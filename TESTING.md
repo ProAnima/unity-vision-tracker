@@ -16,6 +16,7 @@ Current coverage starts with:
 - `VisionAdapterRegistry` adapter registration, duplicate protection, resolution, and runtime creation behavior.
 - `VisionFrameSourceRegistry` source registration, default mappings, provider creation, and error paths.
 - Production `IVisionFrameSource` implementations for texture, render texture, Unity camera, and video contract behavior.
+- `UnityInferenceRuntimeAdapter` and `YoloModelAdapter` runtime creation, processing, and disposal behavior through fakes.
 
 Run from PowerShell:
 
@@ -41,7 +42,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 68 tests, 68 passed, 0 failed
+EditMode: 71 tests, 71 passed, 0 failed
 ```
 
 ## GitHub Actions

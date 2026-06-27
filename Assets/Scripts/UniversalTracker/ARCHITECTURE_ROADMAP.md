@@ -1359,3 +1359,20 @@ Current automated baseline:
 ```text
 EditMode: 68 tests, 68 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 7
+
+Unity Inference runtime migration has started:
+
+- added `UnityInferenceRuntimeAdapter` as the production runtime bridge for Unity Inference based profiles;
+- added `YoloModelAdapter` as the model-family adapter that resolves YOLO profiles into Unity Inference runtime instances;
+- changed the default `VisionAdapterRegistry` to register `YoloModelAdapter` instead of the legacy adapter identity;
+- kept `YoloLegacyModelAdapter` as a compatibility alias for old profile-to-`ModelConfig` migration paths;
+- `LegacyInferenceRuntimeAdapter` remains available only as compatibility scaffolding around existing `IInferenceModel` implementations;
+- EditMode tests cover runtime creation, default registry adapter identity, fake model initialization, processing, result conversion, and disposal.
+
+Current automated baseline:
+
+```text
+EditMode: 71 tests, 71 passed, 0 failed
+```

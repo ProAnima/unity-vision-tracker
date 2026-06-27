@@ -96,7 +96,7 @@ Current legacy files may exceed these limits. New work should reduce pressure, n
 Current baseline:
 
 ```text
-EditMode: 68 tests, 68 passed, 0 failed
+EditMode: 71 tests, 71 passed, 0 failed
 ```
 
 Run EditMode tests after code changes:

@@ -1,0 +1,144 @@
+using System;
+using UnityEngine;
+using UniversalTracker.Models;
+
+namespace UniversalTracker.Core
+{
+    public sealed class UnityInferenceRuntimeAdapter : IVisionRuntimeAdapter
+    {
+        private readonly Func<VisionModelProfile, ModelConfig> configFactory;
+        private readonly Func<ModelConfig, IInferenceModel> modelFactory;
+        private readonly VisionModelCapability capabilities;
+        private IInferenceModel model;
+        private ModelConfig config;
+
+        public UnityInferenceRuntimeAdapter(
+            Func<VisionModelProfile, ModelConfig> configFactory,
+            Func<ModelConfig, IInferenceModel> modelFactory,
+            VisionModelCapability capabilities)
+        {
+            this.configFactory = configFactory ?? throw new ArgumentNullException(nameof(configFactory));
+            this.modelFactory = modelFactory ?? throw new ArgumentNullException(nameof(modelFactory));
+            this.capabilities = capabilities;
+        }
+
+        public VisionRuntimeKind RuntimeKind => VisionRuntimeKind.UnityInferenceEngine;
+        public VisionModelCapability Capabilities => capabilities;
+        public bool IsInitialized => model != null && model.IsInitialized;
+
+        public void Initialize(VisionModelProfile profile)
+        {
+            config = configFactory(profile);
+            if (config == null)
+                throw new InvalidOperationException("Unity inference runtime config factory returned null.");
+
+            model = modelFactory(config);
+            if (model == null)
+                throw new InvalidOperationException("Unity inference model factory returned null.");
+
+            model.Initialize(config);
+        }
+
+        public VisionFrameResult ProcessFrame(VisionFrame frame)
+        {
+            if (!frame.IsValid)
+                return VisionFrameResult.Empty(frame.frameIndex, frame.timestamp, frame.sourceSize);
+
+            InferenceResult result = model.RunInference(frame.texture);
+            return VisionResultAdapter.FromInferenceResult(result, frame.texture, frame.frameIndex, frame.timestamp);
+        }
+
+        public void Dispose()
+        {
+            model?.Dispose();
+            model = null;
+            config = null;
+        }
+    }
+
+    public class YoloModelAdapter : IVisionModelAdapter
+    {
+        public virtual string AdapterId => "proanima.yolo.unity-inference";
+        public VisionModelFamily Family => VisionModelFamily.YOLO;
+        public VisionModelCapability Capabilities =>
+            VisionModelCapability.Detection |
+            VisionModelCapability.HumanDetection |
+            VisionModelCapability.Pose2D |
+            VisionModelCapability.Segmentation;
+
+        public bool CanHandle(VisionModelProfile profile)
+        {
+            return profile != null &&
+                   profile.runtimeKind == VisionRuntimeKind.UnityInferenceEngine &&
+                   profile.family == VisionModelFamily.YOLO &&
+                   profile.modelAsset != null;
+        }
+
+        public IVisionRuntimeAdapter CreateRuntime(VisionModelProfile profile)
+        {
+            return new UnityInferenceRuntimeAdapter(
+                ToModelConfig,
+                YOLOModelFactory.CreateModel,
+                InferCapabilities(profile));
+        }
+
+        public static ModelConfig ToModelConfig(VisionModelProfile profile)
+        {
+            if (profile == null)
+                throw new ArgumentNullException(nameof(profile));
+
+            return new ModelConfig
+            {
+                modelName = string.IsNullOrWhiteSpace(profile.displayName) ? profile.name : profile.displayName,
+                modelAsset = profile.modelAsset,
+                backend = profile.backend,
+                inputSize = profile.input.IsValid ? Mathf.Max(profile.input.width, profile.input.height) : 640,
+                confidenceThreshold = profile.confidenceThreshold,
+                nmsThreshold = profile.nmsThreshold
+            };
+        }
+
+        public static VisionModelCapability InferCapabilities(VisionModelProfile profile)
+        {
+            if (profile == null)
+                return VisionModelCapability.None;
+
+            VisionModelCapability capabilities = profile.capabilities;
+            if (capabilities != VisionModelCapability.None)
+                return capabilities;
+
+            string name = $"{profile.displayName} {profile.name}".ToLowerInvariant();
+            return InferCapabilities(name);
+        }
+
+        public static VisionModelCapability InferCapabilities(ModelConfig config)
+        {
+            return InferCapabilities(config?.modelName);
+        }
+
+        private static VisionModelCapability InferCapabilities(string modelName)
+        {
+            string name = modelName?.ToLowerInvariant() ?? string.Empty;
+            VisionModelCapability capabilities = VisionModelCapability.Detection;
+
+            if (name.Contains("pose"))
+                capabilities |= VisionModelCapability.Pose2D | VisionModelCapability.HumanDetection;
+            if (name.Contains("seg"))
+                capabilities |= VisionModelCapability.Segmentation;
+            if (name.Contains("person") || name.Contains("human"))
+                capabilities |= VisionModelCapability.HumanDetection;
+
+            return capabilities;
+        }
+    }
+
+    public sealed class YoloLegacyModelAdapter : YoloModelAdapter
+    {
+        public override string AdapterId => "proanima.yolo.legacy";
+
+        public static ModelConfig ToLegacyConfig(VisionModelProfile profile)
+        {
+            return ToModelConfig(profile);
+        }
+    }
+}

@@ -13,7 +13,7 @@ namespace UniversalTracker.Core
         public static VisionAdapterRegistry CreateDefault()
         {
             var registry = new VisionAdapterRegistry();
-            registry.Register(new YoloLegacyModelAdapter());
+            registry.Register(new YoloModelAdapter());
             return registry;
         }
 
