@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 using UniversalTracker.Core;
 
 namespace UniversalTracker.Processing
@@ -11,31 +11,31 @@ namespace UniversalTracker.Processing
     {
         #region Public Methods
         
-        public BBoxData[] ApplyNMS(BBoxData[] boxes, float iouThreshold)
+        public VisionDetection[] ApplyNMS(VisionDetection[] detections, float iouThreshold)
         {
-            if (boxes == null || boxes.Length == 0)
-                return boxes;
+            if (detections == null || detections.Length == 0)
+                return detections;
             
-            var boxList = new List<BBoxData>(boxes);
-            boxList.Sort((a, b) => b.confidence.CompareTo(a.confidence));
+            var detectionList = new List<VisionDetection>(detections);
+            detectionList.Sort((a, b) => b.confidence.CompareTo(a.confidence));
             
-            var results = new List<BBoxData>();
-            var active = new bool[boxList.Count];
+            var results = new List<VisionDetection>();
+            var active = new bool[detectionList.Count];
             
             for (int i = 0; i < active.Length; i++)
                 active[i] = true;
             
-            for (int i = 0; i < boxList.Count; i++)
+            for (int i = 0; i < detectionList.Count; i++)
             {
                 if (!active[i]) continue;
                 
-                results.Add(boxList[i]);
+                results.Add(detectionList[i]);
                 
-                for (int j = i + 1; j < boxList.Count; j++)
+                for (int j = i + 1; j < detectionList.Count; j++)
                 {
                     if (!active[j]) continue;
                     
-                    float iou = CalculateIoU(boxList[i].rect, boxList[j].rect);
+                    float iou = CalculateIoU(GetComparisonRect(detectionList[i]), GetComparisonRect(detectionList[j]));
                     if (iou > iouThreshold)
                         active[j] = false;
                 }
@@ -44,25 +44,25 @@ namespace UniversalTracker.Processing
             return results.ToArray();
         }
         
-        public BBoxData[] ApplyClassAgnosticNMS(BBoxData[] boxes, float iouThreshold)
+        public VisionDetection[] ApplyClassAgnosticNMS(VisionDetection[] detections, float iouThreshold)
         {
-            return ApplyNMS(boxes, iouThreshold);
+            return ApplyNMS(detections, iouThreshold);
         }
         
-        public BBoxData[] ApplyPerClassNMS(BBoxData[] boxes, float iouThreshold)
+        public VisionDetection[] ApplyPerClassNMS(VisionDetection[] detections, float iouThreshold)
         {
-            if (boxes == null || boxes.Length == 0)
-                return boxes;
+            if (detections == null || detections.Length == 0)
+                return detections;
             
-            var resultList = new List<BBoxData>();
-            var classGroups = new Dictionary<int, List<BBoxData>>();
+            var resultList = new List<VisionDetection>();
+            var classGroups = new Dictionary<int, List<VisionDetection>>();
             
-            foreach (var box in boxes)
+            foreach (var detection in detections)
             {
-                if (!classGroups.ContainsKey(box.classId))
-                    classGroups[box.classId] = new List<BBoxData>();
+                if (!classGroups.ContainsKey(detection.classId))
+                    classGroups[detection.classId] = new List<VisionDetection>();
                 
-                classGroups[box.classId].Add(box);
+                classGroups[detection.classId].Add(detection);
             }
             
             foreach (var group in classGroups.Values)
@@ -89,6 +89,13 @@ namespace UniversalTracker.Processing
             float area2 = b.width * b.height;
             
             return intersection / (area1 + area2 - intersection);
+        }
+
+        public Rect GetComparisonRect(VisionDetection detection)
+        {
+            return detection.normalizedRect.width > 0f && detection.normalizedRect.height > 0f
+                ? detection.normalizedRect
+                : detection.sourceRect;
         }
         
         #endregion

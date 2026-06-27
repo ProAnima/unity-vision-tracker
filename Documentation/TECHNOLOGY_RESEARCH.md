@@ -381,7 +381,6 @@ This should become one of the central user-facing editor tools.
 1. Add `VisionModelCapability`.
 2. Add `VisionModelProfile` ScriptableObject skeleton.
 3. Add `VisionInputSchema` and `VisionOutputSchema`.
-4. Add `IFrameSource` next to legacy `IInputProvider`.
+4. Keep frame ingestion on `IVisionFrameSource` and add optional camera modules behind adapters.
 5. Add `VisionPipelineContext`.
 6. Add validation tests that do not require a real model asset.
-

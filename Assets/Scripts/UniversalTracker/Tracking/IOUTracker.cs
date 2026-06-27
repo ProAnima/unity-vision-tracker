@@ -27,7 +27,7 @@ namespace UniversalTracker.Tracking
             nmsProcessor = new NMSProcessor();
         }
         
-        public TrackedObject[] Update(BBoxData[] detections, float deltaTime)
+        public TrackedObject[] Update(VisionDetection[] detections, float deltaTime)
         {
             if (detections == null || detections.Length == 0)
             {
@@ -35,17 +35,19 @@ namespace UniversalTracker.Tracking
                 return trackedObjects.Values.Where(t => t.isActive).ToArray();
             }
             
-            var unmatched = new List<BBoxData>(detections);
+            var unmatched = new List<VisionDetection>(detections);
             var matched = new HashSet<int>();
             
             foreach (var tracked in trackedObjects.Values.Where(t => t.isActive))
             {
                 float bestIoU = 0f;
-                BBoxData bestMatch = null;
+                VisionDetection? bestMatch = null;
                 
                 foreach (var detection in unmatched)
                 {
-                    float iou = nmsProcessor.CalculateIoU(tracked.currentDetection.rect, detection.rect);
+                    float iou = nmsProcessor.CalculateIoU(
+                        nmsProcessor.GetComparisonRect(tracked.currentDetection),
+                        nmsProcessor.GetComparisonRect(detection));
                     if (iou > bestIoU && iou > iouThreshold)
                     {
                         bestIoU = iou;
@@ -55,8 +57,8 @@ namespace UniversalTracker.Tracking
                 
                 if (bestMatch != null)
                 {
-                    UpdateTrackedObject(tracked, bestMatch, deltaTime);
-                    unmatched.Remove(bestMatch);
+                    UpdateTrackedObject(tracked, bestMatch.Value, deltaTime);
+                    unmatched.Remove(bestMatch.Value);
                     matched.Add(tracked.id);
                 }
                 else
@@ -97,22 +99,26 @@ namespace UniversalTracker.Tracking
         
         #region Private Methods
         
-        private void UpdateTrackedObject(TrackedObject tracked, BBoxData detection, float deltaTime)
+        private void UpdateTrackedObject(TrackedObject tracked, VisionDetection detection, float deltaTime)
         {
-            var prevCenter = tracked.currentDetection.center;
+            var prevCenter = TrackedObject.DetectionCenter(tracked.currentDetection);
+            detection.trackId = tracked.id;
+            detection.trackState = VisionTrackState.Tracking;
             tracked.currentDetection = detection;
             tracked.confidence = detection.confidence;
             tracked.missedFrames = 0;
             tracked.age++;
             
             if (deltaTime > 0)
-                tracked.velocity = (detection.center - prevCenter) / deltaTime;
+                tracked.velocity = (TrackedObject.DetectionCenter(detection) - prevCenter) / deltaTime;
             
-            tracked.predictedPosition = detection.center + tracked.velocity * deltaTime;
+            tracked.predictedPosition = TrackedObject.DetectionCenter(detection) + tracked.velocity * deltaTime;
         }
         
-        private void CreateNewTrackedObject(BBoxData detection)
+        private void CreateNewTrackedObject(VisionDetection detection)
         {
+            detection.trackId = nextId;
+            detection.trackState = VisionTrackState.New;
             var tracked = new TrackedObject(nextId++, detection);
             trackedObjects[tracked.id] = tracked;
         }

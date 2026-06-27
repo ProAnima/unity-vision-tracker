@@ -44,8 +44,8 @@ namespace UniversalTracker.Tests
             var result = processor.ApplyNMS(boxes, 0.5f);
 
             Assert.That(result, Has.Length.EqualTo(2));
-            Assert.That(result[0].id, Is.EqualTo(1));
-            Assert.That(result[1].id, Is.EqualTo(3));
+            Assert.That(result[0].trackId, Is.EqualTo(1));
+            Assert.That(result[1].trackId, Is.EqualTo(3));
         }
 
         [Test]
@@ -64,6 +64,22 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void ApplyNMS_UsesSourceRectWhenNormalizedRectIsEmpty()
+        {
+            var processor = new NMSProcessor();
+            var boxes = new[]
+            {
+                SourceOnlyBox(1, 0, 0.95f, new Rect(10f, 10f, 50f, 50f)),
+                SourceOnlyBox(2, 0, 0.60f, new Rect(12f, 12f, 50f, 50f))
+            };
+
+            var result = processor.ApplyNMS(boxes, 0.5f);
+
+            Assert.That(result, Has.Length.EqualTo(1));
+            Assert.That(result[0].trackId, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ApplyNMS_NullInput_ReturnsNull()
         {
             var processor = new NMSProcessor();
@@ -71,18 +87,31 @@ namespace UniversalTracker.Tests
             Assert.That(processor.ApplyNMS(null, 0.5f), Is.Null);
         }
 
-        private static BBoxData Box(int id, int classId, float confidence, Rect rect)
+        private static VisionDetection Box(int id, int classId, float confidence, Rect rect)
         {
-            return new BBoxData
+            return new VisionDetection
             {
-                id = id,
+                trackId = id,
                 classId = classId,
-                className = $"class_{classId}",
+                label = $"class_{classId}",
                 confidence = confidence,
-                rect = rect,
-                center = rect.center
+                normalizedRect = rect,
+                sourceRect = rect,
+                sourceCenter = rect.center
+            };
+        }
+
+        private static VisionDetection SourceOnlyBox(int id, int classId, float confidence, Rect sourceRect)
+        {
+            return new VisionDetection
+            {
+                trackId = id,
+                classId = classId,
+                label = $"class_{classId}",
+                confidence = confidence,
+                sourceRect = sourceRect,
+                sourceCenter = sourceRect.center
             };
         }
     }
 }
-

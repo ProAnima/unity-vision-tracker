@@ -28,7 +28,7 @@ namespace UniversalTracker.Tracking
             nmsProcessor = new NMSProcessor();
         }
         
-        public TrackedObject[] Update(BBoxData[] detections, float deltaTime)
+        public TrackedObject[] Update(VisionDetection[] detections, float deltaTime)
         {
             if (detections == null || detections.Length == 0)
             {
@@ -78,13 +78,13 @@ namespace UniversalTracker.Tracking
             {
                 // Простое предсказание на основе скорости (упрощенный Kalman)
                 if (deltaTime > 0)
-                    tracked.predictedPosition = tracked.currentDetection.center + tracked.velocity * deltaTime;
+                    tracked.predictedPosition = TrackedObject.DetectionCenter(tracked.currentDetection) + tracked.velocity * deltaTime;
             }
         }
         
-        private Dictionary<int, BBoxData> AssociateDetectionsToTracks(BBoxData[] detections)
+        private Dictionary<int, VisionDetection> AssociateDetectionsToTracks(VisionDetection[] detections)
         {
-            var matches = new Dictionary<int, BBoxData>();
+            var matches = new Dictionary<int, VisionDetection>();
             var usedDetections = new HashSet<int>();
             
             var activeTracks = trackedObjects.Values.Where(t => t.isActive).OrderByDescending(t => t.confidence).ToList();
@@ -98,7 +98,9 @@ namespace UniversalTracker.Tracking
                 {
                     if (usedDetections.Contains(i)) continue;
                     
-                    float iou = nmsProcessor.CalculateIoU(tracked.currentDetection.rect, detections[i].rect);
+                    float iou = nmsProcessor.CalculateIoU(
+                        nmsProcessor.GetComparisonRect(tracked.currentDetection),
+                        nmsProcessor.GetComparisonRect(detections[i]));
                     if (iou > bestIoU && iou > iouThreshold)
                     {
                         bestIoU = iou;
@@ -116,14 +118,16 @@ namespace UniversalTracker.Tracking
             return matches;
         }
         
-        private void UpdateMatchedTracks(Dictionary<int, BBoxData> matches, float deltaTime)
+        private void UpdateMatchedTracks(Dictionary<int, VisionDetection> matches, float deltaTime)
         {
             foreach (var tracked in trackedObjects.Values.Where(t => t.isActive))
             {
                 if (matches.ContainsKey(tracked.id))
                 {
                     var detection = matches[tracked.id];
-                    var prevCenter = tracked.currentDetection.center;
+                    var prevCenter = TrackedObject.DetectionCenter(tracked.currentDetection);
+                    detection.trackId = tracked.id;
+                    detection.trackState = VisionTrackState.Tracking;
                     
                     tracked.currentDetection = detection;
                     tracked.confidence = detection.confidence;
@@ -132,7 +136,7 @@ namespace UniversalTracker.Tracking
                     
                     if (deltaTime > 0)
                     {
-                        var newVelocity = (detection.center - prevCenter) / deltaTime;
+                        var newVelocity = (TrackedObject.DetectionCenter(detection) - prevCenter) / deltaTime;
                         tracked.velocity = Vector2.Lerp(tracked.velocity, newVelocity, 0.5f);
                     }
                 }
@@ -143,15 +147,18 @@ namespace UniversalTracker.Tracking
             }
         }
         
-        private void CreateNewTracks(BBoxData[] detections, Dictionary<int, BBoxData> matches)
+        private void CreateNewTracks(VisionDetection[] detections, Dictionary<int, VisionDetection> matches)
         {
-            var usedDetections = new HashSet<BBoxData>(matches.Values);
+            var usedDetections = new HashSet<VisionDetection>(matches.Values);
             
             foreach (var detection in detections)
             {
                 if (!usedDetections.Contains(detection))
                 {
-                    var tracked = new TrackedObject(nextId++, detection);
+                    var trackedDetection = detection;
+                    trackedDetection.trackId = nextId;
+                    trackedDetection.trackState = VisionTrackState.New;
+                    var tracked = new TrackedObject(nextId++, trackedDetection);
                     trackedObjects[tracked.id] = tracked;
                 }
             }

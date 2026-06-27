@@ -120,14 +120,6 @@ namespace UniversalTracker.OutputReceivers
             Subscribe();
         }
 
-        public void ReceiveResult(InferenceResult result, Texture sourceTexture)
-        {
-            if (!isReceiverEnabled || result == null)
-                return;
-
-            ReceiveVisionResult(VisionResultAdapter.FromInferenceResult(result, sourceTexture), sourceTexture);
-        }
-
         public void ReceiveVisionResult(VisionFrameResult result)
         {
             ReceiveVisionResult(result, lastTexture);

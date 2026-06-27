@@ -3,100 +3,60 @@ using UniversalTracker.Core;
 
 namespace UniversalTracker.OutputReceivers
 {
-    /// <summary>
-    /// Приёмник результатов для отладочного вывода
-    /// </summary>
     public class DebugOutputReceiver : MonoBehaviour, IOutputReceiver
     {
-        #region Public Fields
-        
-        [Header("🔍 Настройки отладки")]
         [SerializeField] private bool isEnabled = true;
         public bool logToConsole = true;
         public bool showDebugWindow = false;
-        
         [Range(0.1f, 5f)] public float logInterval = 1f;
-        
+
         public bool IsEnabled { get => isEnabled; set => isEnabled = value; }
-        
-        #endregion
-        
-        #region Public Methods
-        
+
+        private float lastLogTime;
+        private VisionFrameResult lastResult;
+
         public void Initialize()
         {
             lastLogTime = Time.time;
-            Debug.Log("✅ [DebugOutput] Debug receiver готов");
         }
-        
-        public void ReceiveResult(InferenceResult result, Texture sourceTexture)
+
+        public void ReceiveVisionResult(VisionFrameResult result, Texture sourceTexture = null)
         {
-            if (!isEnabled) return;
-            
+            if (!isEnabled || result == null)
+                return;
+
+            lastResult = result;
             if (logToConsole && Time.time - lastLogTime >= logInterval)
             {
-                LogResult(result);
+                Debug.Log($"[VisionDebug] frame={result.frameIndex} results={result.TotalResultCount} totalMs={result.stats.totalMs:F2}");
                 lastLogTime = Time.time;
             }
-            
-            lastResult = result;
         }
-        
+
         public void Clear()
         {
             lastResult = null;
         }
-        
+
         public void Release()
         {
             lastResult = null;
         }
-        
-        #endregion
-        
-        #region Private Fields
-        
-        private float lastLogTime;
-        private InferenceResult lastResult;
-        
-        #endregion
-        
-        #region Private Methods
-        
-        private void LogResult(InferenceResult result)
+
+        private void OnGUI()
         {
-            if (!result.success)
-            {
-                Debug.LogWarning("⚠️ [Debug] Inference не удался");
+            if (!showDebugWindow || lastResult == null)
                 return;
-            }
-            
-            var msg = $"📊 [Debug] Inference: {result.inferenceTime:F2}ms | ";
-            msg += $"Детекции: {result.detectionCount} | ";
-            msg += $"Max confidence: {result.maxConfidence:F2}";
-            
-            Debug.Log(msg);
-        }
-        
-        #endregion
-        
-        #region Unity Lifecycle
-        
-        void OnGUI()
-        {
-            if (!showDebugWindow || lastResult == null) return;
-            
-            GUILayout.BeginArea(new Rect(10, 10, 300, 200));
-            GUILayout.Box("🔍 Debug Info");
-            
-            GUILayout.Label($"Model: {lastResult.modelType}");
-            GUILayout.Label($"Inference: {lastResult.inferenceTime:F2}ms");
-            GUILayout.Label($"Detections: {lastResult.detectionCount}");
-            GUILayout.Label($"Max Confidence: {lastResult.maxConfidence:F2}");
-            
+
+            GUILayout.BeginArea(new Rect(10, 10, 320, 170));
+            GUILayout.Box("Vision Debug");
+            GUILayout.Label($"Frame: {lastResult.frameIndex}");
+            GUILayout.Label($"Results: {lastResult.TotalResultCount}");
+            GUILayout.Label($"Detections: {lastResult.detections?.Length ?? 0}");
+            GUILayout.Label($"Poses: {lastResult.poses?.Length ?? 0}");
+            GUILayout.Label($"Masks: {lastResult.masks?.Length ?? 0}");
+            GUILayout.Label($"Total: {lastResult.stats.totalMs:F2}ms");
             GUILayout.EndArea();
         }
-        
-        #endregion
     }
 }

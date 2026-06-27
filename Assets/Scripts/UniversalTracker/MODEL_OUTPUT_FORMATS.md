@@ -77,7 +77,7 @@ mask = crop(mask, bbox)
 
 ---
 
-## 🔧 YOLO11/12 (Legacy, Anchors-Based)
+## 🔧 YOLO11/12 (Anchor-Based)
 
 ### Detection (`yolo11n.pt`)
 **Output**: `[batch, 84, 8400]`

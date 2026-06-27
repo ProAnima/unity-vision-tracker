@@ -1,5 +1,5 @@
-using UnityEngine;
 using UniversalTracker.Core;
+using UnityEngine;
 
 namespace UniversalTracker.Tracking
 {
@@ -8,7 +8,7 @@ namespace UniversalTracker.Tracking
     /// </summary>
     public interface ITracker
     {
-        TrackedObject[] Update(BBoxData[] detections, float deltaTime);
+        TrackedObject[] Update(VisionDetection[] detections, float deltaTime);
         void Reset();
         TrackedObject GetTrackedObject(int id);
         TrackedObject[] GetAllTrackedObjects();
@@ -21,8 +21,8 @@ namespace UniversalTracker.Tracking
     {
         public int id;
         public int classId;
-        public string className;
-        public BBoxData currentDetection;
+        public string label;
+        public VisionDetection currentDetection;
         public Vector2 velocity;
         public Vector2 predictedPosition;
         public float confidence;
@@ -30,18 +30,30 @@ namespace UniversalTracker.Tracking
         public int missedFrames;
         public bool isActive;
         
-        public TrackedObject(int id, BBoxData detection)
+        public TrackedObject(int id, VisionDetection detection)
         {
             this.id = id;
             this.classId = detection.classId;
-            this.className = detection.className;
+            this.label = detection.label;
             this.currentDetection = detection;
             this.velocity = Vector2.zero;
-            this.predictedPosition = detection.center;
+            this.predictedPosition = DetectionCenter(detection);
             this.confidence = detection.confidence;
             this.age = 0;
             this.missedFrames = 0;
             this.isActive = true;
+        }
+
+        public static Vector2 DetectionCenter(VisionDetection detection)
+        {
+            if (detection.sourceCenter != Vector2.zero)
+                return detection.sourceCenter;
+
+            Rect rect = detection.sourceRect.width > 0f && detection.sourceRect.height > 0f
+                ? detection.sourceRect
+                : detection.normalizedRect;
+
+            return rect.center;
         }
     }
 }

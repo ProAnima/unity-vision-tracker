@@ -77,16 +77,14 @@ VisionFrameResult
 
 ## Current Capabilities
 
-- Unity `WebCamTexture` input through a safer `RenderTexture` path.
-- Unity `Camera`, `Texture`, and `VideoPlayer` input providers.
-- YOLO11 and YOLO26 model wrappers.
-- Detection, pose, and segmentation-oriented model classes.
+- Production frame sources for WebCamTexture, Unity Camera, Texture, RenderTexture, and VideoPlayer.
+- YOLO-family adapter path through Unity Inference Engine raw tensors and output parsers.
 - Unity Inference Engine runtime usage.
 - Capability-based `VisionModelProfile` contract for plugin/adapters architecture.
 - `VisionPipeline` orchestration for source/runtime/result flow.
 - IOU and SORT tracking implementations.
-- Modern UI Toolkit dashboard plus legacy UI, scene, event, and debug output receivers.
-- Runtime manager for model selection, input, inference, tracking, and output.
+- Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
+- Thin runtime manager facade over `VisionPipeline`.
 - Architecture roadmap for a production SDK evolution.
 
 ## Target Capabilities
@@ -139,15 +137,11 @@ git lfs pull
 1. Clone the repository.
 2. Open the project in Unity 6.
 3. Open `Assets/Scenes/SampleScene.unity`.
-4. Check the `UniversalTrackerManager` object and ensure a model is assigned.
+4. Check the `UniversalTrackerManager` object and assign a `VisionPipelineProfile` or `VisionModelProfile`.
 5. Press Play.
 6. Watch the Unity Console and UI overlay for camera/inference status.
 
-For current startup troubleshooting, see:
-
-- [STARTUP_CHECKLIST.md](Assets/Scripts/UniversalTracker/STARTUP_CHECKLIST.md)
-- [TROUBLESHOOTING.md](Assets/Scripts/UniversalTracker/TROUBLESHOOTING.md)
-- [CRASH_FIX.md](Assets/Scripts/UniversalTracker/CRASH_FIX.md)
+For setup rules and contribution constraints, see [CODEX.md](CODEX.md).
 
 ## Runtime Dashboard
 
@@ -169,7 +163,7 @@ Usage:
 2. Assign the `UniversalTrackerManager` reference, or leave `autoFindManager` enabled.
 3. Assign the receiver to `UniversalTrackerManager.manualToolkitDashboardReceiver`, or enable `useToolkitDashboard` for dynamic creation.
 
-The legacy `UIVisualizationReceiver` remains available for existing Canvas/RawImage scenes.
+`UIVisualizationReceiver` remains available as a lightweight Canvas/RawImage preview receiver.
 
 ## Plugin And Adapter Architecture
 
@@ -186,15 +180,14 @@ Current bridge contracts:
 - `VisionModelProfile` describes task, model family, capabilities, runtime kind, input/output schema, thresholds, and license metadata.
 - `IVisionFrameSource` is the source-agnostic frame API for webcams, Unity cameras, render textures, videos, AR/XR feeds, and custom cameras.
 - Built-in production frame sources cover Texture, RenderTexture, Unity Camera, WebCamTexture, and VideoPlayer paths.
-- `VisionFrameSourceRegistry` resolves input provider types to frame sources without hardcoding camera creation in the manager.
 - `IVisionRuntimeAdapter` is the runtime plugin surface for Unity Inference Engine, MediaPipe, native plugins, remote inference, and mocks.
 - `VisionAdapterRegistry` resolves model profiles to runtime adapters without hardcoding one model family in the manager.
 - `IVisionOutputParser` converts raw runtime tensors into canonical detections, poses, masks, and classifications.
-- `UnityInferenceRuntimeAdapter` supports the new raw-output parser path, with legacy `InferenceResult` conversion kept as fallback.
+- `UnityInferenceRuntimeAdapter` runs the raw-output parser path into canonical `VisionFrameResult` objects.
 - `UnityInferenceRawOutputProvider` executes Unity Inference models into `VisionRawModelOutput` tensors using profile-declared output schemas.
 - `VisionProfileValidator` checks profile identity, task/capability consistency, runtime asset requirements, schemas, thresholds, and model governance metadata.
-- `YoloModelAdapter` and `UnityInferenceRuntimeAdapter` are the production Unity Inference bridge; legacy `IInferenceModel`/`IInputProvider` paths remain as compatibility layers.
-- `UniversalTrackerManager` can run profile-based setups through `VisionPipeline`, with legacy `ModelConfig[]` kept as fallback.
+- `YoloModelAdapter` and `UnityInferenceRuntimeAdapter` are the production Unity Inference bridge.
+- `UniversalTrackerManager` runs profile-based setups through `VisionPipeline`.
 
 The design keeps YOLO as one adapter instead of the core identity of the SDK.
 
@@ -210,8 +203,7 @@ The design keeps YOLO as one adapter instead of the core identity of the SDK.
 ### Phase 2: Unified Result API
 
 - Introduce `VisionFrameResult`, `VisionDetection`, `VisionPose`, and `VisionKeypoint`.
-- Bridge current `InferenceResult` into the new API.
-- Move receivers to the unified result format.
+- Keep receivers on the unified result format.
 
 ### Phase 3: Camera Sources
 
@@ -246,7 +238,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 80 tests, 80 passed, 0 failed
+EditMode: 67 tests, 67 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

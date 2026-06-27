@@ -10,7 +10,7 @@ namespace UniversalTracker.Core
         bool IsEnabled { get; set; }
         
         void Initialize();
-        void ReceiveResult(InferenceResult result, Texture sourceTexture);
+        void ReceiveVisionResult(VisionFrameResult result, Texture sourceTexture = null);
         void Clear();
         void Release();
     }

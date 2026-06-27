@@ -35,14 +35,7 @@ Prefer these contracts for all new work:
 - `IVisionModelAdapter` for model-family adapters.
 - `VisionImageTransform` and `VisionDashboardGeometry` for coordinate mapping.
 
-Legacy contracts are compatibility layers:
-
-- `IInputProvider`
-- `IInferenceModel`
-- `ModelConfig`
-- `InferenceResult`
-
-Do not build new production features directly on legacy contracts unless the change is explicitly a bridge.
+Removed prototype contracts are not part of the production API. Do not reintroduce prototype input providers, model factories, direct model wrappers, or result bridges when adding new features.
 
 ## Unity Version Policy
 
@@ -72,7 +65,7 @@ Every production change must preserve these properties:
 - Coordinate transforms are explicit and testable.
 - Runtime paths handle nulls, invalid sizes, unavailable cameras, and failed model init.
 - Debug UI must be informative but not required for core runtime operation.
-- Existing scenes using legacy `ModelConfig[]` should continue to work until a deliberate migration removes them.
+- Existing scenes should be migrated to profile-based setup through `VisionPipelineProfile` and `VisionModelProfile`.
 - New model/camera/runtime support must enter through adapters, profiles, and schemas.
 - Errors should be actionable and tied to `VisionError` / health-state concepts where possible.
 
@@ -82,21 +75,21 @@ Use these limits as review gates:
 
 - Target class size: under 250 lines.
 - Soft maximum class size: 400 lines.
-- Hard maximum class size: 600 lines unless the file is generated or explicitly documented as temporary legacy code.
+- Hard maximum class size: 600 lines unless the file is generated and explicitly documented.
 - Target method size: under 40 lines.
 - Soft maximum method size: 80 lines.
 - Keep MonoBehaviours thin. Move pure logic into testable classes/structs.
 - Avoid large manager classes absorbing responsibilities. Add focused services/adapters instead.
 - Do not add abstractions just to add abstractions; add them when they define a real extension point or reduce real duplication.
 
-Current legacy files may exceed these limits. New work should reduce pressure, not increase it.
+Existing large files should be split when touched for substantive production work.
 
 ## Testing Requirements
 
 Current baseline:
 
 ```text
-EditMode: 80 tests, 80 passed, 0 failed
+EditMode: 67 tests, 67 passed, 0 failed
 ```
 
 Run EditMode tests after code changes:
@@ -107,8 +100,8 @@ Run EditMode tests after code changes:
   -projectPath 'D:\Projects\ProAnimaStudio\pas-UCT' `
   -runTests `
   -testPlatform EditMode `
-  -testResults 'Temp\EditModeResults.xml' `
-  -logFile 'Temp\EditModeTests.log'
+  -testResults 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\EditModeResults.xml' `
+  -logFile 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\EditModeTests.log'
 ```
 
 Important runner note:
@@ -171,7 +164,7 @@ A production increment is done only when:
 - The code compiles in Unity.
 - Relevant EditMode tests pass or the reason they could not run is documented.
 - Public architecture direction remains model-agnostic.
-- Legacy compatibility is preserved unless removal is explicitly requested.
+- Removed prototype APIs stay removed unless a new adapter contract is explicitly approved.
 - Docs reflect new public behavior.
 - The commit is pushed when the user asked to keep pushing.
 
@@ -180,7 +173,7 @@ A production increment is done only when:
 1. Extract `VisionPipeline` orchestration from `UniversalTrackerManager`.
 2. Add `VisionPipelineProfile`.
 3. Add model profile validation.
-4. Convert frame sources from `IInputProvider` to `IVisionFrameSource`.
+4. Expand production `IVisionFrameSource` coverage for camera, texture, video, AR, and XR sources.
 5. Add parser/output schema fixtures.
 6. Add PlayMode smoke tests for UI Toolkit dashboard.
 7. Prepare UPM package layout.

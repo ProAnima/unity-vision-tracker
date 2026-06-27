@@ -18,6 +18,8 @@ namespace UniversalTracker.Tests
             Assert.That(first, Has.Length.EqualTo(1));
             Assert.That(second, Has.Length.EqualTo(1));
             Assert.That(second[0].id, Is.EqualTo(first[0].id));
+            Assert.That(second[0].currentDetection.trackId, Is.EqualTo(first[0].id));
+            Assert.That(second[0].currentDetection.trackState, Is.EqualTo(VisionTrackState.Tracking));
             Assert.That(second[0].missedFrames, Is.EqualTo(0));
         }
 
@@ -76,18 +78,18 @@ namespace UniversalTracker.Tests
             Assert.That(afterReset[0].id, Is.EqualTo(0));
         }
 
-        private static BBoxData Box(int classId, float confidence, Rect rect)
+        private static VisionDetection Box(int classId, float confidence, Rect rect)
         {
-            return new BBoxData
+            return new VisionDetection
             {
-                id = -1,
+                trackId = -1,
                 classId = classId,
-                className = $"class_{classId}",
+                label = $"class_{classId}",
                 confidence = confidence,
-                rect = rect,
-                center = rect.center
+                normalizedRect = rect,
+                sourceRect = rect,
+                sourceCenter = rect.center
             };
         }
     }
 }
-

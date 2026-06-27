@@ -9,12 +9,10 @@ Current coverage starts with:
 - `VisionFrameResult` result-count and pose keypoint behavior;
 - `VisionPerformanceStats` stage totals;
 - `VisionImageTransform` stretch, letterbox, normalized mapping, and source/model round trips.
-- `VisionResultAdapter` compatibility mapping from legacy `InferenceResult` to `VisionFrameResult`.
 - `NMSProcessor` IoU, class-aware suppression, null input, and confidence ordering behavior.
 - `IOUTracker` and `SORTTracker` track ID stability, missed-frame lifecycle, reset behavior, and confirmation behavior.
 - `VisionProfileValidator` model and pipeline profile validation behavior.
 - `VisionAdapterRegistry` adapter registration, duplicate protection, resolution, and runtime creation behavior.
-- `VisionFrameSourceRegistry` source registration, default mappings, provider creation, and error paths.
 - Production `IVisionFrameSource` implementations for texture, render texture, Unity camera, and video contract behavior.
 - `UnityInferenceRuntimeAdapter` and `YoloModelAdapter` runtime creation, processing, and disposal behavior through fakes.
 - Parser contracts and YOLO detection golden row fixtures.
@@ -45,7 +43,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 80 tests, 80 passed, 0 failed
+EditMode: 67 tests, 67 passed, 0 failed
 ```
 
 ## GitHub Actions
@@ -79,7 +77,6 @@ Current automated tests cover the pure runtime core. A production-ready release 
 | Runtime dashboard geometry | EditMode unit tests | Started |
 | Plugin/adapters contracts | EditMode unit tests | Started |
 | Vision pipeline orchestration | EditMode unit tests | Started |
-| Legacy-to-production bridge | EditMode unit tests | Started |
 | NMS/postprocess math | EditMode unit tests | Started |
 | Tracking lifecycle | EditMode unit tests | Started |
 | Model profile validation | EditMode unit tests | Started |
