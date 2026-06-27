@@ -1,0 +1,36 @@
+* text=auto
+
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.cs text eol=lf
+*.py text eol=lf
+LICENSE text eol=lf
+
+# Keep Unity YAML assets diffable.
+*.asset text eol=lf
+*.meta text eol=lf
+*.unity text eol=lf
+*.prefab text eol=lf
+*.mat text eol=lf
+*.controller text eol=lf
+*.anim text eol=lf
+*.overrideController text eol=lf
+*.asmdef text eol=lf
+*.inputactions text eol=lf
+
+# Large ML/model binaries.
+*.onnx filter=lfs diff=lfs merge=lfs -text
+*.sentis filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
+*.tflite filter=lfs diff=lfs merge=lfs -text
+
+# Media assets.
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
