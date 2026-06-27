@@ -1392,3 +1392,20 @@ Current automated baseline:
 ```text
 EditMode: 75 tests, 75 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 9
+
+Parser contracts are now connected to the runtime path:
+
+- added `VisionOutputParserRegistry` for parser registration, duplicate-ID protection, explicit `parserId` lookup, and capability fallback lookup;
+- added `IVisionRawOutputProvider` as the production seam between Unity Inference tensor execution and output parsing;
+- `UnityInferenceRuntimeAdapter` can now process frames through `VisionRawModelOutput -> IVisionOutputParser -> VisionFrameResult`;
+- legacy `IInferenceModel -> InferenceResult -> VisionFrameResult` remains as a compatibility fallback only;
+- `YoloModelAdapter` now attempts raw-output/parser runtime construction first and falls back to legacy model execution until the raw Unity tensor executor is implemented;
+- EditMode tests cover parser registry lookup, duplicate parser IDs, raw-output runtime processing, parser output mapping, and provider disposal.
+
+Current automated baseline:
+
+```text
+EditMode: 78 tests, 78 passed, 0 failed
+```

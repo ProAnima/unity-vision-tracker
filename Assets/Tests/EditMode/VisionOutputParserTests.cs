@@ -94,6 +94,33 @@ namespace UniversalTracker.Tests
             Assert.That(frame.TotalResultCount, Is.EqualTo(1));
         }
 
+        [Test]
+        public void ParserRegistry_ResolvesParserByExplicitId()
+        {
+            var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
+            profile.family = VisionModelFamily.YOLO;
+            profile.capabilities = VisionModelCapability.Detection;
+            profile.parserId = "yolo.detection.rows";
+            var registry = VisionOutputParserRegistry.CreateDefault();
+
+            bool resolved = registry.TryGetParser(profile, out IVisionOutputParser parser);
+
+            Assert.That(resolved, Is.True);
+            Assert.That(parser, Is.TypeOf<YoloDetectionOutputParser>());
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
+        public void ParserRegistry_DuplicateParserId_Throws()
+        {
+            var registry = new VisionOutputParserRegistry();
+            registry.Register(new YoloDetectionOutputParser());
+
+            Assert.That(
+                () => registry.Register(new YoloDetectionOutputParser()),
+                Throws.InvalidOperationException);
+        }
+
         private static void AssertRect(Rect actual, Rect expected)
         {
             Assert.That(actual.x, Is.EqualTo(expected.x).Within(0.0001f));
