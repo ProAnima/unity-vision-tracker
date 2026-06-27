@@ -15,6 +15,7 @@ Current coverage starts with:
 - `VisionProfileValidator` model and pipeline profile validation behavior.
 - `VisionAdapterRegistry` adapter registration, duplicate protection, resolution, and runtime creation behavior.
 - `VisionFrameSourceRegistry` source registration, default mappings, provider creation, and error paths.
+- Production `IVisionFrameSource` implementations for texture, render texture, Unity camera, and video contract behavior.
 
 Run from PowerShell:
 
@@ -40,7 +41,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 62 tests, 62 passed, 0 failed
+EditMode: 68 tests, 68 passed, 0 failed
 ```
 
 ## GitHub Actions
@@ -79,7 +80,7 @@ Current automated tests cover the pure runtime core. A production-ready release 
 | Tracking lifecycle | EditMode unit tests | Started |
 | Model profile validation | EditMode unit tests | Started |
 | Parser output schemas | Golden fixture tests | Planned |
-| Frame sources | EditMode + PlayMode tests | Planned |
+| Frame sources | EditMode + PlayMode tests | Started |
 | WebCam/RenderTexture path | PlayMode/manual device tests | Planned |
 | Unity Inference runtime smoke | PlayMode/batchmode tests | Planned |
 | UI overlay mapping | PlayMode screenshot tests | Planned |

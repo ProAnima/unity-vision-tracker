@@ -1341,3 +1341,21 @@ Current automated baseline:
 ```text
 EditMode: 62 tests, 62 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 6
+
+Real frame sources are now available behind `IVisionFrameSource`:
+
+- added `TextureFrameSource`, `RenderTextureFrameSource`, `UnityCameraFrameSource`, `WebCamFrameSource`, and `VideoFrameSource`;
+- texture and render-texture sources provide direct source-native frames without legacy `IInputProvider`;
+- Unity camera source assigns/restores target textures and emits camera projection/world matrices;
+- WebCam source wraps `WebCamTexture` without forcing YOLO-specific 640x640 policy;
+- Video source wraps `VideoPlayer` and keeps prepare/autoplay behavior behind the frame-source contract;
+- `LegacyInputProviderFrameSource` remains the compatibility bridge for existing scenes while manager migration continues;
+- EditMode tests cover texture, render texture, Unity camera target lifecycle, video null guards, and empty video-frame behavior.
+
+Current automated baseline:
+
+```text
+EditMode: 68 tests, 68 passed, 0 failed
+```

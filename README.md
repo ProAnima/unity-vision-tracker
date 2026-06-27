@@ -185,6 +185,7 @@ Current bridge contracts:
 
 - `VisionModelProfile` describes task, model family, capabilities, runtime kind, input/output schema, thresholds, and license metadata.
 - `IVisionFrameSource` is the source-agnostic frame API for webcams, Unity cameras, render textures, videos, AR/XR feeds, and custom cameras.
+- Built-in production frame sources cover Texture, RenderTexture, Unity Camera, WebCamTexture, and VideoPlayer paths.
 - `VisionFrameSourceRegistry` resolves input provider types to frame sources without hardcoding camera creation in the manager.
 - `IVisionRuntimeAdapter` is the runtime plugin surface for Unity Inference Engine, MediaPipe, native plugins, remote inference, and mocks.
 - `VisionAdapterRegistry` resolves model profiles to runtime adapters without hardcoding one model family in the manager.
@@ -242,7 +243,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 62 tests, 62 passed, 0 failed
+EditMode: 68 tests, 68 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.
