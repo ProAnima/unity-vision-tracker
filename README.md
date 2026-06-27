@@ -83,7 +83,7 @@ VisionFrameResult
 - Detection, pose, and segmentation-oriented model classes.
 - Unity Inference Engine runtime usage.
 - IOU and SORT tracking implementations.
-- UI, scene, event, and debug output receivers.
+- Modern UI Toolkit dashboard plus legacy UI, scene, event, and debug output receivers.
 - Runtime manager for model selection, input, inference, tracking, and output.
 - Architecture roadmap for a production SDK evolution.
 
@@ -147,6 +147,26 @@ For current startup troubleshooting, see:
 - [TROUBLESHOOTING.md](Assets/Scripts/UniversalTracker/TROUBLESHOOTING.md)
 - [CRASH_FIX.md](Assets/Scripts/UniversalTracker/CRASH_FIX.md)
 
+## Runtime Dashboard
+
+The production UI path is `VisionToolkitDashboardReceiver`, a UI Toolkit receiver driven by the unified `VisionFrameResult` API.
+
+It provides:
+
+- live camera/texture preview;
+- detection boxes with labels, confidence, and track IDs;
+- pose keypoints and skeleton bones;
+- frame, FPS, inference, detection, pose, and error counters;
+- runtime Start/Stop controls bound to `UniversalTrackerManager`.
+
+Usage:
+
+1. Add a `UIDocument` and `VisionToolkitDashboardReceiver` to a scene object.
+2. Assign the `UniversalTrackerManager` reference, or leave `autoFindManager` enabled.
+3. Assign the receiver to `UniversalTrackerManager.manualToolkitDashboardReceiver`, or enable `useToolkitDashboard` for dynamic creation.
+
+The legacy `UIVisualizationReceiver` remains available for existing Canvas/RawImage scenes.
+
 ## Production Roadmap
 
 ### Phase 1: Stabilize Current Core
@@ -195,7 +215,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 25 tests, 25 passed, 0 failed
+EditMode: 30 tests, 30 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

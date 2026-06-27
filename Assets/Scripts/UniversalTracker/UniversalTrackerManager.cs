@@ -33,6 +33,7 @@ namespace UniversalTracker
         [Header("🎨 Output Receivers")]
         [Tooltip("Использовать готовые компоненты со сцены (если привязаны) или создавать динамически")]
         public UIVisualizationReceiver manualUIReceiver;
+        public VisionToolkitDashboardReceiver manualToolkitDashboardReceiver;
         public EventOutputReceiver manualEventReceiver;
         public SceneVisualizationReceiver manualSceneReceiver;
         public DebugOutputReceiver manualDebugReceiver;
@@ -41,6 +42,7 @@ namespace UniversalTracker
         [Tooltip("Создавать receivers динамически если не привязаны вручную")]
         public bool useEventOutput = true;
         public bool useUIVisualization = true;
+        public bool useToolkitDashboard = false;
         public bool useSceneVisualization = false;
         public bool useDebugOutput = true;
         
@@ -520,6 +522,30 @@ namespace UniversalTracker
             catch (System.Exception e)
             {
                 Debug.LogError($"❌ [TrackerManager] Ошибка UIOutput: {e.Message}");
+            }
+            
+            // 2b. UI Toolkit Dashboard
+            try
+            {
+                if (manualToolkitDashboardReceiver != null)
+                {
+                    Debug.Log("[TrackerManager] Using bound UI Toolkit Dashboard");
+                    manualToolkitDashboardReceiver.trackerManager = this;
+                    manualToolkitDashboardReceiver.Initialize();
+                    outputReceivers.Add(manualToolkitDashboardReceiver);
+                }
+                else if (useToolkitDashboard)
+                {
+                    Debug.Log("[TrackerManager] Creating UI Toolkit Dashboard dynamically");
+                    var dashboardOutput = gameObject.AddComponent<VisionToolkitDashboardReceiver>();
+                    dashboardOutput.trackerManager = this;
+                    dashboardOutput.Initialize();
+                    outputReceivers.Add(dashboardOutput);
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[TrackerManager] ToolkitDashboard error: {e.Message}");
             }
             
             // 3. Scene Visualization

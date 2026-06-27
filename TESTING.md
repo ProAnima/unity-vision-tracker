@@ -37,7 +37,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 25 tests, 25 passed, 0 failed
+EditMode: 30 tests, 30 passed, 0 failed
 ```
 
 ## GitHub Actions
@@ -68,6 +68,7 @@ Current automated tests cover the pure runtime core. A production-ready release 
 | --- | --- | --- |
 | Result API | EditMode unit tests | Started |
 | Coordinate mapping | EditMode unit tests | Started |
+| Runtime dashboard geometry | EditMode unit tests | Started |
 | Legacy-to-production bridge | EditMode unit tests | Started |
 | NMS/postprocess math | EditMode unit tests | Started |
 | Tracking lifecycle | EditMode unit tests | Started |
