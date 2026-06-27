@@ -27,6 +27,8 @@ namespace UniversalTracker
         public MonoBehaviour customInputProvider;
         
         [Header("🧠 Модели")]
+        public VisionModelProfile[] modelProfiles;
+        public bool preferModelProfiles = true;
         public ModelConfig[] modelConfigs;
         public int activeModelIndex = 0;
         
@@ -60,6 +62,7 @@ namespace UniversalTracker
         public bool IsRunning { get; private set; }
         public InferenceResult LastResult { get; private set; }
         public VisionFrameResult LastVisionResult { get; private set; }
+        public VisionModelProfile ActiveModelProfile { get; private set; }
         public float CurrentFPS { get; private set; }
         public int ConsecutiveErrors { get; private set; }
 
@@ -79,6 +82,8 @@ namespace UniversalTracker
                 Debug.LogWarning("⚠️ [TrackerManager] Трекинг уже запущен!");
                 return;
             }
+
+            WarnAboutUnsafeProfileBackends();
 
             if (modelConfigs != null)
             {
@@ -220,7 +225,8 @@ namespace UniversalTracker
         
         public void SwitchModel(int index)
         {
-            if (index < 0 || index >= modelConfigs.Length)
+            int modelCount = GetConfiguredModelCount();
+            if (index < 0 || index >= modelCount)
             {
                 Debug.LogError($"❌ [TrackerManager] Неверный индекс модели: {index}");
                 return;
@@ -229,6 +235,11 @@ namespace UniversalTracker
             activeModel?.Dispose();
             activeModelIndex = index;
             InitializeModels();
+            if (UsesModelProfiles())
+            {
+                Debug.Log($"[TrackerManager] Switched model profile: {GetConfiguredModelName(index)}");
+                return;
+            }
             
             Debug.Log($"🔄 [TrackerManager] Переключена модель: {modelConfigs[index].modelName}");
         }
@@ -408,10 +419,110 @@ namespace UniversalTracker
             }
         }
         
+        private bool UsesModelProfiles()
+        {
+            return preferModelProfiles && modelProfiles != null && modelProfiles.Length > 0;
+        }
+
+        private int GetConfiguredModelCount()
+        {
+            if (UsesModelProfiles())
+                return modelProfiles.Length;
+
+            return modelConfigs?.Length ?? 0;
+        }
+
+        private string GetConfiguredModelName(int index)
+        {
+            if (UsesModelProfiles() && index >= 0 && index < modelProfiles.Length)
+            {
+                var profile = modelProfiles[index];
+                if (profile == null)
+                    return $"Profile[{index}]";
+
+                if (!string.IsNullOrWhiteSpace(profile.displayName))
+                    return profile.displayName;
+
+                return profile.name;
+            }
+
+            if (modelConfigs != null && index >= 0 && index < modelConfigs.Length && modelConfigs[index] != null)
+                return modelConfigs[index].modelName;
+
+            return $"Model[{index}]";
+        }
+
+        private void WarnAboutUnsafeProfileBackends()
+        {
+            if (modelProfiles == null)
+                return;
+
+            for (int i = 0; i < modelProfiles.Length; i++)
+            {
+                var profile = modelProfiles[i];
+                if (profile != null && profile.backend == Unity.InferenceEngine.BackendType.GPUCompute)
+                    Debug.LogWarning($"[TrackerManager] VisionModelProfile[{i}] uses GPUCompute. Consider GPUPixel for safer Unity Editor runtime.");
+            }
+        }
+
+        private void InitializeModelFromProfile()
+        {
+            Debug.Log("[TrackerManager] Initialize model from VisionModelProfile...");
+
+            if (activeModelIndex >= modelProfiles.Length)
+                activeModelIndex = 0;
+
+            ActiveModelProfile = modelProfiles[activeModelIndex];
+            if (ActiveModelProfile == null)
+            {
+                Debug.LogError($"[TrackerManager] VisionModelProfile[{activeModelIndex}] is null!");
+                return;
+            }
+
+            if (ActiveModelProfile.family != VisionModelFamily.YOLO ||
+                ActiveModelProfile.runtimeKind != VisionRuntimeKind.UnityInferenceEngine)
+            {
+                Debug.LogError($"[TrackerManager] No runtime adapter registered for profile '{ActiveModelProfile.name}' ({ActiveModelProfile.family}/{ActiveModelProfile.runtimeKind}).");
+                return;
+            }
+
+            var config = YoloLegacyModelAdapter.ToLegacyConfig(ActiveModelProfile);
+            if (config.modelAsset == null)
+            {
+                Debug.LogError($"[TrackerManager] ModelAsset null in profile '{ActiveModelProfile.name}'!");
+                return;
+            }
+
+            activeModel = YOLOModelFactory.CreateModel(config);
+            if (activeModel == null)
+            {
+                Debug.LogError("[TrackerManager] YOLO legacy adapter returned null model!");
+                return;
+            }
+
+            activeModel.Initialize(config);
+            if (!activeModel.IsInitialized)
+            {
+                Debug.LogError($"[TrackerManager] Model profile '{ActiveModelProfile.name}' failed to initialize!");
+                activeModel.Dispose();
+                activeModel = null;
+                return;
+            }
+
+            Debug.Log($"[TrackerManager] Model profile '{GetConfiguredModelName(activeModelIndex)}' ready.");
+        }
+
         private void InitializeModels()
         {
             try
             {
+                if (UsesModelProfiles())
+                {
+                    InitializeModelFromProfile();
+                    return;
+                }
+
+                ActiveModelProfile = null;
                 Debug.Log("🔍 [TrackerManager] Начало InitializeModels...");
                 
                 if (modelConfigs == null || modelConfigs.Length == 0)

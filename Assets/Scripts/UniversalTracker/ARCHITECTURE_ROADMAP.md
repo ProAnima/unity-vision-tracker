@@ -1228,3 +1228,15 @@ Current automated baseline:
 ```text
 EditMode: 35 tests, 35 passed, 0 failed
 ```
+
+### 2026-06-27: Production core increment 5
+
+`VisionModelProfile` is now part of the active runtime migration path:
+
+- `UniversalTrackerManager` exposes `modelProfiles` and prefers them when configured;
+- legacy `ModelConfig[]` remains the fallback path for existing scenes;
+- profile-backed startup converts through `YoloLegacyModelAdapter.ToLegacyConfig` while the full graph runtime is still being extracted;
+- `SwitchModel` now works against the active model source, either profiles or legacy configs;
+- `ActiveModelProfile` exposes the production profile currently driving inference.
+
+This keeps the migration incremental: scenes can move to profile assets now, while YOLO runtime internals continue to work through the compatibility adapter.
