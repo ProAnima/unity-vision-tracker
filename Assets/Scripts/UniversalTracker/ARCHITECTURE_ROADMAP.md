@@ -1292,3 +1292,19 @@ Current automated baseline:
 ```text
 EditMode: 48 tests, 48 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 3
+
+Profile validation is now a first-class production contract:
+
+- added `VisionProfileValidator`, `VisionProfileValidationReport`, and severity-coded validation messages;
+- model profiles validate identity, model family, capabilities, task/capability consistency, runtime asset requirements, input/output schemas, thresholds, license, and provenance metadata;
+- pipeline profiles validate model collections, default model index, nested model reports, and duplicate stable IDs;
+- `UniversalTrackerManager` blocks profile-backed `VisionPipeline` startup on validation errors while logging warnings for migration metadata gaps;
+- EditMode tests cover valid profiles, missing runtime assets, task/capability mismatches, pipeline warnings, duplicate IDs, and report formatting.
+
+Current automated baseline:
+
+```text
+EditMode: 53 tests, 53 passed, 0 failed
+```

@@ -12,6 +12,7 @@ Current coverage starts with:
 - `VisionResultAdapter` compatibility mapping from legacy `InferenceResult` to `VisionFrameResult`.
 - `NMSProcessor` IoU, class-aware suppression, null input, and confidence ordering behavior.
 - `IOUTracker` and `SORTTracker` track ID stability, missed-frame lifecycle, reset behavior, and confirmation behavior.
+- `VisionProfileValidator` model and pipeline profile validation behavior.
 
 Run from PowerShell:
 
@@ -37,7 +38,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 48 tests, 48 passed, 0 failed
+EditMode: 53 tests, 53 passed, 0 failed
 ```
 
 ## GitHub Actions
@@ -74,7 +75,7 @@ Current automated tests cover the pure runtime core. A production-ready release 
 | Legacy-to-production bridge | EditMode unit tests | Started |
 | NMS/postprocess math | EditMode unit tests | Started |
 | Tracking lifecycle | EditMode unit tests | Started |
-| Model profile validation | EditMode unit tests | Planned |
+| Model profile validation | EditMode unit tests | Started |
 | Parser output schemas | Golden fixture tests | Planned |
 | Frame sources | EditMode + PlayMode tests | Planned |
 | WebCam/RenderTexture path | PlayMode/manual device tests | Planned |

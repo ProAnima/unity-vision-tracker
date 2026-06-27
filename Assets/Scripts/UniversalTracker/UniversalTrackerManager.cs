@@ -594,6 +594,11 @@ namespace UniversalTracker
                 return false;
             }
 
+            var validation = VisionProfileValidator.ValidateModelProfile(ActiveModelProfile);
+            LogProfileValidation(ActiveModelProfile, validation);
+            if (!validation.IsValid)
+                return false;
+
             if (ActiveModelProfile.family != VisionModelFamily.YOLO ||
                 ActiveModelProfile.runtimeKind != VisionRuntimeKind.UnityInferenceEngine)
             {
@@ -629,6 +634,24 @@ namespace UniversalTracker
             LastResult = null;
             Debug.Log($"[TrackerManager] VisionPipeline ready: {GetConfiguredModelName(activeModelIndex)}");
             return true;
+        }
+
+        private void LogProfileValidation(VisionModelProfile profile, VisionProfileValidationReport report)
+        {
+            if (report == null || report.Messages.Count == 0)
+                return;
+
+            string profileName = profile != null ? GetConfiguredModelName(activeModelIndex) : "null";
+            foreach (var message in report.Messages)
+            {
+                string log = $"[TrackerManager] Profile validation '{profileName}': {message.code} - {message.message}";
+                if (message.severity == VisionValidationSeverity.Error)
+                    Debug.LogError(log);
+                else if (message.severity == VisionValidationSeverity.Warning)
+                    Debug.LogWarning(log);
+                else
+                    Debug.Log(log);
+            }
         }
 
         private VisionFrameSourceType ResolveSourceType()
