@@ -103,6 +103,8 @@ VisionFrameResult
 
 See the full roadmap: [ARCHITECTURE_ROADMAP.md](Assets/Scripts/UniversalTracker/ARCHITECTURE_ROADMAP.md).
 
+Technology research and future-proofing notes: [TECHNOLOGY_RESEARCH.md](Documentation/TECHNOLOGY_RESEARCH.md).
+
 ## Repository Structure
 
 ```text

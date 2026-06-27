@@ -1136,6 +1136,17 @@ GPU paths могут отличаться по платформам.
 - segmentation/AR/XR как staged roadmap;
 - core abstractions проектируются заранее, но реализации добавляются поэтапно.
 
+### 19.5 Технологическая привязка к одному семейству моделей
+
+Если архитектура будет слишком сильно завязана на YOLO, её будет сложно расширить под MediaPipe, SAM-style segmentation, open-vocabulary detection, depth estimation, AR/XR camera feeds и remote/native runtimes.
+
+Решение:
+
+- проектировать API вокруг capabilities, schemas, frame sources и observations;
+- держать YOLO как adapter layer;
+- развивать `VisionModelProfile`, `IModelRuntime`, `IFrameSource`, `VisionPrompt`, `VisionObservation`;
+- сверяться с [TECHNOLOGY_RESEARCH.md](../../../Documentation/TECHNOLOGY_RESEARCH.md) при добавлении крупных подсистем.
+
 ## 20. Рекомендуемое следующее действие
 
 Начать с Phase 1:
