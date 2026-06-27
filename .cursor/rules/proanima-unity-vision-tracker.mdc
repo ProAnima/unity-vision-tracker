@@ -1,0 +1,8 @@
+---
+description: ProAnima Universal Vision Tracker production contract
+alwaysApply: true
+---
+
+Use [COSEX.md](../../COSEX.md) as the single source of truth for this repository.
+
+Follow it for architecture, tests, Unity version support, class-size limits, maintainability, visualization rules, and Definition of Done.
