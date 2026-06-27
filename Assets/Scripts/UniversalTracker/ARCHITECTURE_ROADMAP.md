@@ -1147,3 +1147,23 @@ GPU paths могут отличаться по платформам.
 5. Перевести UI/Event/Debug receivers на unified result.
 
 После этого можно безопасно разносить систему на новые слои без потери текущей работоспособности.
+
+## 21. Architecture implementation log
+
+### 2026-06-27: Production core increment 1
+
+Первый production-инкремент начинается с безопасного слоя, который не ломает текущий `UniversalTrackerManager`:
+
+- добавлен canonical result API: `VisionFrameResult`, `VisionDetection`, `VisionPose`, `VisionKeypoint`, `VisionMask`, `VisionPerformanceStats`;
+- добавлена frame envelope структура `VisionFrame` для будущих camera/frame sources;
+- добавлены production enums: task type, source type, frame orientation, track lifecycle, health state, structured error code;
+- добавлен тестируемый `VisionImageTransform` для reversible mapping между source image space, model input space и normalized coordinates;
+- добавлены EditMode-тесты для result API и координатных преобразований.
+
+Это создаёт базовый контракт, вокруг которого дальше можно мигрировать:
+
+- input providers -> frame sources;
+- model outputs -> unified result API;
+- UI/Event/Debug receivers -> `VisionFrameResult`;
+- postprocessing -> `VisionImageTransform`;
+- tracking -> `VisionTrackState`.

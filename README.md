@@ -10,8 +10,8 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg"></a>
-  <img alt="Unity" src="https://img.shields.io/badge/Unity-6000.3%2B-black.svg">
-  <img alt="Inference Engine" src="https://img.shields.io/badge/Unity%20Inference%20Engine-2.4%2B-blue.svg">
+  <img alt="Unity" src="https://img.shields.io/badge/Unity-6000.3.15f1-black.svg">
+  <img alt="Inference Engine" src="https://img.shields.io/badge/Unity%20Inference%20Engine-2.6.1-blue.svg">
   <img alt="Status" src="https://img.shields.io/badge/status-productionization%20in%20progress-orange.svg">
 </p>
 
@@ -119,8 +119,8 @@ ProjectSettings/                  Unity project settings
 
 ## Requirements
 
-- Unity `6000.3.4f1` or newer Unity 6 version.
-- Unity Inference Engine package.
+- Unity `6000.3.15f1`.
+- Unity Inference Engine `2.6.1`.
 - Git LFS for model and media assets.
 
 After cloning:
@@ -186,6 +186,18 @@ For current startup troubleshooting, see:
 - Add samples and API docs.
 - Prepare first stable release.
 
+## Testing
+
+EditMode tests are available for the production-core API and coordinate mapping layer.
+
+Current baseline:
+
+```text
+EditMode: 11 tests, 11 passed, 0 failed
+```
+
+See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.
+
 ## Licensing
 
 This project is licensed under the [MIT License](LICENSE).
@@ -199,4 +211,3 @@ See also [NOTICE.md](NOTICE.md).
 Created by **ProAnima**.
 
 This project builds on Unity's modern runtime stack and open model workflows for real-time computer vision inside Unity applications.
-
