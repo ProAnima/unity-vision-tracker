@@ -35,7 +35,7 @@ namespace UniversalTracker.Core
         VisionModelCapability Capabilities { get; }
 
         bool CanHandle(VisionModelProfile profile);
-        IVisionRuntimeAdapter CreateRuntime();
+        IVisionRuntimeAdapter CreateRuntime(VisionModelProfile profile);
     }
 
     public sealed class VisionPipelineContext

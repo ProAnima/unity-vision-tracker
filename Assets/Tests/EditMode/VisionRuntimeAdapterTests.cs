@@ -117,6 +117,69 @@ namespace UniversalTracker.Tests
             Object.DestroyImmediate(go);
         }
 
+        [Test]
+        public void VisionAdapterRegistry_RegisterDuplicateAdapterId_Throws()
+        {
+            var registry = new VisionAdapterRegistry();
+            registry.Register(new FakeModelAdapter("fake.adapter"));
+
+            Assert.That(
+                () => registry.Register(new FakeModelAdapter("fake.adapter")),
+                Throws.InvalidOperationException);
+        }
+
+        [Test]
+        public void VisionAdapterRegistry_TryGetAdapter_ReturnsFirstMatchingAdapter()
+        {
+            var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
+            profile.family = VisionModelFamily.Custom;
+            profile.runtimeKind = VisionRuntimeKind.Mock;
+            var registry = new VisionAdapterRegistry();
+            var adapter = new FakeModelAdapter("fake.adapter");
+            registry.Register(adapter);
+
+            bool found = registry.TryGetAdapter(profile, out IVisionModelAdapter resolved);
+
+            Assert.That(found, Is.True);
+            Assert.That(resolved, Is.SameAs(adapter));
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
+        public void VisionAdapterRegistry_TryCreateRuntime_NoAdapter_ReturnsError()
+        {
+            var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
+            profile.family = VisionModelFamily.SAM;
+            profile.runtimeKind = VisionRuntimeKind.Mock;
+            var registry = new VisionAdapterRegistry();
+
+            bool created = registry.TryCreateRuntime(profile, out IVisionRuntimeAdapter runtime, out string error);
+
+            Assert.That(created, Is.False);
+            Assert.That(runtime, Is.Null);
+            Assert.That(error, Does.Contain("No adapter registered"));
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
+        public void VisionAdapterRegistry_TryCreateRuntime_UsesRegisteredAdapter()
+        {
+            var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
+            profile.family = VisionModelFamily.Custom;
+            profile.runtimeKind = VisionRuntimeKind.Mock;
+            var registry = new VisionAdapterRegistry();
+            registry.Register(new FakeModelAdapter("fake.adapter"));
+
+            bool created = registry.TryCreateRuntime(profile, out IVisionRuntimeAdapter runtime, out string error);
+
+            Assert.That(created, Is.True);
+            Assert.That(error, Is.Null);
+            Assert.That(runtime, Is.Not.Null);
+            Assert.That(runtime.RuntimeKind, Is.EqualTo(VisionRuntimeKind.Mock));
+            runtime.Dispose();
+            Object.DestroyImmediate(profile);
+        }
+
         private sealed class FakeInputProvider : IInputProvider
         {
             private readonly Texture texture;
@@ -147,6 +210,52 @@ namespace UniversalTracker.Tests
             public void Release()
             {
                 IsReady = false;
+            }
+        }
+
+        private sealed class FakeModelAdapter : IVisionModelAdapter
+        {
+            public FakeModelAdapter(string adapterId)
+            {
+                AdapterId = adapterId;
+            }
+
+            public string AdapterId { get; }
+            public VisionModelFamily Family => VisionModelFamily.Custom;
+            public VisionModelCapability Capabilities => VisionModelCapability.Detection;
+
+            public bool CanHandle(VisionModelProfile profile)
+            {
+                return profile != null &&
+                       profile.family == VisionModelFamily.Custom &&
+                       profile.runtimeKind == VisionRuntimeKind.Mock;
+            }
+
+            public IVisionRuntimeAdapter CreateRuntime(VisionModelProfile profile)
+            {
+                return new FakeRuntimeAdapter();
+            }
+        }
+
+        private sealed class FakeRuntimeAdapter : IVisionRuntimeAdapter
+        {
+            public VisionRuntimeKind RuntimeKind => VisionRuntimeKind.Mock;
+            public VisionModelCapability Capabilities => VisionModelCapability.Detection;
+            public bool IsInitialized { get; private set; }
+
+            public void Initialize(VisionModelProfile profile)
+            {
+                IsInitialized = true;
+            }
+
+            public VisionFrameResult ProcessFrame(VisionFrame frame)
+            {
+                return VisionFrameResult.Empty(frame.frameIndex, frame.timestamp, frame.sourceSize);
+            }
+
+            public void Dispose()
+            {
+                IsInitialized = false;
             }
         }
     }

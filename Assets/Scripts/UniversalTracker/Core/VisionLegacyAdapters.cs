@@ -118,9 +118,9 @@ namespace UniversalTracker.Core
                    profile.modelAsset != null;
         }
 
-        public IVisionRuntimeAdapter CreateRuntime()
+        public IVisionRuntimeAdapter CreateRuntime(VisionModelProfile profile)
         {
-            throw new InvalidOperationException("Use CreateRuntime(ModelConfig) for the legacy YOLO adapter.");
+            return CreateRuntime(ToLegacyConfig(profile));
         }
 
         public IVisionRuntimeAdapter CreateRuntime(ModelConfig config)

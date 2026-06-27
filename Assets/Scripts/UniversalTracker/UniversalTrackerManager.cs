@@ -297,6 +297,7 @@ namespace UniversalTracker
         private IInputProvider inputProvider;
         private IInferenceModel activeModel;
         private VisionPipeline visionPipeline;
+        private VisionAdapterRegistry adapterRegistry;
         private bool isUsingVisionPipeline;
         private List<IOutputReceiver> outputReceivers = new List<IOutputReceiver>();
         private ITracker tracker;
@@ -599,22 +600,13 @@ namespace UniversalTracker
             if (!validation.IsValid)
                 return false;
 
-            if (ActiveModelProfile.family != VisionModelFamily.YOLO ||
-                ActiveModelProfile.runtimeKind != VisionRuntimeKind.UnityInferenceEngine)
+            adapterRegistry ??= VisionAdapterRegistry.CreateDefault();
+            if (!adapterRegistry.TryCreateRuntime(ActiveModelProfile, out IVisionRuntimeAdapter runtime, out string adapterError))
             {
-                Debug.LogError($"[TrackerManager] No pipeline adapter registered for '{ActiveModelProfile.name}' ({ActiveModelProfile.family}/{ActiveModelProfile.runtimeKind}).");
+                Debug.LogError($"[TrackerManager] {adapterError}");
                 return false;
             }
 
-            var config = YoloLegacyModelAdapter.ToLegacyConfig(ActiveModelProfile);
-            if (config.modelAsset == null)
-            {
-                Debug.LogError($"[TrackerManager] ModelAsset null in profile '{ActiveModelProfile.name}'!");
-                return false;
-            }
-
-            var yoloAdapter = new YoloLegacyModelAdapter();
-            var runtime = yoloAdapter.CreateRuntime(config);
             var source = new LegacyInputProviderFrameSource(inputProvider, ResolveSourceType(), false);
 
             DisposeVisionPipeline();

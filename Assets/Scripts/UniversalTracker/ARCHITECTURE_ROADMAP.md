@@ -1308,3 +1308,19 @@ Current automated baseline:
 ```text
 EditMode: 53 tests, 53 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 4
+
+Adapter resolution is now outside the manager:
+
+- added `VisionAdapterRegistry` for adapter registration, duplicate-ID protection, profile resolution, and runtime creation;
+- updated `IVisionModelAdapter` so adapters create runtimes from `VisionModelProfile`;
+- `YoloLegacyModelAdapter` now participates as the default registry adapter instead of being hardcoded inside `UniversalTrackerManager`;
+- `UniversalTrackerManager` asks the registry for a runtime and only owns orchestration/lifecycle decisions;
+- EditMode tests cover duplicate adapter IDs, matching adapter resolution, missing adapter errors, and runtime creation through a registered adapter.
+
+Current automated baseline:
+
+```text
+EditMode: 57 tests, 57 passed, 0 failed
+```

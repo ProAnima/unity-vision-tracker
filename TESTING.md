@@ -13,6 +13,7 @@ Current coverage starts with:
 - `NMSProcessor` IoU, class-aware suppression, null input, and confidence ordering behavior.
 - `IOUTracker` and `SORTTracker` track ID stability, missed-frame lifecycle, reset behavior, and confirmation behavior.
 - `VisionProfileValidator` model and pipeline profile validation behavior.
+- `VisionAdapterRegistry` adapter registration, duplicate protection, resolution, and runtime creation behavior.
 
 Run from PowerShell:
 
@@ -38,7 +39,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 53 tests, 53 passed, 0 failed
+EditMode: 57 tests, 57 passed, 0 failed
 ```
 
 ## GitHub Actions
