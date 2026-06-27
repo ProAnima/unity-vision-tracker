@@ -64,5 +64,48 @@ namespace UniversalTracker.Tests
             Assert.Throws<System.ArgumentOutOfRangeException>(() =>
                 VisionDashboardGeometry.CalculateScaleToFitRect(Vector2.zero, new Vector2(100, 100)));
         }
+
+        [Test]
+        public void ClampRectToViewport_KeepsRectInsideViewport()
+        {
+            Rect rect = VisionDashboardGeometry.ClampRectToViewport(
+                new Rect(-10, 20, 80, 100),
+                new Vector2(64, 64));
+
+            Assert.That(rect.xMin, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(rect.yMin, Is.EqualTo(20f).Within(0.001f));
+            Assert.That(rect.xMax, Is.EqualTo(64f).Within(0.001f));
+            Assert.That(rect.yMax, Is.EqualTo(64f).Within(0.001f));
+        }
+
+        [Test]
+        public void ClampLabelPosition_FallsBackBelowTopEdge()
+        {
+            Vector2 point = VisionDashboardGeometry.ClampLabelPosition(
+                new Rect(10, 4, 100, 80),
+                new Vector2(80, 20),
+                new Vector2(200, 120));
+
+            Assert.That(point.x, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(point.y, Is.EqualTo(10f).Within(0.001f));
+        }
+
+        [Test]
+        public void CalculateAdaptiveStroke_ClampsToReadableRange()
+        {
+            Assert.That(VisionDashboardGeometry.CalculateAdaptiveStroke(new Vector2(100, 100)), Is.EqualTo(1.5f).Within(0.001f));
+            Assert.That(VisionDashboardGeometry.CalculateAdaptiveStroke(new Vector2(4000, 3000)), Is.EqualTo(4f).Within(0.001f));
+        }
+
+        [Test]
+        public void StableColor_IsDeterministic()
+        {
+            Color first = VisionDashboardGeometry.StableColor(42);
+            Color second = VisionDashboardGeometry.StableColor(42);
+
+            Assert.That(first.r, Is.EqualTo(second.r).Within(0.0001f));
+            Assert.That(first.g, Is.EqualTo(second.g).Within(0.0001f));
+            Assert.That(first.b, Is.EqualTo(second.b).Within(0.0001f));
+        }
     }
 }

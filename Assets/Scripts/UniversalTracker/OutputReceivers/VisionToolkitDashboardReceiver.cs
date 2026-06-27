@@ -23,7 +23,11 @@ namespace UniversalTracker.OutputReceivers
         public bool showPreview = true;
         public bool showDetections = true;
         public bool showPoses = true;
+        public bool showMasks = true;
         public bool showStats = true;
+        public bool showOverlayMetrics = true;
+        [Range(0.05f, 1f)] public float keypointConfidenceThreshold = 0.35f;
+        [Range(0.05f, 0.8f)] public float maskAlpha = 0.28f;
         [Range(1, 20)] public int maxRows = 8;
 
         public bool IsEnabled
@@ -52,10 +56,14 @@ namespace UniversalTracker.OutputReceivers
         private VisualElement previewStage;
         private Image previewImage;
         private VisualElement overlay;
+        private VisualElement contentGuide;
+        private VisualElement maskLayer;
         private VisualElement detectionLayer;
         private VisualElement boneLayer;
         private VisualElement keypointLayer;
+        private VisualElement labelLayer;
         private VisualElement list;
+        private Label overlayMetricsLabel;
         private Label statusLabel;
         private Label frameLabel;
         private Label fpsLabel;
@@ -68,7 +76,9 @@ namespace UniversalTracker.OutputReceivers
         private bool isSubscribed;
         private Texture lastTexture;
 
+        private readonly List<VisualElement> maskPool = new List<VisualElement>();
         private readonly List<VisualElement> detectionPool = new List<VisualElement>();
+        private readonly List<Label> detectionLabelPool = new List<Label>();
         private readonly List<VisualElement> keypointPool = new List<VisualElement>();
         private readonly List<VisualElement> bonePool = new List<VisualElement>();
         private readonly List<Label> rowPool = new List<Label>();
@@ -138,7 +148,9 @@ namespace UniversalTracker.OutputReceivers
 
         public void Clear()
         {
+            SetPoolActive(maskPool, 0);
             SetPoolActive(detectionPool, 0);
+            SetLabelsActive(detectionLabelPool, 0);
             SetPoolActive(keypointPool, 0);
             SetPoolActive(bonePool, 0);
             SetRowsActive(0);
@@ -244,12 +256,47 @@ namespace UniversalTracker.OutputReceivers
             overlay.style.bottom = 0;
             previewStage.Add(overlay);
 
+            contentGuide = new VisualElement { name = "VisionContentGuide" };
+            contentGuide.pickingMode = PickingMode.Ignore;
+            contentGuide.style.position = Position.Absolute;
+            contentGuide.style.borderTopWidth = 1;
+            contentGuide.style.borderRightWidth = 1;
+            contentGuide.style.borderBottomWidth = 1;
+            contentGuide.style.borderLeftWidth = 1;
+            contentGuide.style.borderTopColor = new Color(1f, 1f, 1f, 0.18f);
+            contentGuide.style.borderRightColor = new Color(1f, 1f, 1f, 0.18f);
+            contentGuide.style.borderBottomColor = new Color(1f, 1f, 1f, 0.18f);
+            contentGuide.style.borderLeftColor = new Color(1f, 1f, 1f, 0.18f);
+            overlay.Add(contentGuide);
+
+            maskLayer = CreateOverlayLayer("Masks");
             boneLayer = CreateOverlayLayer("Bones");
             detectionLayer = CreateOverlayLayer("Detections");
             keypointLayer = CreateOverlayLayer("Keypoints");
+            labelLayer = CreateOverlayLayer("Labels");
+            overlay.Add(maskLayer);
             overlay.Add(boneLayer);
             overlay.Add(detectionLayer);
             overlay.Add(keypointLayer);
+            overlay.Add(labelLayer);
+
+            overlayMetricsLabel = new Label();
+            overlayMetricsLabel.pickingMode = PickingMode.Ignore;
+            overlayMetricsLabel.style.position = Position.Absolute;
+            overlayMetricsLabel.style.right = 10;
+            overlayMetricsLabel.style.top = 10;
+            overlayMetricsLabel.style.paddingLeft = 8;
+            overlayMetricsLabel.style.paddingRight = 8;
+            overlayMetricsLabel.style.paddingTop = 5;
+            overlayMetricsLabel.style.paddingBottom = 5;
+            overlayMetricsLabel.style.borderTopLeftRadius = 6;
+            overlayMetricsLabel.style.borderTopRightRadius = 6;
+            overlayMetricsLabel.style.borderBottomLeftRadius = 6;
+            overlayMetricsLabel.style.borderBottomRightRadius = 6;
+            overlayMetricsLabel.style.backgroundColor = new Color(0f, 0f, 0f, 0.52f);
+            overlayMetricsLabel.style.color = Text;
+            overlayMetricsLabel.style.fontSize = 11;
+            overlay.Add(overlayMetricsLabel);
         }
 
         private void AddHeader(VisualElement parent)
@@ -344,11 +391,31 @@ namespace UniversalTracker.OutputReceivers
             if (viewportSize.x <= 1f || viewportSize.y <= 1f || sourceSize.x <= 0f || sourceSize.y <= 0f)
                 return;
 
+            Rect contentRect = VisionDashboardGeometry.CalculateScaleToFitRect(sourceSize, viewportSize);
+            float stroke = VisionDashboardGeometry.CalculateAdaptiveStroke(viewportSize);
+            UpdateContentGuide(contentRect);
+            UpdateOverlayMetrics(result, sourceSize, viewportSize, contentRect);
+
+            int masksUsed = 0;
+            if (showMasks && result.masks != null)
+            {
+                for (int i = 0; i < result.masks.Length; i++)
+                    UpdateMask(GetElement(maskPool, maskLayer, CreateMaskOverlay, masksUsed), masksUsed++, result.masks[i], sourceSize, viewportSize, stroke);
+            }
+
             int detectionsUsed = 0;
+            int detectionLabelsUsed = 0;
             if (showDetections && result.detections != null)
             {
                 for (int i = 0; i < result.detections.Length; i++)
-                    UpdateDetectionBox(GetElement(detectionPool, detectionLayer, CreateDetectionBox, detectionsUsed), detectionsUsed++, result.detections[i], sourceSize, viewportSize);
+                    UpdateDetectionBox(
+                        GetElement(detectionPool, detectionLayer, CreateDetectionBox, detectionsUsed),
+                        GetLabel(detectionLabelPool, labelLayer, detectionLabelsUsed++),
+                        detectionsUsed++,
+                        result.detections[i],
+                        sourceSize,
+                        viewportSize,
+                        stroke);
             }
 
             int keypointsUsed = 0;
@@ -356,33 +423,48 @@ namespace UniversalTracker.OutputReceivers
             if (showPoses && result.poses != null)
             {
                 for (int i = 0; i < result.poses.Length; i++)
-                    UpdatePose(result.poses[i], sourceSize, viewportSize, ref keypointsUsed, ref bonesUsed);
+                    UpdatePose(result.poses[i], sourceSize, viewportSize, stroke, ref keypointsUsed, ref bonesUsed);
             }
 
+            SetPoolActive(maskPool, masksUsed);
             SetPoolActive(detectionPool, detectionsUsed);
+            SetLabelsActive(detectionLabelPool, detectionLabelsUsed);
             SetPoolActive(keypointPool, keypointsUsed);
             SetPoolActive(bonePool, bonesUsed);
         }
 
-        private void UpdateDetectionBox(VisualElement box, int index, VisionDetection detection, Vector2 sourceSize, Vector2 viewportSize)
+        private void UpdateDetectionBox(VisualElement box, Label label, int index, VisionDetection detection, Vector2 sourceSize, Vector2 viewportSize, float stroke)
         {
             Rect rect = VisionDashboardGeometry.NormalizedToViewportRect(detection.normalizedRect, sourceSize, viewportSize);
             box.style.left = rect.x;
             box.style.top = rect.y;
             box.style.width = Mathf.Max(1f, rect.width);
             box.style.height = Mathf.Max(1f, rect.height);
+            box.style.borderTopWidth = stroke;
+            box.style.borderRightWidth = stroke;
+            box.style.borderBottomWidth = stroke;
+            box.style.borderLeftWidth = stroke;
 
-            var label = box.Q<Label>();
             string name = string.IsNullOrWhiteSpace(detection.label) ? $"#{detection.classId}" : detection.label;
             string id = detection.IsTracked ? $" T{detection.trackId}" : string.Empty;
             label.text = $"{name} {(detection.confidence * 100f):F0}%{id}";
 
-            Color color = index % 2 == 0 ? Accent : Good;
+            int stableId = detection.IsTracked ? detection.trackId : detection.classId + index * 31;
+            Color color = VisionDashboardGeometry.StableColor(stableId);
             SetBorderColor(box, color);
-            label.style.backgroundColor = new Color(color.r, color.g, color.b, 0.88f);
+            box.style.backgroundColor = new Color(color.r, color.g, color.b, 0.06f);
+
+            Vector2 labelSize = new Vector2(Mathf.Clamp(label.text.Length * 7.5f + 18f, 86f, 260f), 24f);
+            Vector2 labelPosition = VisionDashboardGeometry.ClampLabelPosition(rect, labelSize, viewportSize);
+            label.style.left = labelPosition.x;
+            label.style.top = labelPosition.y;
+            label.style.width = labelSize.x;
+            label.style.height = labelSize.y;
+            label.style.backgroundColor = new Color(color.r, color.g, color.b, 0.9f);
+            label.style.color = Color.black;
         }
 
-        private void UpdatePose(VisionPose pose, Vector2 sourceSize, Vector2 viewportSize, ref int keypointsUsed, ref int bonesUsed)
+        private void UpdatePose(VisionPose pose, Vector2 sourceSize, Vector2 viewportSize, float stroke, ref int keypointsUsed, ref int bonesUsed)
         {
             if (pose.keypoints == null)
                 return;
@@ -400,36 +482,96 @@ namespace UniversalTracker.OutputReceivers
 
                     Vector2 fromPoint = VisionDashboardGeometry.NormalizedToViewportPoint(from.normalizedPosition, sourceSize, viewportSize);
                     Vector2 toPoint = VisionDashboardGeometry.NormalizedToViewportPoint(to.normalizedPosition, sourceSize, viewportSize);
-                    UpdateBone(GetElement(bonePool, boneLayer, CreateBone, bonesUsed), bonesUsed++, fromPoint, toPoint);
+                    UpdateBone(GetElement(bonePool, boneLayer, CreateBone, bonesUsed), bonesUsed++, fromPoint, toPoint, from.confidence, to.confidence, stroke);
                 }
             }
 
             for (int i = 0; i < pose.keypoints.Length; i++)
             {
-                if (!pose.keypoints[i].isVisible)
+                if (!IsVisibleKeypoint(pose.keypoints[i]))
                     continue;
 
                 Vector2 point = VisionDashboardGeometry.NormalizedToViewportPoint(pose.keypoints[i].normalizedPosition, sourceSize, viewportSize);
-                UpdateKeypoint(GetElement(keypointPool, keypointLayer, CreateKeypoint, keypointsUsed), keypointsUsed++, point, pose.keypoints[i]);
+                UpdateKeypoint(GetElement(keypointPool, keypointLayer, CreateKeypoint, keypointsUsed), keypointsUsed++, point, pose.keypoints[i], stroke);
             }
         }
 
-        private void UpdateBone(VisualElement bone, int index, Vector2 from, Vector2 to)
+        private void UpdateBone(VisualElement bone, int index, Vector2 from, Vector2 to, float fromConfidence, float toConfidence, float stroke)
         {
             BoneLine line = VisionDashboardGeometry.CalculateBoneLine(from, to);
+            float confidence = Mathf.Clamp01(Mathf.Min(fromConfidence, toConfidence));
             bone.style.left = line.center.x - line.length * 0.5f;
-            bone.style.top = line.center.y - 1f;
+            bone.style.top = line.center.y - stroke * 0.5f;
             bone.style.width = Mathf.Max(1f, line.length);
-            bone.style.height = 2;
+            bone.style.height = Mathf.Max(2f, stroke);
             bone.style.rotate = new Rotate(new Angle(line.angleDegrees, AngleUnit.Degree));
-            bone.style.backgroundColor = index % 2 == 0 ? PoseColor : Accent;
+            Color color = index % 2 == 0 ? PoseColor : Accent;
+            bone.style.backgroundColor = new Color(color.r, color.g, color.b, Mathf.Lerp(0.38f, 0.95f, confidence));
         }
 
-        private void UpdateKeypoint(VisualElement keypoint, int index, Vector2 point, VisionKeypoint data)
+        private void UpdateKeypoint(VisualElement keypoint, int index, Vector2 point, VisionKeypoint data, float stroke)
         {
-            keypoint.style.left = point.x - 4f;
-            keypoint.style.top = point.y - 4f;
+            float radius = Mathf.Clamp(stroke * 2.2f, 4f, 8f);
+            keypoint.style.left = point.x - radius;
+            keypoint.style.top = point.y - radius;
+            keypoint.style.width = radius * 2f;
+            keypoint.style.height = radius * 2f;
             keypoint.style.backgroundColor = data.confidence >= 0.5f ? PoseColor : Warning;
+            SetBorderColor(keypoint, new Color(0f, 0f, 0f, 0.8f));
+        }
+
+        private void UpdateMask(VisualElement element, int index, VisionMask mask, Vector2 sourceSize, Vector2 viewportSize, float stroke)
+        {
+            Rect rect = VisionDashboardGeometry.NormalizedToViewportRect(mask.normalizedRect, sourceSize, viewportSize);
+            element.style.left = rect.x;
+            element.style.top = rect.y;
+            element.style.width = Mathf.Max(1f, rect.width);
+            element.style.height = Mathf.Max(1f, rect.height);
+            element.style.borderTopWidth = stroke;
+            element.style.borderRightWidth = stroke;
+            element.style.borderBottomWidth = stroke;
+            element.style.borderLeftWidth = stroke;
+
+            int stableId = mask.trackId >= 0 ? mask.trackId : mask.classId + index * 37;
+            Color color = VisionDashboardGeometry.StableColor(stableId, 0.68f, 0.88f);
+            SetBorderColor(element, new Color(color.r, color.g, color.b, 0.95f));
+            element.style.backgroundColor = new Color(color.r, color.g, color.b, maskAlpha);
+
+            var image = element.Q<Image>();
+            if (image != null)
+            {
+                image.image = mask.texture;
+                image.tintColor = new Color(1f, 1f, 1f, mask.texture != null ? Mathf.Clamp01(maskAlpha + 0.12f) : 0f);
+                image.style.display = mask.texture != null ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        private void UpdateContentGuide(Rect contentRect)
+        {
+            if (contentGuide == null)
+                return;
+
+            contentGuide.style.left = contentRect.x;
+            contentGuide.style.top = contentRect.y;
+            contentGuide.style.width = contentRect.width;
+            contentGuide.style.height = contentRect.height;
+        }
+
+        private void UpdateOverlayMetrics(VisionFrameResult result, Vector2 sourceSize, Vector2 viewportSize, Rect contentRect)
+        {
+            if (overlayMetricsLabel == null)
+                return;
+
+            overlayMetricsLabel.style.display = showOverlayMetrics ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!showOverlayMetrics)
+                return;
+
+            int detections = result.detections?.Length ?? 0;
+            int poses = result.poses?.Length ?? 0;
+            int masks = result.masks?.Length ?? 0;
+            overlayMetricsLabel.text =
+                $"src {sourceSize.x:F0}x{sourceSize.y:F0} | view {viewportSize.x:F0}x{viewportSize.y:F0}\n" +
+                $"fit {contentRect.width:F0}x{contentRect.height:F0} | d:{detections} p:{poses} m:{masks}";
         }
 
         private void UpdateRows(VisionFrameResult result)
@@ -458,6 +600,18 @@ namespace UniversalTracker.OutputReceivers
                 }
             }
 
+            if (showMasks && result.masks != null)
+            {
+                for (int i = 0; i < result.masks.Length && used < maxRows; i++)
+                {
+                    VisionMask mask = result.masks[i];
+                    string name = string.IsNullOrWhiteSpace(mask.label) ? $"Mask {mask.classId}" : mask.label;
+                    string track = mask.trackId >= 0 ? $" T{mask.trackId}" : string.Empty;
+                    UpdateRow(GetRow(used), $"{name}{track}", mask.confidence, Warning);
+                    used++;
+                }
+            }
+
             if (used == 0)
             {
                 Label empty = GetRow(0);
@@ -481,14 +635,19 @@ namespace UniversalTracker.OutputReceivers
             return new Vector2(1f, 1f);
         }
 
-        private static bool TryGetVisibleKeypoint(VisionPose pose, int index, out VisionKeypoint keypoint)
+        private bool TryGetVisibleKeypoint(VisionPose pose, int index, out VisionKeypoint keypoint)
         {
             keypoint = default;
             if (pose.keypoints == null || index < 0 || index >= pose.keypoints.Length)
                 return false;
 
             keypoint = pose.keypoints[index];
-            return keypoint.isVisible;
+            return IsVisibleKeypoint(keypoint);
+        }
+
+        private bool IsVisibleKeypoint(VisionKeypoint keypoint)
+        {
+            return keypoint.isVisible && keypoint.confidence >= keypointConfidenceThreshold;
         }
 
         private VisualElement CreateOverlayLayer(string name)
@@ -516,26 +675,29 @@ namespace UniversalTracker.OutputReceivers
             box.style.borderTopRightRadius = 4;
             box.style.borderBottomLeftRadius = 4;
             box.style.borderBottomRightRadius = 4;
-
-            var label = new Label();
-            label.style.position = Position.Absolute;
-            label.style.left = 0;
-            label.style.top = -24;
-            label.style.height = 22;
-            label.style.paddingLeft = 6;
-            label.style.paddingRight = 6;
-            label.style.paddingTop = 2;
-            label.style.paddingBottom = 2;
-            label.style.borderTopLeftRadius = 4;
-            label.style.borderTopRightRadius = 4;
-            label.style.borderBottomLeftRadius = 4;
-            label.style.borderBottomRightRadius = 4;
-            label.style.fontSize = 11;
-            label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            label.style.color = Color.black;
-            box.Add(label);
-
             return box;
+        }
+
+        private VisualElement CreateMaskOverlay()
+        {
+            var mask = new VisualElement();
+            mask.pickingMode = PickingMode.Ignore;
+            mask.style.position = Position.Absolute;
+            mask.style.borderTopLeftRadius = 4;
+            mask.style.borderTopRightRadius = 4;
+            mask.style.borderBottomLeftRadius = 4;
+            mask.style.borderBottomRightRadius = 4;
+
+            var image = new Image { scaleMode = ScaleMode.StretchToFill };
+            image.pickingMode = PickingMode.Ignore;
+            image.style.position = Position.Absolute;
+            image.style.left = 0;
+            image.style.right = 0;
+            image.style.top = 0;
+            image.style.bottom = 0;
+            mask.Add(image);
+
+            return mask;
         }
 
         private VisualElement CreateKeypoint()
@@ -693,7 +855,38 @@ namespace UniversalTracker.OutputReceivers
             return pool[index];
         }
 
+        private static Label GetLabel(List<Label> pool, VisualElement parent, int index)
+        {
+            while (pool.Count <= index)
+            {
+                var label = new Label();
+                label.pickingMode = PickingMode.Ignore;
+                label.style.position = Position.Absolute;
+                label.style.paddingLeft = 7;
+                label.style.paddingRight = 7;
+                label.style.paddingTop = 3;
+                label.style.paddingBottom = 3;
+                label.style.borderTopLeftRadius = 5;
+                label.style.borderTopRightRadius = 5;
+                label.style.borderBottomLeftRadius = 5;
+                label.style.borderBottomRightRadius = 5;
+                label.style.fontSize = 11;
+                label.style.unityFontStyleAndWeight = FontStyle.Bold;
+                parent.Add(label);
+                pool.Add(label);
+            }
+
+            pool[index].style.display = DisplayStyle.Flex;
+            return pool[index];
+        }
+
         private static void SetPoolActive(List<VisualElement> pool, int activeCount)
+        {
+            for (int i = 0; i < pool.Count; i++)
+                pool[i].style.display = i < activeCount ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private static void SetLabelsActive(List<Label> pool, int activeCount)
         {
             for (int i = 0; i < pool.Count; i++)
                 pool[i].style.display = i < activeCount ? DisplayStyle.Flex : DisplayStyle.None;

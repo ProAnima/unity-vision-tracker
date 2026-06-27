@@ -37,7 +37,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 35 tests, 35 passed, 0 failed
+EditMode: 39 tests, 39 passed, 0 failed
 ```
 
 ## GitHub Actions

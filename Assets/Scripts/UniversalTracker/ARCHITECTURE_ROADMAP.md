@@ -1240,3 +1240,21 @@ EditMode: 35 tests, 35 passed, 0 failed
 - `ActiveModelProfile` exposes the production profile currently driving inference.
 
 This keeps the migration incremental: scenes can move to profile assets now, while YOLO runtime internals continue to work through the compatibility adapter.
+
+### 2026-06-27: Production visualization increment 1
+
+Runtime debug visualization was upgraded around the canonical `VisionFrameResult` overlay path:
+
+- adaptive fit geometry now clamps detections and labels inside the preview viewport;
+- stable colors are derived from track/class ids for readable multi-object debugging;
+- stroke thickness adapts to viewport size;
+- UI Toolkit dashboard has separate layers for masks, bones, detection boxes, keypoints, labels, and metrics;
+- mask overlays render contour-style bounds and optional mask textures;
+- skeleton rendering respects keypoint visibility/confidence and fades low-confidence bones;
+- overlay metrics expose source size, viewport size, fitted content size, and result counts.
+
+Current automated baseline:
+
+```text
+EditMode: 39 tests, 39 passed, 0 failed
+```

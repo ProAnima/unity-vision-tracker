@@ -155,8 +155,10 @@ The production UI path is `VisionToolkitDashboardReceiver`, a UI Toolkit receive
 It provides:
 
 - live camera/texture preview;
-- detection boxes with labels, confidence, and track IDs;
-- pose keypoints and skeleton bones;
+- adaptive detection boxes with clamped labels, confidence, and stable track colors;
+- pose keypoints and skeleton bones with confidence-aware visibility;
+- mask overlays with contour-style bounds;
+- source/view/fit metrics for diagnosing aspect-ratio and letterbox issues;
 - frame, FPS, inference, detection, pose, and error counters;
 - runtime Start/Stop controls bound to `UniversalTrackerManager`.
 
@@ -236,7 +238,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 35 tests, 35 passed, 0 failed
+EditMode: 39 tests, 39 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.
