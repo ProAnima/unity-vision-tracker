@@ -1258,3 +1258,19 @@ Current automated baseline:
 ```text
 EditMode: 39 tests, 39 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 1
+
+The first clean pipeline extraction is in place:
+
+- added `VisionPipeline`, a model-agnostic orchestration core around `IVisionFrameSource -> IVisionRuntimeAdapter -> VisionFrameResult`;
+- added `VisionPipelineProfile` as the production ScriptableObject direction for model/runtime/debug/health settings;
+- pipeline owns start/stop/process lifecycle, health state, last result, processed-frame events, and structured recoverable/non-recoverable errors;
+- pipeline tests cover missing configuration, initialization, successful frame processing, source-not-ready errors, null runtime results, disposal, and profile default-model selection;
+- `UniversalTrackerManager` remains a compatibility facade until sources/runtimes are migrated behind the pipeline.
+
+Current automated baseline:
+
+```text
+EditMode: 46 tests, 46 passed, 0 failed
+```

@@ -83,6 +83,7 @@ VisionFrameResult
 - Detection, pose, and segmentation-oriented model classes.
 - Unity Inference Engine runtime usage.
 - Capability-based `VisionModelProfile` contract for plugin/adapters architecture.
+- `VisionPipeline` orchestration for source/runtime/result flow.
 - IOU and SORT tracking implementations.
 - Modern UI Toolkit dashboard plus legacy UI, scene, event, and debug output receivers.
 - Runtime manager for model selection, input, inference, tracking, and output.
@@ -238,7 +239,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 39 tests, 39 passed, 0 failed
+EditMode: 46 tests, 46 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.
