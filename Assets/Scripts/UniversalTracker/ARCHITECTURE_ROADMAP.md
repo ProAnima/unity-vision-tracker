@@ -1324,3 +1324,20 @@ Current automated baseline:
 ```text
 EditMode: 57 tests, 57 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 5
+
+Frame source creation now has its own registry:
+
+- added `VisionFrameSourceRegistry` for input provider registration, default built-in mappings, provider creation, source-type lookup, and structured creation errors;
+- default mappings cover WebCam, Unity Camera, Texture, and Video through the existing providers;
+- `UniversalTrackerManager` stores the active `VisionFrameSourceType` and creates dynamic input providers through the registry instead of a local switch;
+- custom scene providers are still supported and are marked as `VisionFrameSourceType.Custom`;
+- profile pipeline source wrapping now uses the active source type, which prepares the system for RenderTexture, AR Foundation, XR passthrough, native camera SDKs, and remote streams;
+- EditMode tests cover built-in mappings, registered factories, missing sources, null hosts, and null factory guards.
+
+Current automated baseline:
+
+```text
+EditMode: 62 tests, 62 passed, 0 failed
+```

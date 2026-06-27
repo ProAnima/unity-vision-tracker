@@ -14,6 +14,7 @@ Current coverage starts with:
 - `IOUTracker` and `SORTTracker` track ID stability, missed-frame lifecycle, reset behavior, and confirmation behavior.
 - `VisionProfileValidator` model and pipeline profile validation behavior.
 - `VisionAdapterRegistry` adapter registration, duplicate protection, resolution, and runtime creation behavior.
+- `VisionFrameSourceRegistry` source registration, default mappings, provider creation, and error paths.
 
 Run from PowerShell:
 
@@ -39,7 +40,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 57 tests, 57 passed, 0 failed
+EditMode: 62 tests, 62 passed, 0 failed
 ```
 
 ## GitHub Actions

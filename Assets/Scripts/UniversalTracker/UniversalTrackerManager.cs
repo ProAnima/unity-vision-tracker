@@ -281,6 +281,7 @@ namespace UniversalTracker
         {
             inputProvider?.Release();
             inputProvider = provider;
+            activeSourceType = VisionFrameSourceType.Custom;
             inputProvider?.Initialize();
         }
         
@@ -298,6 +299,8 @@ namespace UniversalTracker
         private IInferenceModel activeModel;
         private VisionPipeline visionPipeline;
         private VisionAdapterRegistry adapterRegistry;
+        private VisionFrameSourceRegistry frameSourceRegistry;
+        private VisionFrameSourceType activeSourceType = VisionFrameSourceType.Unknown;
         private bool isUsingVisionPipeline;
         private List<IOutputReceiver> outputReceivers = new List<IOutputReceiver>();
         private ITracker tracker;
@@ -423,6 +426,7 @@ namespace UniversalTracker
                 {
                     Debug.Log($"📌 [TrackerManager] Используем привязанный Input Provider: {customInputProvider.GetType().Name}");
                     inputProvider = provider;
+                    activeSourceType = VisionFrameSourceType.Custom;
                     
                     // Если провайдер уже на сцене - не инициализируем повторно
                     Debug.Log($"🎬 [TrackerManager] Инициализация {inputProvider.GetType().Name}...");
@@ -437,14 +441,7 @@ namespace UniversalTracker
                 else
                 {
                     Debug.Log($"🔧 [TrackerManager] Создаём Input Provider динамически: {inputType}");
-                    inputProvider = inputType switch
-                    {
-                        InputProviderType.WebCam => gameObject.AddComponent<WebCamInputProvider>(),
-                        InputProviderType.Camera => gameObject.AddComponent<CameraInputProvider>(),
-                        InputProviderType.Texture => gameObject.AddComponent<TextureInputProvider>(),
-                        InputProviderType.Video => gameObject.AddComponent<VideoInputProvider>(),
-                        _ => null
-                    };
+                    inputProvider = CreateInputProviderFromRegistry();
                     
                     if (inputProvider == null)
                     {
@@ -464,6 +461,20 @@ namespace UniversalTracker
                 Debug.LogError($"   StackTrace: {e.StackTrace}");
                 inputProvider = null;
             }
+        }
+
+        private IInputProvider CreateInputProviderFromRegistry()
+        {
+            frameSourceRegistry ??= VisionFrameSourceRegistry.CreateDefault();
+            if (!frameSourceRegistry.TryCreateProvider(inputType, gameObject, out IInputProvider provider, out VisionFrameSourceType sourceType, out string error))
+            {
+                Debug.LogError($"[TrackerManager] Failed to create Input Provider: {error}");
+                activeSourceType = VisionFrameSourceType.Unknown;
+                return null;
+            }
+
+            activeSourceType = sourceType;
+            return provider;
         }
         
         private bool UsesModelProfiles()
@@ -607,7 +618,7 @@ namespace UniversalTracker
                 return false;
             }
 
-            var source = new LegacyInputProviderFrameSource(inputProvider, ResolveSourceType(), false);
+            var source = new LegacyInputProviderFrameSource(inputProvider, ResolveActiveSourceType(), false);
 
             DisposeVisionPipeline();
             visionPipeline = new VisionPipeline();
@@ -646,16 +657,15 @@ namespace UniversalTracker
             }
         }
 
-        private VisionFrameSourceType ResolveSourceType()
+        private VisionFrameSourceType ResolveActiveSourceType()
         {
-            return inputType switch
-            {
-                InputProviderType.WebCam => VisionFrameSourceType.WebCam,
-                InputProviderType.Camera => VisionFrameSourceType.UnityCamera,
-                InputProviderType.Texture => VisionFrameSourceType.Texture,
-                InputProviderType.Video => VisionFrameSourceType.Video,
-                _ => VisionFrameSourceType.Custom
-            };
+            if (activeSourceType != VisionFrameSourceType.Unknown)
+                return activeSourceType;
+
+            frameSourceRegistry ??= VisionFrameSourceRegistry.CreateDefault();
+            return frameSourceRegistry.TryGetSourceType(inputType, out VisionFrameSourceType sourceType)
+                ? sourceType
+                : VisionFrameSourceType.Custom;
         }
 
         private void HandlePipelineFrameProcessed(VisionFrameResult result)
