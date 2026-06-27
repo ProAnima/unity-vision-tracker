@@ -5,6 +5,8 @@
 *.json text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+.gitattributes text eol=lf
+*.gitignore text eol=lf
 *.cs text eol=lf
 *.py text eol=lf
 LICENSE text eol=lf
