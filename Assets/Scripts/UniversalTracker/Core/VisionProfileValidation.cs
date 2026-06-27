@@ -62,7 +62,10 @@ namespace UniversalTracker.Core
 
     public static class VisionProfileValidator
     {
-        public static VisionProfileValidationReport ValidateModelProfile(VisionModelProfile profile, bool requireRuntimeAsset = true)
+        public static VisionProfileValidationReport ValidateModelProfile(
+            VisionModelProfile profile,
+            bool requireRuntimeAsset = true,
+            VisionOutputParserRegistry parserRegistry = null)
         {
             var report = new VisionProfileValidationReport();
 
@@ -87,6 +90,7 @@ namespace UniversalTracker.Core
             ValidateTaskCapability(profile, report);
             ValidateRuntime(profile, requireRuntimeAsset, report);
             ValidateSchemas(profile, report);
+            ValidateParser(profile, parserRegistry ?? VisionOutputParserRegistry.CreateDefault(), report);
             ValidateThresholds(profile, report);
             ValidateGovernance(profile, report);
 
@@ -182,6 +186,72 @@ namespace UniversalTracker.Core
                         report.Add(VisionValidationSeverity.Error, $"schema.output.tensors[{i}].invalid", "Output tensor must have a name and shape.");
                 }
             }
+        }
+
+        private static void ValidateParser(VisionModelProfile profile, VisionOutputParserRegistry parserRegistry, VisionProfileValidationReport report)
+        {
+            if (parserRegistry == null)
+            {
+                report.Add(VisionValidationSeverity.Error, "parser.registry.null", "Parser registry is null; parser compatibility cannot be validated.");
+                return;
+            }
+
+            if (!parserRegistry.TryGetParser(profile, out IVisionOutputParser parser, out string code, out string message))
+            {
+                report.Add(VisionValidationSeverity.Error, code ?? "parser.resolve.failed", message ?? "No output parser could be resolved for this model profile.");
+                return;
+            }
+
+            if ((profile.capabilities & parser.Capabilities) != parser.Capabilities)
+            {
+                report.Add(
+                    VisionValidationSeverity.Error,
+                    "parser.capabilities.unsupported",
+                    $"Parser '{parser.ParserId}' requires capabilities '{parser.Capabilities}', but profile declares '{profile.capabilities}'.");
+                return;
+            }
+
+            if (!parser.CanParse(profile))
+            {
+                report.Add(
+                    VisionValidationSeverity.Error,
+                    "parser.profile.unsupported",
+                    $"Parser '{parser.ParserId}' is registered but does not support this model family/task/profile combination.");
+                return;
+            }
+
+            report.Add(VisionValidationSeverity.Info, "parser.selected", $"Output parser '{parser.ParserId}' is compatible with this profile.");
+            ValidateParserSchemaSemantics(profile, parser, report);
+        }
+
+        private static void ValidateParserSchemaSemantics(VisionModelProfile profile, IVisionOutputParser parser, VisionProfileValidationReport report)
+        {
+            if (!profile.output.IsValid || profile.output.tensors == null)
+                return;
+
+            if ((parser.Capabilities & VisionModelCapability.Detection) == VisionModelCapability.Detection &&
+                !HasTensorSemantic(profile.output, "detection"))
+            {
+                report.Add(
+                    VisionValidationSeverity.Warning,
+                    "parser.output.semantic.detection_missing",
+                    $"Parser '{parser.ParserId}' handles detections, but no output tensor semantic contains 'detection'.");
+            }
+        }
+
+        private static bool HasTensorSemantic(VisionOutputSchema output, string semanticFragment)
+        {
+            for (int i = 0; i < output.TensorCount; i++)
+            {
+                string semantic = output.tensors[i].semantic;
+                if (!string.IsNullOrWhiteSpace(semantic) &&
+                    semantic.IndexOf(semanticFragment, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ValidateThresholds(VisionModelProfile profile, VisionProfileValidationReport report)

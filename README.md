@@ -83,6 +83,7 @@ VisionFrameResult
 - Capability-based `VisionModelProfile` contract for plugin/adapters architecture.
 - `VisionPipeline` orchestration for source/runtime/result flow.
 - `VisionHealthStatus` lifecycle state and runtime health events.
+- Parser registry diagnostics for profile/output compatibility.
 - IOU and SORT tracking implementations.
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
 - Thin runtime manager facade over `VisionPipeline`.
@@ -239,7 +240,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 68 tests, 68 passed, 0 failed
+EditMode: 72 tests, 72 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

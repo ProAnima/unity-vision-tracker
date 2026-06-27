@@ -111,6 +111,28 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void ParserRegistry_UnknownExplicitId_DoesNotFallbackToCapabilityMatch()
+        {
+            var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
+            profile.family = VisionModelFamily.YOLO;
+            profile.capabilities = VisionModelCapability.Detection;
+            profile.parserId = "unknown.parser";
+            var registry = VisionOutputParserRegistry.CreateDefault();
+
+            bool resolved = registry.TryGetParser(
+                profile,
+                out IVisionOutputParser parser,
+                out string code,
+                out string message);
+
+            Assert.That(resolved, Is.False);
+            Assert.That(parser, Is.Null);
+            Assert.That(code, Is.EqualTo("parser.id.not_registered"));
+            Assert.That(message, Does.Contain("unknown.parser"));
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
         public void ParserRegistry_DuplicateParserId_Throws()
         {
             var registry = new VisionOutputParserRegistry();

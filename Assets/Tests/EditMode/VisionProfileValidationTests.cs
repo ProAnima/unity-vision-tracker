@@ -16,6 +16,7 @@ namespace UniversalTracker.Tests
 
             Assert.That(report.IsValid, Is.True);
             Assert.That(report.ErrorCount, Is.EqualTo(0));
+            Assert.That(report.Messages.Any(message => message.code == "parser.selected"), Is.True);
 
             Object.DestroyImmediate(profile);
         }
@@ -71,6 +72,50 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void ValidateModelProfile_UnknownParserId_FailsWithDiagnostic()
+        {
+            var profile = CreateValidProfile();
+            profile.parserId = "missing.parser";
+
+            VisionProfileValidationReport report = VisionProfileValidator.ValidateModelProfile(profile, false);
+
+            Assert.That(report.IsValid, Is.False);
+            Assert.That(report.Messages.Any(message => message.code == "parser.id.not_registered"), Is.True);
+
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
+        public void ValidateModelProfile_NoParserForCapability_FailsWithDiagnostic()
+        {
+            var profile = CreateValidProfile();
+            profile.family = VisionModelFamily.Custom;
+            profile.parserId = null;
+
+            VisionProfileValidationReport report = VisionProfileValidator.ValidateModelProfile(profile, false);
+
+            Assert.That(report.IsValid, Is.False);
+            Assert.That(report.Messages.Any(message => message.code == "parser.compatibility.none"), Is.True);
+
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
+        public void ValidateModelProfile_ParserIdForUnsupportedFamily_FailsWithDiagnostic()
+        {
+            var profile = CreateValidProfile();
+            profile.family = VisionModelFamily.MediaPipe;
+            profile.parserId = "yolo.detection.rows";
+
+            VisionProfileValidationReport report = VisionProfileValidator.ValidateModelProfile(profile, false);
+
+            Assert.That(report.IsValid, Is.False);
+            Assert.That(report.Messages.Any(message => message.code == "parser.profile.unsupported"), Is.True);
+
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
         public void ValidationReport_ToLogString_IncludesSeverityCodeAndMessage()
         {
             var report = new VisionProfileValidationReport();
@@ -106,7 +151,7 @@ namespace UniversalTracker.Tests
                     }
                 }
             };
-            profile.parserId = "yolo";
+            profile.parserId = "yolo.detection.rows";
             profile.confidenceThreshold = 0.5f;
             profile.nmsThreshold = 0.45f;
             profile.modelLicense = "MIT";

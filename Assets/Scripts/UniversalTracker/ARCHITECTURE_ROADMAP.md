@@ -31,16 +31,16 @@ Configuration is profile-first:
 - Output receivers consume `VisionFrameResult` directly.
 - NMS and tracking operate on `VisionDetection`.
 - Runtime lifecycle is exposed through `VisionHealthStatus` and started/stopped/degraded/failed/recovered events.
+- Model profile validation reports parser selection, missing parser ids, unsupported profile/parser combinations, and output semantic warnings before runtime startup.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
 
 ## Next Production Steps
 
 1. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
 2. Add golden fixtures for pose and segmentation parsers.
-3. Add parser selection diagnostics to `VisionProfileValidator`.
-4. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
-5. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
-6. Add performance/allocation budgets for parser, overlay, and tracking paths.
+3. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
+4. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
+5. Add performance/allocation budgets for parser, overlay, and tracking paths.
 
 ## Extension Rules
 
