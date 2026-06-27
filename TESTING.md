@@ -9,6 +9,7 @@ Current coverage starts with:
 - `VisionFrameResult` result-count and pose keypoint behavior;
 - `VisionPerformanceStats` stage totals;
 - `VisionImageTransform` stretch, letterbox, normalized mapping, and source/model round trips.
+- `VisionResultAdapter` compatibility mapping from legacy `InferenceResult` to `VisionFrameResult`.
 
 Run from PowerShell:
 
@@ -34,6 +35,5 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 11 tests, 11 passed, 0 failed
+EditMode: 15 tests, 15 passed, 0 failed
 ```
-

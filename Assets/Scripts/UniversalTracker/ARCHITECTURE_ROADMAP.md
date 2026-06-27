@@ -1167,3 +1167,19 @@ GPU paths могут отличаться по платформам.
 - UI/Event/Debug receivers -> `VisionFrameResult`;
 - postprocessing -> `VisionImageTransform`;
 - tracking -> `VisionTrackState`.
+
+### 2026-06-27: Production core increment 2
+
+Второй инкремент вводит compatibility bridge, чтобы старый рабочий inference runtime начал отдавать новый production API без разрыва текущей сцены:
+
+- добавлен `VisionResultAdapter` для конвертации `InferenceResult -> VisionFrameResult`;
+- старые normalized `BBoxData.rect` и keypoint positions переводятся в source-space пиксельные координаты;
+- `UniversalTrackerManager` публикует `LastVisionResult` и событие `OnVisionFrameResult`;
+- `EventOutputReceiver` получил новый UnityEvent `OnVisionFrameReceived`, сохранив legacy events;
+- добавлены EditMode-тесты для conversion mapping detection/pose/mask/classification.
+
+Следующий шаг после bridge:
+
+- перевести `DebugOutputReceiver` и UI/debug overlay на `VisionFrameResult`;
+- добавить compatibility deprecation notes для legacy `InferenceResult`;
+- начать выделение `IFrameSource` поверх текущих `IInputProvider`.

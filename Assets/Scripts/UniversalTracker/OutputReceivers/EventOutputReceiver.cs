@@ -12,6 +12,7 @@ namespace UniversalTracker.OutputReceivers
         #region Public Fields
         
         [Header("📢 События")]
+        public UnityEvent<VisionFrameResult> OnVisionFrameReceived;
         public UnityEvent<InferenceResult> OnInferenceComplete;
         public UnityEvent<BBoxData[]> OnDetectionsReceived;
         public UnityEvent<KeypointData[]> OnKeypointsReceived;
@@ -33,6 +34,8 @@ namespace UniversalTracker.OutputReceivers
         public void ReceiveResult(InferenceResult result, Texture sourceTexture)
         {
             if (!isEnabled) return;
+
+            OnVisionFrameReceived?.Invoke(VisionResultAdapter.FromInferenceResult(result, sourceTexture));
             
             OnInferenceComplete?.Invoke(result);
             
@@ -53,6 +56,7 @@ namespace UniversalTracker.OutputReceivers
         
         public void Release()
         {
+            OnVisionFrameReceived?.RemoveAllListeners();
             OnInferenceComplete?.RemoveAllListeners();
             OnDetectionsReceived?.RemoveAllListeners();
             OnKeypointsReceived?.RemoveAllListeners();

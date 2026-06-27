@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using UniversalTracker.Core;
 using UniversalTracker.InputProviders;
@@ -56,8 +57,14 @@ namespace UniversalTracker
         
         public bool IsRunning { get; private set; }
         public InferenceResult LastResult { get; private set; }
+        public VisionFrameResult LastVisionResult { get; private set; }
         public float CurrentFPS { get; private set; }
         public int ConsecutiveErrors { get; private set; }
+
+        /// <summary>
+        /// Production-facing result event. The legacy InferenceResult pipeline remains active for compatibility.
+        /// </summary>
+        public event Action<VisionFrameResult> OnVisionFrameResult;
         
         #endregion
         
@@ -685,7 +692,13 @@ namespace UniversalTracker
                 }
                 
                 LastResult = result;
+                LastVisionResult = VisionResultAdapter.FromInferenceResult(
+                    result,
+                    inputTexture,
+                    totalFramesProcessed,
+                    Time.realtimeSinceStartupAsDouble);
                 ConsecutiveErrors = consecutiveErrors;
+                OnVisionFrameResult?.Invoke(LastVisionResult);
                 
                 foreach (var receiver in outputReceivers)
                 {
