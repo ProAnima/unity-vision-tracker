@@ -1194,3 +1194,18 @@ GPU paths могут отличаться по платформам.
 - перевести `DebugOutputReceiver` и UI/debug overlay на `VisionFrameResult`;
 - добавить compatibility deprecation notes для legacy `InferenceResult`;
 - начать выделение `IFrameSource` поверх текущих `IInputProvider`.
+
+### 2026-06-27: Production testing increment 1
+
+Тестовый слой расширен до core production baseline:
+
+- добавлены unit-тесты для `NMSProcessor`;
+- добавлены unit-тесты для `IOUTracker` и `SORTTracker`;
+- добавлен GitHub Actions workflow для EditMode-тестов через GameCI;
+- тестовая матрица вынесена в `TESTING.md`.
+
+Текущий automated baseline:
+
+```text
+EditMode: 25 tests, 25 passed, 0 failed
+```
