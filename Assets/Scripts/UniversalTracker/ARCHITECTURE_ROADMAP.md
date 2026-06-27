@@ -1376,3 +1376,19 @@ Current automated baseline:
 ```text
 EditMode: 71 tests, 71 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 8
+
+Parser contracts are now explicit:
+
+- added `IVisionOutputParser`, `VisionRawModelOutput`, `VisionRawTensor`, `VisionParsedOutput`, and `VisionOutputParserContext`;
+- added `YoloDetectionOutputParser` for row-based YOLO detection fixtures;
+- parser output now converts to canonical `VisionFrameResult` without passing through legacy `InferenceResult`;
+- detection parsing covers confidence thresholding, label resolution, normalized-to-source mapping, and class-aware NMS;
+- EditMode golden fixture tests cover row parsing, low-confidence filtering, NMS, and parsed-output frame metadata.
+
+Current automated baseline:
+
+```text
+EditMode: 75 tests, 75 passed, 0 failed
+```

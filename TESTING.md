@@ -17,6 +17,7 @@ Current coverage starts with:
 - `VisionFrameSourceRegistry` source registration, default mappings, provider creation, and error paths.
 - Production `IVisionFrameSource` implementations for texture, render texture, Unity camera, and video contract behavior.
 - `UnityInferenceRuntimeAdapter` and `YoloModelAdapter` runtime creation, processing, and disposal behavior through fakes.
+- Parser contracts and YOLO detection golden row fixtures.
 
 Run from PowerShell:
 
@@ -42,7 +43,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 71 tests, 71 passed, 0 failed
+EditMode: 75 tests, 75 passed, 0 failed
 ```
 
 ## GitHub Actions
@@ -80,7 +81,7 @@ Current automated tests cover the pure runtime core. A production-ready release 
 | NMS/postprocess math | EditMode unit tests | Started |
 | Tracking lifecycle | EditMode unit tests | Started |
 | Model profile validation | EditMode unit tests | Started |
-| Parser output schemas | Golden fixture tests | Planned |
+| Parser output schemas | Golden fixture tests | Started |
 | Frame sources | EditMode + PlayMode tests | Started |
 | WebCam/RenderTexture path | PlayMode/manual device tests | Planned |
 | Unity Inference runtime smoke | PlayMode/batchmode tests | Planned |
