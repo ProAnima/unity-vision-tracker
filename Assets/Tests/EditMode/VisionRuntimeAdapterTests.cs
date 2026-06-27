@@ -2,6 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Unity.InferenceEngine;
 using UniversalTracker.Core;
+using UniversalTracker.OutputReceivers;
 
 namespace UniversalTracker.Tests
 {
@@ -85,6 +86,37 @@ namespace UniversalTracker.Tests
             Object.DestroyImmediate(texture);
         }
 
+        [Test]
+        public void LegacyInputProviderFrameSource_CanSkipProviderInitialization()
+        {
+            var texture = new Texture2D(8, 8);
+            var provider = new FakeInputProvider(texture);
+            provider.Initialize();
+            var source = new LegacyInputProviderFrameSource(provider, VisionFrameSourceType.Texture, false);
+
+            source.Initialize();
+
+            Assert.That(provider.InitializeCount, Is.EqualTo(1));
+
+            source.Dispose();
+            Object.DestroyImmediate(texture);
+        }
+
+        [Test]
+        public void EventOutputReceiver_ReceivesVisionFrameResultDirectly()
+        {
+            var go = new GameObject("EventOutputReceiverTest");
+            var receiver = go.AddComponent<EventOutputReceiver>();
+            VisionFrameResult received = null;
+            receiver.OnVisionFrameReceived.AddListener(result => received = result);
+            var result = VisionFrameResult.Empty(3, 1.5, new Vector2Int(16, 16));
+
+            receiver.ReceiveVisionResult(result);
+
+            Assert.That(received, Is.SameAs(result));
+            Object.DestroyImmediate(go);
+        }
+
         private sealed class FakeInputProvider : IInputProvider
         {
             private readonly Texture texture;
@@ -95,6 +127,7 @@ namespace UniversalTracker.Tests
             }
 
             public bool IsReady { get; private set; }
+            public int InitializeCount { get; private set; }
             public Texture CurrentTexture => texture;
             public Vector2Int Resolution => new Vector2Int(texture.width, texture.height);
 
@@ -102,6 +135,7 @@ namespace UniversalTracker.Tests
 
             public void Initialize()
             {
+                InitializeCount++;
                 IsReady = true;
             }
 

@@ -8,12 +8,17 @@ namespace UniversalTracker.Core
     {
         private readonly IInputProvider provider;
         private readonly VisionFrameSourceType sourceType;
+        private readonly bool initializeProvider;
         private int frameIndex;
 
-        public LegacyInputProviderFrameSource(IInputProvider provider, VisionFrameSourceType sourceType = VisionFrameSourceType.Custom)
+        public LegacyInputProviderFrameSource(
+            IInputProvider provider,
+            VisionFrameSourceType sourceType = VisionFrameSourceType.Custom,
+            bool initializeProvider = true)
         {
             this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
             this.sourceType = sourceType;
+            this.initializeProvider = initializeProvider;
         }
 
         public bool IsReady => provider.IsReady;
@@ -22,7 +27,8 @@ namespace UniversalTracker.Core
 
         public void Initialize()
         {
-            provider.Initialize();
+            if (initializeProvider)
+                provider.Initialize();
         }
 
         public bool TryGetFrame(out VisionFrame frame)

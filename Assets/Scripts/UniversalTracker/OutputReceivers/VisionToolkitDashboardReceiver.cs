@@ -11,7 +11,7 @@ namespace UniversalTracker.OutputReceivers
     /// Runtime UI Toolkit dashboard driven by the canonical VisionFrameResult API.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
-    public sealed class VisionToolkitDashboardReceiver : MonoBehaviour, IOutputReceiver
+    public sealed class VisionToolkitDashboardReceiver : MonoBehaviour, IOutputReceiver, IVisionFrameResultReceiver
     {
         [Header("Data Source")]
         public UniversalTrackerManager trackerManager;

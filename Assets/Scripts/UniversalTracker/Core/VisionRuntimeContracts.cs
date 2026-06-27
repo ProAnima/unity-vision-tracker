@@ -23,6 +23,11 @@ namespace UniversalTracker.Core
         VisionFrameResult ProcessFrame(VisionFrame frame);
     }
 
+    public interface IVisionFrameResultReceiver
+    {
+        void ReceiveVisionResult(VisionFrameResult result, Texture sourceTexture = null);
+    }
+
     public interface IVisionModelAdapter
     {
         string AdapterId { get; }

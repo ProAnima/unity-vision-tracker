@@ -27,6 +27,8 @@ namespace UniversalTracker
         public MonoBehaviour customInputProvider;
         
         [Header("🧠 Модели")]
+        public VisionPipelineProfile pipelineProfile;
+        public bool useVisionPipeline = true;
         public VisionModelProfile[] modelProfiles;
         public bool preferModelProfiles = true;
         public ModelConfig[] modelConfigs;
@@ -122,9 +124,21 @@ namespace UniversalTracker
             try
             {
                 Debug.Log("📍 ШАГ 2/4: Инициализация моделей...");
-                InitializeModels();
+                if (UsesPipelineRuntime())
+                {
+                    if (!InitializeVisionPipeline())
+                    {
+                        Debug.LogError("[TrackerManager] VisionPipeline initialization failed, startup cancelled.");
+                        CleanupOnError();
+                        return;
+                    }
+                }
+                else
+                {
+                    InitializeModels();
+                }
                 
-                if (activeModel == null || !activeModel.IsInitialized)
+                if (!isUsingVisionPipeline && (activeModel == null || !activeModel.IsInitialized))
                 {
                     Debug.LogError("❌ [TrackerManager] Модель не инициализирована, запуск отменён");
                     CleanupOnError();
@@ -185,6 +199,16 @@ namespace UniversalTracker
                 return;
             
             IsRunning = false;
+
+            try
+            {
+                DisposeVisionPipeline();
+                isUsingVisionPipeline = false;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[TrackerManager] Error disposing VisionPipeline: {e.Message}");
+            }
             
             try
             {
@@ -234,6 +258,15 @@ namespace UniversalTracker
             
             activeModel?.Dispose();
             activeModelIndex = index;
+            if (IsRunning && UsesPipelineRuntime())
+            {
+                DisposeVisionPipeline();
+                isUsingVisionPipeline = false;
+                InitializeVisionPipeline();
+                Debug.Log($"[TrackerManager] Switched pipeline model profile: {GetConfiguredModelName(index)}");
+                return;
+            }
+
             InitializeModels();
             if (UsesModelProfiles())
             {
@@ -263,6 +296,8 @@ namespace UniversalTracker
         
         private IInputProvider inputProvider;
         private IInferenceModel activeModel;
+        private VisionPipeline visionPipeline;
+        private bool isUsingVisionPipeline;
         private List<IOutputReceiver> outputReceivers = new List<IOutputReceiver>();
         private ITracker tracker;
         
@@ -296,6 +331,17 @@ namespace UniversalTracker
         void Update()
         {
             if (!IsRunning) return;
+
+            if (isUsingVisionPipeline)
+            {
+                if (Time.time - lastFrameTime < frameInterval)
+                    return;
+
+                lastFrameTime = Time.time;
+                UpdateFPS();
+                ProcessPipelineFrame();
+                return;
+            }
             
             bool isFirstUpdates = totalFramesProcessed < 15;
             
@@ -421,22 +467,37 @@ namespace UniversalTracker
         
         private bool UsesModelProfiles()
         {
-            return preferModelProfiles && modelProfiles != null && modelProfiles.Length > 0;
+            var profiles = GetActiveModelProfiles();
+            return preferModelProfiles && profiles != null && profiles.Length > 0;
+        }
+
+        private bool UsesPipelineRuntime()
+        {
+            return useVisionPipeline && UsesModelProfiles();
+        }
+
+        private VisionModelProfile[] GetActiveModelProfiles()
+        {
+            if (pipelineProfile != null && pipelineProfile.HasModels)
+                return pipelineProfile.models;
+
+            return modelProfiles;
         }
 
         private int GetConfiguredModelCount()
         {
             if (UsesModelProfiles())
-                return modelProfiles.Length;
+                return GetActiveModelProfiles().Length;
 
             return modelConfigs?.Length ?? 0;
         }
 
         private string GetConfiguredModelName(int index)
         {
-            if (UsesModelProfiles() && index >= 0 && index < modelProfiles.Length)
+            var profiles = GetActiveModelProfiles();
+            if (UsesModelProfiles() && index >= 0 && index < profiles.Length)
             {
-                var profile = modelProfiles[index];
+                var profile = profiles[index];
                 if (profile == null)
                     return $"Profile[{index}]";
 
@@ -454,12 +515,13 @@ namespace UniversalTracker
 
         private void WarnAboutUnsafeProfileBackends()
         {
-            if (modelProfiles == null)
+            var profiles = GetActiveModelProfiles();
+            if (profiles == null)
                 return;
 
-            for (int i = 0; i < modelProfiles.Length; i++)
+            for (int i = 0; i < profiles.Length; i++)
             {
-                var profile = modelProfiles[i];
+                var profile = profiles[i];
                 if (profile != null && profile.backend == Unity.InferenceEngine.BackendType.GPUCompute)
                     Debug.LogWarning($"[TrackerManager] VisionModelProfile[{i}] uses GPUCompute. Consider GPUPixel for safer Unity Editor runtime.");
             }
@@ -469,10 +531,11 @@ namespace UniversalTracker
         {
             Debug.Log("[TrackerManager] Initialize model from VisionModelProfile...");
 
-            if (activeModelIndex >= modelProfiles.Length)
+            var profiles = GetActiveModelProfiles();
+            if (activeModelIndex >= profiles.Length)
                 activeModelIndex = 0;
 
-            ActiveModelProfile = modelProfiles[activeModelIndex];
+            ActiveModelProfile = profiles[activeModelIndex];
             if (ActiveModelProfile == null)
             {
                 Debug.LogError($"[TrackerManager] VisionModelProfile[{activeModelIndex}] is null!");
@@ -510,6 +573,140 @@ namespace UniversalTracker
             }
 
             Debug.Log($"[TrackerManager] Model profile '{GetConfiguredModelName(activeModelIndex)}' ready.");
+        }
+
+        private bool InitializeVisionPipeline()
+        {
+            var profiles = GetActiveModelProfiles();
+            if (profiles == null || profiles.Length == 0)
+            {
+                Debug.LogError("[TrackerManager] VisionPipeline requires at least one VisionModelProfile.");
+                return false;
+            }
+
+            if (activeModelIndex >= profiles.Length)
+                activeModelIndex = 0;
+
+            ActiveModelProfile = profiles[activeModelIndex];
+            if (ActiveModelProfile == null)
+            {
+                Debug.LogError($"[TrackerManager] VisionModelProfile[{activeModelIndex}] is null!");
+                return false;
+            }
+
+            if (ActiveModelProfile.family != VisionModelFamily.YOLO ||
+                ActiveModelProfile.runtimeKind != VisionRuntimeKind.UnityInferenceEngine)
+            {
+                Debug.LogError($"[TrackerManager] No pipeline adapter registered for '{ActiveModelProfile.name}' ({ActiveModelProfile.family}/{ActiveModelProfile.runtimeKind}).");
+                return false;
+            }
+
+            var config = YoloLegacyModelAdapter.ToLegacyConfig(ActiveModelProfile);
+            if (config.modelAsset == null)
+            {
+                Debug.LogError($"[TrackerManager] ModelAsset null in profile '{ActiveModelProfile.name}'!");
+                return false;
+            }
+
+            var yoloAdapter = new YoloLegacyModelAdapter();
+            var runtime = yoloAdapter.CreateRuntime(config);
+            var source = new LegacyInputProviderFrameSource(inputProvider, ResolveSourceType(), false);
+
+            DisposeVisionPipeline();
+            visionPipeline = new VisionPipeline();
+            visionPipeline.FrameProcessed += HandlePipelineFrameProcessed;
+            visionPipeline.ErrorReceived += HandlePipelineError;
+            visionPipeline.Configure(ActiveModelProfile, source, runtime);
+
+            isUsingVisionPipeline = visionPipeline.Start();
+            if (!isUsingVisionPipeline)
+            {
+                DisposeVisionPipeline();
+                return false;
+            }
+
+            activeModel = null;
+            LastResult = null;
+            Debug.Log($"[TrackerManager] VisionPipeline ready: {GetConfiguredModelName(activeModelIndex)}");
+            return true;
+        }
+
+        private VisionFrameSourceType ResolveSourceType()
+        {
+            return inputType switch
+            {
+                InputProviderType.WebCam => VisionFrameSourceType.WebCam,
+                InputProviderType.Camera => VisionFrameSourceType.UnityCamera,
+                InputProviderType.Texture => VisionFrameSourceType.Texture,
+                InputProviderType.Video => VisionFrameSourceType.Video,
+                _ => VisionFrameSourceType.Custom
+            };
+        }
+
+        private void HandlePipelineFrameProcessed(VisionFrameResult result)
+        {
+            LastVisionResult = result;
+            ConsecutiveErrors = consecutiveErrors;
+            OnVisionFrameResult?.Invoke(result);
+            DispatchVisionResultToReceivers(result);
+        }
+
+        private void HandlePipelineError(VisionError error)
+        {
+            if (error == null)
+                return;
+
+            if (!error.isRecoverable)
+            {
+                consecutiveErrors = maxConsecutiveErrors;
+                ConsecutiveErrors = consecutiveErrors;
+                Debug.LogError($"[TrackerManager] VisionPipeline failed: {error.code} {error.message}");
+                CheckErrorThreshold();
+                return;
+            }
+
+            if (error.code != VisionErrorCode.SourceNotReady)
+            {
+                consecutiveErrors++;
+                ConsecutiveErrors = consecutiveErrors;
+                Debug.LogWarning($"[TrackerManager] VisionPipeline recoverable error #{consecutiveErrors}: {error.code} {error.message}");
+                CheckErrorThreshold();
+            }
+        }
+
+        private void DispatchVisionResultToReceivers(VisionFrameResult result)
+        {
+            foreach (var receiver in outputReceivers)
+            {
+                if (receiver == null || !receiver.IsEnabled)
+                    continue;
+
+                if (receiver is VisionToolkitDashboardReceiver)
+                    continue;
+
+                if (receiver is IVisionFrameResultReceiver visionReceiver)
+                {
+                    try
+                    {
+                        visionReceiver.ReceiveVisionResult(result);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"[TrackerManager] Vision result receiver error: {e.Message}");
+                    }
+                }
+            }
+        }
+
+        private void DisposeVisionPipeline()
+        {
+            if (visionPipeline == null)
+                return;
+
+            visionPipeline.FrameProcessed -= HandlePipelineFrameProcessed;
+            visionPipeline.ErrorReceived -= HandlePipelineError;
+            visionPipeline.Dispose();
+            visionPipeline = null;
         }
 
         private void InitializeModels()
@@ -721,6 +918,28 @@ namespace UniversalTracker
         #endregion
         
         #region Private Methods - Processing
+
+        private void ProcessPipelineFrame()
+        {
+            totalFramesProcessed++;
+
+            if (visionPipeline == null)
+            {
+                consecutiveErrors++;
+                ConsecutiveErrors = consecutiveErrors;
+                Debug.LogError("[TrackerManager] VisionPipeline is null while pipeline runtime is active.");
+                CheckErrorThreshold();
+                return;
+            }
+
+            if (visionPipeline.TryProcessNext(out VisionFrameResult result))
+            {
+                consecutiveErrors = 0;
+                ConsecutiveErrors = 0;
+                LastVisionResult = result;
+                return;
+            }
+        }
         
         private void ProcessFrame()
         {
@@ -886,6 +1105,7 @@ namespace UniversalTracker
             
             try { inputProvider?.Release(); } catch { }
             try { activeModel?.Dispose(); } catch { }
+            try { DisposeVisionPipeline(); } catch { }
             
             foreach (var receiver in outputReceivers)
             {
@@ -895,6 +1115,8 @@ namespace UniversalTracker
             outputReceivers.Clear();
             inputProvider = null;
             activeModel = null;
+            visionPipeline = null;
+            isUsingVisionPipeline = false;
         }
         
         #endregion

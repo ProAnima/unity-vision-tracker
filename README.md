@@ -187,7 +187,7 @@ Current bridge contracts:
 - `IVisionFrameSource` is the source-agnostic frame API for webcams, Unity cameras, render textures, videos, AR/XR feeds, and custom cameras.
 - `IVisionRuntimeAdapter` is the runtime plugin surface for Unity Inference Engine, MediaPipe, native plugins, remote inference, and mocks.
 - `YoloLegacyModelAdapter`, `LegacyInferenceRuntimeAdapter`, and `LegacyInputProviderFrameSource` keep the existing YOLO/`IInferenceModel`/`IInputProvider` path usable during migration.
-- `UniversalTrackerManager` can use `VisionModelProfile[]` as the preferred model source, with legacy `ModelConfig[]` kept as fallback.
+- `UniversalTrackerManager` can run profile-based setups through `VisionPipeline`, with legacy `ModelConfig[]` kept as fallback.
 
 The design keeps YOLO as one adapter instead of the core identity of the SDK.
 
@@ -239,7 +239,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 46 tests, 46 passed, 0 failed
+EditMode: 48 tests, 48 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

@@ -1274,3 +1274,21 @@ Current automated baseline:
 ```text
 EditMode: 46 tests, 46 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 2
+
+`UniversalTrackerManager` now routes profile-based runtime through `VisionPipeline`:
+
+- added `pipelineProfile` and `useVisionPipeline` manager settings;
+- profile-backed startup builds `LegacyInputProviderFrameSource + YoloLegacyModelAdapter + VisionPipeline`;
+- legacy `ModelConfig[]` direct inference remains fallback for old scenes;
+- `Update()` uses `VisionPipeline.TryProcessNext` when profile pipeline mode is active;
+- `EventOutputReceiver` now implements `IVisionFrameResultReceiver` and can receive `VisionFrameResult` directly;
+- runtime-created `EventOutputReceiver` instances now initialize UnityEvents safely;
+- pipeline results are dispatched through `OnVisionFrameResult` and compatible result receivers.
+
+Current automated baseline:
+
+```text
+EditMode: 48 tests, 48 passed, 0 failed
+```

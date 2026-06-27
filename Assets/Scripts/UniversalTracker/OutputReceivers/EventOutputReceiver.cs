@@ -7,16 +7,16 @@ namespace UniversalTracker.OutputReceivers
     /// <summary>
     /// Приёмник результатов через Unity Events
     /// </summary>
-    public class EventOutputReceiver : MonoBehaviour, IOutputReceiver
+    public class EventOutputReceiver : MonoBehaviour, IOutputReceiver, IVisionFrameResultReceiver
     {
         #region Public Fields
         
         [Header("📢 События")]
-        public UnityEvent<VisionFrameResult> OnVisionFrameReceived;
-        public UnityEvent<InferenceResult> OnInferenceComplete;
-        public UnityEvent<BBoxData[]> OnDetectionsReceived;
-        public UnityEvent<KeypointData[]> OnKeypointsReceived;
-        public UnityEvent<MaskData[]> OnMasksReceived;
+        public UnityEvent<VisionFrameResult> OnVisionFrameReceived = new UnityEvent<VisionFrameResult>();
+        public UnityEvent<InferenceResult> OnInferenceComplete = new UnityEvent<InferenceResult>();
+        public UnityEvent<BBoxData[]> OnDetectionsReceived = new UnityEvent<BBoxData[]>();
+        public UnityEvent<KeypointData[]> OnKeypointsReceived = new UnityEvent<KeypointData[]>();
+        public UnityEvent<MaskData[]> OnMasksReceived = new UnityEvent<MaskData[]>();
         
         [Header("⚙️ Настройки")]
         [SerializeField] private bool isEnabled = true;
@@ -47,6 +47,14 @@ namespace UniversalTracker.OutputReceivers
             
             if (result.masks != null && result.masks.Length > 0)
                 OnMasksReceived?.Invoke(result.masks);
+        }
+
+        public void ReceiveVisionResult(VisionFrameResult result, Texture sourceTexture = null)
+        {
+            if (!isEnabled || result == null)
+                return;
+
+            OnVisionFrameReceived?.Invoke(result);
         }
         
         public void Clear()
