@@ -13,6 +13,7 @@ Current coverage starts with:
 - `IOUTracker` and `SORTTracker` track ID stability, missed-frame lifecycle, reset behavior, and confirmation behavior.
 - `VisionProfileValidator` model and pipeline profile validation behavior.
 - `VisionAdapterRegistry` adapter registration, duplicate protection, resolution, and runtime creation behavior.
+- `VisionHealthStatus` lifecycle transitions for start, degradation, recovery, stop, and failure.
 - Production `IVisionFrameSource` implementations for texture, render texture, Unity camera, and video contract behavior.
 - `UnityInferenceRuntimeAdapter` and `YoloModelAdapter` runtime creation, processing, and disposal behavior through fakes.
 - Parser contracts and YOLO detection golden row fixtures.
@@ -43,7 +44,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 67 tests, 67 passed, 0 failed
+EditMode: 68 tests, 68 passed, 0 failed
 ```
 
 ## GitHub Actions

@@ -169,7 +169,9 @@ namespace UniversalTracker.OutputReceivers
                 return;
 
             trackerManager.OnVisionFrameResult += ReceiveVisionResult;
+            trackerManager.OnVisionHealthChanged += HandleHealthChanged;
             isSubscribed = true;
+            UpdateHealthStatus(trackerManager.HealthStatus);
         }
 
         private void Unsubscribe()
@@ -178,6 +180,7 @@ namespace UniversalTracker.OutputReceivers
                 return;
 
             trackerManager.OnVisionFrameResult -= ReceiveVisionResult;
+            trackerManager.OnVisionHealthChanged -= HandleHealthChanged;
             isSubscribed = false;
         }
 
@@ -361,9 +364,7 @@ namespace UniversalTracker.OutputReceivers
 
         private void UpdateStats(VisionFrameResult result)
         {
-            bool running = trackerManager != null && trackerManager.IsRunning;
-            statusLabel.text = running ? "Running" : "Ready";
-            SetPillColor(statusLabel, running ? Good : Warning);
+            UpdateHealthStatus(trackerManager != null ? trackerManager.HealthStatus : null);
 
             frameLabel.text = result.frameIndex.ToString();
             fpsLabel.text = trackerManager != null ? trackerManager.CurrentFPS.ToString("F1") : "-";
@@ -371,6 +372,37 @@ namespace UniversalTracker.OutputReceivers
             detectionCountLabel.text = (result.detections?.Length ?? 0).ToString();
             poseCountLabel.text = (result.poses?.Length ?? 0).ToString();
             errorLabel.text = trackerManager != null ? trackerManager.ConsecutiveErrors.ToString() : "0";
+        }
+
+        private void HandleHealthChanged(VisionHealthStatus status)
+        {
+            UpdateHealthStatus(status);
+        }
+
+        private void UpdateHealthStatus(VisionHealthStatus status)
+        {
+            if (statusLabel == null)
+                return;
+
+            VisionHealthState state = status?.state ?? VisionHealthState.NotInitialized;
+            statusLabel.text = state.ToString();
+            SetPillColor(statusLabel, HealthColor(state));
+
+            if (errorLabel != null)
+                errorLabel.text = trackerManager != null ? trackerManager.ConsecutiveErrors.ToString() : "0";
+        }
+
+        private static Color HealthColor(VisionHealthState state)
+        {
+            return state switch
+            {
+                VisionHealthState.Running => Good,
+                VisionHealthState.Degraded => Warning,
+                VisionHealthState.Recovering => Warning,
+                VisionHealthState.Failed => new Color(1f, 0.35f, 0.35f, 1f),
+                VisionHealthState.Initializing => Accent,
+                _ => Warning
+            };
         }
 
         private void UpdateOverlay(VisionFrameResult result)

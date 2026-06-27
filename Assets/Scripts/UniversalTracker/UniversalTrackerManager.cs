@@ -53,10 +53,20 @@ namespace UniversalTracker
         public bool IsRunning { get; private set; }
         public VisionFrameResult LastVisionResult { get; private set; }
         public VisionModelProfile ActiveModelProfile { get; private set; }
+        public VisionHealthStatus HealthStatus { get; private set; } =
+            VisionHealthStatus.Create(VisionHealthState.NotInitialized, VisionHealthState.NotInitialized, VisionHealthEvent.None, "Tracker is not initialized.");
+        public VisionHealthState HealthState => HealthStatus?.state ?? VisionHealthState.NotInitialized;
+        public VisionError LastError => HealthStatus?.lastError;
         public float CurrentFPS { get; private set; }
         public int ConsecutiveErrors { get; private set; }
 
         public event Action<VisionFrameResult> OnVisionFrameResult;
+        public event Action<VisionHealthStatus> OnVisionHealthChanged;
+        public event Action<VisionHealthStatus> OnVisionStarted;
+        public event Action<VisionHealthStatus> OnVisionStopped;
+        public event Action<VisionHealthStatus> OnVisionDegraded;
+        public event Action<VisionHealthStatus> OnVisionFailed;
+        public event Action<VisionHealthStatus> OnVisionRecovered;
 
         private readonly List<IOutputReceiver> outputReceivers = new List<IOutputReceiver>();
         private VisionPipeline visionPipeline;
@@ -102,6 +112,7 @@ namespace UniversalTracker
 
             try
             {
+                EmitHealth(VisionHealthStatus.Create(VisionHealthState.Initializing, HealthState, VisionHealthEvent.None, "Tracker is initializing."));
                 InitializeOutputs();
                 InitializeTracking();
                 if (!InitializePipeline())
@@ -119,12 +130,30 @@ namespace UniversalTracker
             catch (Exception e)
             {
                 Debug.LogError($"[TrackerManager] Startup failed: {e.Message}");
+                EmitHealth(VisionHealthStatus.Create(
+                    VisionHealthState.Failed,
+                    HealthState,
+                    VisionHealthEvent.Failed,
+                    "Tracker startup failed.",
+                    new VisionError(VisionErrorCode.ModelInitializationFailed, e.Message, false, e)));
                 CleanupOnError();
             }
         }
 
         public void StopTracking()
         {
+            StopTrackingInternal(true);
+        }
+
+        private void StopTrackingInternal(bool emitStopped)
+        {
+            if (!IsRunning && visionPipeline == null)
+            {
+                if (emitStopped && HealthState != VisionHealthState.Stopped)
+                    EmitHealth(VisionHealthStatus.Create(VisionHealthState.Stopped, HealthState, VisionHealthEvent.Stopped, "Tracker stopped."));
+                return;
+            }
+
             IsRunning = false;
             DisposePipeline();
 
@@ -135,6 +164,8 @@ namespace UniversalTracker
 
             outputReceivers.Clear();
             tracker = null;
+            if (emitStopped)
+                EmitHealth(VisionHealthStatus.Create(VisionHealthState.Stopped, HealthState, VisionHealthEvent.Stopped, "Tracker stopped."));
         }
 
         public void SwitchModel(int index)
@@ -190,6 +221,7 @@ namespace UniversalTracker
             visionPipeline = new VisionPipeline();
             visionPipeline.FrameProcessed += HandlePipelineFrameProcessed;
             visionPipeline.ErrorReceived += HandlePipelineError;
+            visionPipeline.HealthChanged += HandlePipelineHealthChanged;
             visionPipeline.Configure(ActiveModelProfile, frameSource, runtime);
 
             if (!visionPipeline.Start())
@@ -375,13 +407,24 @@ namespace UniversalTracker
             }
 
             if (error.code != VisionErrorCode.SourceNotReady)
-                RegisterError($"[TrackerManager] Recoverable pipeline error: {error.code} {error.message}");
+                RegisterError($"[TrackerManager] Recoverable pipeline error: {error.code} {error.message}", false);
         }
 
-        private void RegisterError(string message)
+        private void RegisterError(string message, bool emitHealth = true)
         {
             consecutiveErrors++;
             ConsecutiveErrors = consecutiveErrors;
+            if (emitHealth)
+            {
+                EmitHealth(VisionHealthStatus.Create(
+                    VisionHealthState.Degraded,
+                    HealthState,
+                    VisionHealthEvent.Degraded,
+                    message,
+                    new VisionError(VisionErrorCode.Unknown, message, true),
+                    consecutiveErrors));
+            }
+
             if (verboseLogging)
                 Debug.LogWarning(message);
             CheckErrorThreshold();
@@ -393,7 +436,17 @@ namespace UniversalTracker
                 return;
 
             Debug.LogError($"[TrackerManager] Error threshold exceeded ({consecutiveErrors}/{maxConsecutiveErrors}).");
-            StopTracking();
+            if (HealthState != VisionHealthState.Failed)
+            {
+                EmitHealth(VisionHealthStatus.Create(
+                    VisionHealthState.Failed,
+                    HealthState,
+                    VisionHealthEvent.Failed,
+                    $"Error threshold exceeded ({consecutiveErrors}/{maxConsecutiveErrors}).",
+                    LastError ?? new VisionError(VisionErrorCode.Unknown, "Error threshold exceeded.", false)));
+            }
+
+            StopTrackingInternal(false);
         }
 
         private void UpdateFPS()
@@ -414,6 +467,7 @@ namespace UniversalTracker
             {
                 visionPipeline.FrameProcessed -= HandlePipelineFrameProcessed;
                 visionPipeline.ErrorReceived -= HandlePipelineError;
+                visionPipeline.HealthChanged -= HandlePipelineHealthChanged;
                 visionPipeline.Dispose();
                 visionPipeline = null;
             }
@@ -425,6 +479,39 @@ namespace UniversalTracker
         {
             DisposePipeline();
             IsRunning = false;
+        }
+
+        private void HandlePipelineHealthChanged(VisionHealthStatus status)
+        {
+            EmitHealth(status);
+        }
+
+        private void EmitHealth(VisionHealthStatus status)
+        {
+            if (status == null)
+                return;
+
+            HealthStatus = status;
+            OnVisionHealthChanged?.Invoke(status);
+
+            switch (status.eventType)
+            {
+                case VisionHealthEvent.Started:
+                    OnVisionStarted?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Stopped:
+                    OnVisionStopped?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Degraded:
+                    OnVisionDegraded?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Failed:
+                    OnVisionFailed?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Recovered:
+                    OnVisionRecovered?.Invoke(status);
+                    break;
+            }
         }
 
         private void LogProfileValidation(VisionModelProfile profile, VisionProfileValidationReport report)

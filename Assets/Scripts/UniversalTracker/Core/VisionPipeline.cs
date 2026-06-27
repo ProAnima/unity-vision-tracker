@@ -10,9 +10,18 @@ namespace UniversalTracker.Core
         public VisionPipelineContext Context { get; } = new VisionPipelineContext();
         public VisionFrameResult LastResult { get; private set; }
         public bool IsRunning { get; private set; }
+        public VisionHealthStatus HealthStatus => Context.HealthStatus;
 
         public event Action<VisionFrameResult> FrameProcessed;
         public event Action<VisionError> ErrorReceived;
+        public event Action<VisionHealthStatus> HealthChanged;
+        public event Action<VisionHealthStatus> Started;
+        public event Action<VisionHealthStatus> Stopped;
+        public event Action<VisionHealthStatus> Degraded;
+        public event Action<VisionHealthStatus> Failed;
+        public event Action<VisionHealthStatus> Recovered;
+
+        private int consecutiveRecoverableErrors;
 
         public void Configure(VisionModelProfile profile, IVisionFrameSource source, IVisionRuntimeAdapter runtime)
         {
@@ -25,6 +34,7 @@ namespace UniversalTracker.Core
             Context.Bind(profile, source, runtime);
             LastResult = null;
             IsRunning = false;
+            consecutiveRecoverableErrors = 0;
         }
 
         public bool Start()
@@ -53,7 +63,8 @@ namespace UniversalTracker.Core
             }
 
             IsRunning = true;
-            Context.MarkRunning();
+            consecutiveRecoverableErrors = 0;
+            EmitHealth(Context.MarkRunning("Pipeline started."));
             return true;
         }
 
@@ -99,15 +110,21 @@ namespace UniversalTracker.Core
             }
 
             LastResult = result;
-            Context.MarkRunning();
+            consecutiveRecoverableErrors = 0;
+            VisionHealthStatus health = Context.MarkRunning("Pipeline recovered and processed a valid frame.");
+            if (health.eventType != VisionHealthEvent.None)
+                EmitHealth(health);
             FrameProcessed?.Invoke(result);
             return true;
         }
 
         public void Stop()
         {
+            if (!IsRunning && Context.HealthState == VisionHealthState.Stopped)
+                return;
+
             IsRunning = false;
-            Context.MarkStopped();
+            EmitHealth(Context.MarkStopped("Pipeline stopped."));
         }
 
         public void Dispose()
@@ -122,11 +139,44 @@ namespace UniversalTracker.Core
             var error = new VisionError(code, message, recoverable, exception);
 
             if (recoverable)
-                Context.MarkRunning();
+            {
+                consecutiveRecoverableErrors++;
+                EmitHealth(Context.MarkDegraded(error, consecutiveRecoverableErrors, message));
+            }
             else
-                Context.MarkFailed(error);
+            {
+                IsRunning = false;
+                EmitHealth(Context.MarkFailed(error, message));
+            }
 
             ErrorReceived?.Invoke(error);
+        }
+
+        private void EmitHealth(VisionHealthStatus status)
+        {
+            if (status == null)
+                return;
+
+            HealthChanged?.Invoke(status);
+
+            switch (status.eventType)
+            {
+                case VisionHealthEvent.Started:
+                    Started?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Stopped:
+                    Stopped?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Degraded:
+                    Degraded?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Failed:
+                    Failed?.Invoke(status);
+                    break;
+                case VisionHealthEvent.Recovered:
+                    Recovered?.Invoke(status);
+                    break;
+            }
         }
     }
 }

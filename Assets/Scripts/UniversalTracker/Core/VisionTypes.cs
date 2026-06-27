@@ -68,6 +68,16 @@ namespace UniversalTracker.Core
         Failed
     }
 
+    public enum VisionHealthEvent
+    {
+        None,
+        Started,
+        Stopped,
+        Degraded,
+        Failed,
+        Recovered
+    }
+
     /// <summary>
     /// Structured error code used by manager/runtime layers.
     /// </summary>
@@ -149,6 +159,42 @@ namespace UniversalTracker.Core
             this.message = message;
             this.isRecoverable = isRecoverable;
             exceptionType = exception?.GetType().Name;
+        }
+    }
+
+    [Serializable]
+    public sealed class VisionHealthStatus
+    {
+        public VisionHealthState state;
+        public VisionHealthState previousState;
+        public VisionHealthEvent eventType;
+        public VisionError lastError;
+        public string message;
+        public int consecutiveRecoverableErrors;
+        public double timestamp;
+
+        public bool IsHealthy => state == VisionHealthState.Running;
+        public bool HasError => lastError != null;
+
+        public static VisionHealthStatus Create(
+            VisionHealthState state,
+            VisionHealthState previousState,
+            VisionHealthEvent eventType,
+            string message,
+            VisionError error = null,
+            int consecutiveRecoverableErrors = 0,
+            double timestamp = 0)
+        {
+            return new VisionHealthStatus
+            {
+                state = state,
+                previousState = previousState,
+                eventType = eventType,
+                message = message,
+                lastError = error,
+                consecutiveRecoverableErrors = consecutiveRecoverableErrors,
+                timestamp = timestamp
+            };
         }
     }
 }

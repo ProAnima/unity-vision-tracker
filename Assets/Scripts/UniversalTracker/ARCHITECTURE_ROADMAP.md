@@ -30,17 +30,17 @@ Configuration is profile-first:
 - YOLO-specific handling lives in `YoloModelAdapter` and output parsers.
 - Output receivers consume `VisionFrameResult` directly.
 - NMS and tracking operate on `VisionDetection`.
+- Runtime lifecycle is exposed through `VisionHealthStatus` and started/stopped/degraded/failed/recovered events.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
 
 ## Next Production Steps
 
-1. Add health/state events to `VisionPipeline` and expose them through `UniversalTrackerManager`.
-2. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
-3. Add golden fixtures for pose and segmentation parsers.
-4. Add parser selection diagnostics to `VisionProfileValidator`.
-5. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
-6. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
-7. Add performance/allocation budgets for parser, overlay, and tracking paths.
+1. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
+2. Add golden fixtures for pose and segmentation parsers.
+3. Add parser selection diagnostics to `VisionProfileValidator`.
+4. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
+5. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
+6. Add performance/allocation budgets for parser, overlay, and tracking paths.
 
 ## Extension Rules
 

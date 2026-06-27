@@ -27,6 +27,8 @@ namespace UniversalTracker.Tests
             using var pipeline = new VisionPipeline();
             var source = new FakeFrameSource();
             var runtime = new FakeRuntimeAdapter();
+            VisionHealthStatus startedStatus = null;
+            pipeline.Started += status => startedStatus = status;
             pipeline.Configure(null, source, runtime);
 
             bool started = pipeline.Start();
@@ -35,6 +37,8 @@ namespace UniversalTracker.Tests
             Assert.That(source.InitializeCount, Is.EqualTo(1));
             Assert.That(runtime.InitializeCount, Is.EqualTo(1));
             Assert.That(pipeline.Context.HealthState, Is.EqualTo(VisionHealthState.Running));
+            Assert.That(startedStatus, Is.Not.Null);
+            Assert.That(startedStatus.eventType, Is.EqualTo(VisionHealthEvent.Started));
         }
 
         [Test]
@@ -74,6 +78,32 @@ namespace UniversalTracker.Tests
             Assert.That(result, Is.Null);
             Assert.That(error.code, Is.EqualTo(VisionErrorCode.SourceNotReady));
             Assert.That(error.isRecoverable, Is.True);
+            Assert.That(pipeline.Context.HealthState, Is.EqualTo(VisionHealthState.Degraded));
+            Assert.That(pipeline.HealthStatus.eventType, Is.EqualTo(VisionHealthEvent.Degraded));
+            Assert.That(pipeline.HealthStatus.consecutiveRecoverableErrors, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryProcessNext_AfterRecoverableError_EmitsRecovered()
+        {
+            using var pipeline = new VisionPipeline();
+            var source = new FakeFrameSource { Ready = false };
+            var runtime = new FakeRuntimeAdapter();
+            VisionHealthStatus recovered = null;
+            pipeline.Recovered += status => recovered = status;
+            pipeline.Configure(null, source, runtime);
+            pipeline.Start();
+
+            pipeline.TryProcessNext(out _);
+            source.Ready = true;
+            bool processed = pipeline.TryProcessNext(out VisionFrameResult result);
+
+            Assert.That(processed, Is.True);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(recovered, Is.Not.Null);
+            Assert.That(recovered.previousState, Is.EqualTo(VisionHealthState.Degraded));
+            Assert.That(recovered.state, Is.EqualTo(VisionHealthState.Running));
+            Assert.That(recovered.eventType, Is.EqualTo(VisionHealthEvent.Recovered));
         }
 
         [Test]
@@ -100,6 +130,8 @@ namespace UniversalTracker.Tests
             var pipeline = new VisionPipeline();
             var source = new FakeFrameSource();
             var runtime = new FakeRuntimeAdapter();
+            VisionHealthStatus stopped = null;
+            pipeline.Stopped += status => stopped = status;
             pipeline.Configure(null, source, runtime);
             pipeline.Start();
 
@@ -108,6 +140,8 @@ namespace UniversalTracker.Tests
             Assert.That(source.Disposed, Is.True);
             Assert.That(runtime.Disposed, Is.True);
             Assert.That(pipeline.IsRunning, Is.False);
+            Assert.That(stopped, Is.Not.Null);
+            Assert.That(stopped.eventType, Is.EqualTo(VisionHealthEvent.Stopped));
         }
 
         [Test]

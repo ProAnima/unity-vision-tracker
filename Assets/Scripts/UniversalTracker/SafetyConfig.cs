@@ -2,33 +2,25 @@ using UnityEngine;
 
 namespace UniversalTracker
 {
-    /// <summary>
-    /// Настройки безопасности для предотвращения крашей
-    /// </summary>
     [CreateAssetMenu(fileName = "SafetyConfig", menuName = "Universal Tracker/Safety Config")]
     public class SafetyConfig : ScriptableObject
     {
-        [Header("🛡️ Защита от крашей")]
-        [Tooltip("Максимальное время ожидания одного inference (мс)")]
-        public float maxInferenceTime = 1000f;
-        
-        [Tooltip("Пропускать кадры если inference слишком долгий")]
+        [Header("Runtime Limits")]
+        [Tooltip("Maximum expected inference time in milliseconds before runtime policy can treat the frame as slow.")]
+        public float maxInferenceTimeMs = 1000f;
+
+        [Tooltip("Allow frame skipping when inference takes longer than the configured budget.")]
         public bool skipFramesOnSlowInference = true;
-        
-        [Tooltip("Автоматически перезапускать при критических ошибках")]
-        public bool autoRestartOnCriticalError = false;
-        
-        [Tooltip("Максимум ошибок подряд до остановки")]
+
+        [Tooltip("Automatically restart after non-recoverable runtime failures when a supervisor implements restart policy.")]
+        public bool autoRestartOnCriticalError;
+
+        [Tooltip("Maximum consecutive recoverable errors before the manager stops the runtime.")]
         public int maxConsecutiveErrors = 10;
-        
-        [Header("🔍 Отладка")]
-        [Tooltip("Дополнительные логи для отладки")]
-        public bool verboseLogging = false;
-        
-        [Tooltip("Логировать каждый кадр")]
-        public bool logEveryFrame = false;
-        
-        [Tooltip("Останавливать на первой ошибке")]
-        public bool stopOnFirstError = false;
+
+        [Header("Debug")]
+        public bool verboseLogging;
+        public bool logEveryFrame;
+        public bool stopOnFirstError;
     }
 }
