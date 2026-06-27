@@ -151,7 +151,10 @@ namespace UniversalTracker.Core
 
         protected virtual Func<VisionModelProfile, IVisionRawOutputProvider> CreateRawOutputProviderFactory(VisionModelProfile profile)
         {
-            return null;
+            if (profile == null || profile.modelAsset == null || !profile.output.IsValid)
+                return null;
+
+            return modelProfile => new UnityInferenceRawOutputProvider(modelProfile);
         }
 
         public static ModelConfig ToModelConfig(VisionModelProfile profile)
@@ -213,4 +216,5 @@ namespace UniversalTracker.Core
             return ToModelConfig(profile);
         }
     }
+
 }

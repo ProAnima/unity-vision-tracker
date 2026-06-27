@@ -191,6 +191,7 @@ Current bridge contracts:
 - `VisionAdapterRegistry` resolves model profiles to runtime adapters without hardcoding one model family in the manager.
 - `IVisionOutputParser` converts raw runtime tensors into canonical detections, poses, masks, and classifications.
 - `UnityInferenceRuntimeAdapter` supports the new raw-output parser path, with legacy `InferenceResult` conversion kept as fallback.
+- `UnityInferenceRawOutputProvider` executes Unity Inference models into `VisionRawModelOutput` tensors using profile-declared output schemas.
 - `VisionProfileValidator` checks profile identity, task/capability consistency, runtime asset requirements, schemas, thresholds, and model governance metadata.
 - `YoloModelAdapter` and `UnityInferenceRuntimeAdapter` are the production Unity Inference bridge; legacy `IInferenceModel`/`IInputProvider` paths remain as compatibility layers.
 - `UniversalTrackerManager` can run profile-based setups through `VisionPipeline`, with legacy `ModelConfig[]` kept as fallback.
@@ -245,7 +246,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 78 tests, 78 passed, 0 failed
+EditMode: 80 tests, 80 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

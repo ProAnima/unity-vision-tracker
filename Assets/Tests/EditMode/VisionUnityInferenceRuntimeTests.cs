@@ -86,6 +86,25 @@ namespace UniversalTracker.Tests
             Object.DestroyImmediate(texture);
         }
 
+        [Test]
+        public void UnityInferenceRawOutputProvider_NullProfile_Throws()
+        {
+            Assert.That(() => new UnityInferenceRawOutputProvider(null), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void UnityInferenceRawOutputProvider_InitializeWithoutModelAsset_Throws()
+        {
+            var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
+            using var provider = new UnityInferenceRawOutputProvider(profile);
+
+            Assert.That(
+                () => provider.Initialize(profile),
+                Throws.InvalidOperationException.With.Message.Contains("ModelAsset"));
+
+            Object.DestroyImmediate(profile);
+        }
+
         private sealed class FakeInferenceModel : IInferenceModel
         {
             public ModelType ModelType => ModelType.Detection;

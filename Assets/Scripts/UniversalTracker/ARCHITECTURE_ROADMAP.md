@@ -1409,3 +1409,19 @@ Current automated baseline:
 ```text
 EditMode: 78 tests, 78 passed, 0 failed
 ```
+
+### 2026-06-27: Production pipeline increment 10
+
+Unity Inference raw tensor execution is now represented directly:
+
+- added `UnityInferenceRawOutputProvider`, a production `IVisionRawOutputProvider` implementation around `ModelLoader`, `Worker`, `TextureConverter`, and tensor readback;
+- raw output shape metadata is taken from `VisionModelProfile.output`, making model profiles the source of parser truth instead of filename heuristics;
+- `YoloModelAdapter` can now select the raw-output/parser runtime path when a valid model asset and output schema are present;
+- legacy `IInferenceModel` execution remains only as fallback for old scenes and incomplete profiles;
+- EditMode tests cover raw provider null-profile construction and missing-model-asset initialization failures without requiring a real model asset.
+
+Current automated baseline:
+
+```text
+EditMode: 80 tests, 80 passed, 0 failed
+```
