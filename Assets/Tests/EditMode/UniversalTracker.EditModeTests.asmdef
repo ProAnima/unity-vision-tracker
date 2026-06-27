@@ -2,7 +2,8 @@
   "name": "UniversalTracker.EditModeTests",
   "rootNamespace": "UniversalTracker.Tests",
   "references": [
-    "UniversalTracker.Runtime"
+    "UniversalTracker.Runtime",
+    "Unity.InferenceEngine"
   ],
   "includePlatforms": [
     "Editor"

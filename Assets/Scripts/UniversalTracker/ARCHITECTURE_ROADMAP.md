@@ -1209,3 +1209,22 @@ GPU paths могут отличаться по платформам.
 ```text
 EditMode: 25 tests, 25 passed, 0 failed
 ```
+
+### 2026-06-27: Production core increment 4
+
+Adapter/plugin architecture scaffold added on top of the research direction:
+
+- added capability-based model metadata: `VisionModelCapability`, `VisionModelFamily`, `VisionRuntimeKind`, `VisionModelSourceFormat`;
+- added `VisionModelProfile` ScriptableObject with model identity, runtime kind, input/output schema, thresholds, labels, and license metadata;
+- added production extension contracts: `IVisionFrameSource`, `IVisionRuntimeAdapter`, `IVisionModelAdapter`, `VisionPipelineContext`;
+- added compatibility adapters so current prototype pieces can participate in the new architecture:
+  - `LegacyInputProviderFrameSource` wraps existing `IInputProvider`;
+  - `LegacyInferenceRuntimeAdapter` wraps existing `IInferenceModel`;
+  - `YoloLegacyModelAdapter` keeps YOLO as one adapter family instead of the core runtime identity;
+- added EditMode tests for schemas, capabilities, legacy source wrapping, and YOLO profile/config bridging.
+
+Current automated baseline:
+
+```text
+EditMode: 35 tests, 35 passed, 0 failed
+```

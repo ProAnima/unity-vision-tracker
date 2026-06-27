@@ -82,6 +82,7 @@ VisionFrameResult
 - YOLO11 and YOLO26 model wrappers.
 - Detection, pose, and segmentation-oriented model classes.
 - Unity Inference Engine runtime usage.
+- Capability-based `VisionModelProfile` contract for plugin/adapters architecture.
 - IOU and SORT tracking implementations.
 - Modern UI Toolkit dashboard plus legacy UI, scene, event, and debug output receivers.
 - Runtime manager for model selection, input, inference, tracking, and output.
@@ -167,6 +168,25 @@ Usage:
 
 The legacy `UIVisualizationReceiver` remains available for existing Canvas/RawImage scenes.
 
+## Plugin And Adapter Architecture
+
+The production runtime is moving toward a model-agnostic adapter layer:
+
+```text
+IVisionFrameSource
+  -> IVisionRuntimeAdapter
+    -> VisionFrameResult
+```
+
+Current bridge contracts:
+
+- `VisionModelProfile` describes task, model family, capabilities, runtime kind, input/output schema, thresholds, and license metadata.
+- `IVisionFrameSource` is the source-agnostic frame API for webcams, Unity cameras, render textures, videos, AR/XR feeds, and custom cameras.
+- `IVisionRuntimeAdapter` is the runtime plugin surface for Unity Inference Engine, MediaPipe, native plugins, remote inference, and mocks.
+- `YoloLegacyModelAdapter`, `LegacyInferenceRuntimeAdapter`, and `LegacyInputProviderFrameSource` keep the existing YOLO/`IInferenceModel`/`IInputProvider` path usable during migration.
+
+The design keeps YOLO as one adapter instead of the core identity of the SDK.
+
 ## Production Roadmap
 
 ### Phase 1: Stabilize Current Core
@@ -215,7 +235,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 30 tests, 30 passed, 0 failed
+EditMode: 35 tests, 35 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

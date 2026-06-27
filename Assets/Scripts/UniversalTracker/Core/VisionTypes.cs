@@ -85,6 +85,56 @@ namespace UniversalTracker.Core
         ReceiverFailed
     }
 
+    /// <summary>
+    /// Capabilities exposed by a model adapter or runtime plugin.
+    /// </summary>
+    [Flags]
+    public enum VisionModelCapability
+    {
+        None = 0,
+        Detection = 1 << 0,
+        HumanDetection = 1 << 1,
+        Pose2D = 1 << 2,
+        Pose3D = 1 << 3,
+        Segmentation = 1 << 4,
+        Classification = 1 << 5,
+        Depth = 1 << 6,
+        OpenVocabulary = 1 << 7,
+        Promptable = 1 << 8,
+        TemporalMemory = 1 << 9,
+        WorldProjection = 1 << 10
+    }
+
+    public enum VisionModelFamily
+    {
+        Unknown,
+        YOLO,
+        MediaPipe,
+        SAM,
+        Depth,
+        Custom
+    }
+
+    public enum VisionModelSourceFormat
+    {
+        Unknown,
+        ONNX,
+        UnityModelAsset,
+        NativePlugin,
+        RemoteEndpoint,
+        Custom
+    }
+
+    public enum VisionRuntimeKind
+    {
+        UnityInferenceEngine,
+        MediaPipe,
+        NativePlugin,
+        Remote,
+        Mock,
+        Custom
+    }
+
     [Serializable]
     public sealed class VisionError
     {
@@ -102,4 +152,3 @@ namespace UniversalTracker.Core
         }
     }
 }
-
