@@ -161,7 +161,7 @@ namespace UniversalTracker.Editor
             profile.primaryTask = VisionTaskType.Pose;
             profile.capabilities = VisionModelCapability.Detection | VisionModelCapability.HumanDetection | VisionModelCapability.Pose2D;
             profile.output = CreateSingleTensorSchema("output0", "pose.rows", 1, 56, 8400);
-            profile.parserId = string.Empty;
+            profile.parserId = "yolo.pose2d.rows";
         }
 
         private static void ApplyYoloSegmentation(VisionModelProfile profile)
@@ -177,7 +177,7 @@ namespace UniversalTracker.Editor
                     new VisionTensorSchema { name = "proto", shape = new[] { 1, 32, 160, 160 }, semantic = "segmentation.prototype" }
                 }
             };
-            profile.parserId = string.Empty;
+            profile.parserId = "yolo.segmentation.rows";
         }
 
         private static VisionOutputSchema CreateSingleTensorSchema(string name, string semantic, params int[] shape)

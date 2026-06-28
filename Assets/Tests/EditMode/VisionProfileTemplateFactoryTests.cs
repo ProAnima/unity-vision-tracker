@@ -36,6 +36,7 @@ namespace UniversalTracker.Tests
             Assert.That(profile.primaryTask, Is.EqualTo(VisionTaskType.Pose));
             Assert.That(profile.Supports(VisionModelCapability.Pose2D), Is.True);
             Assert.That(profile.Supports(VisionModelCapability.HumanDetection), Is.True);
+            Assert.That(profile.parserId, Is.EqualTo("yolo.pose2d.rows"));
             Assert.That(profile.output.TensorCount, Is.EqualTo(1));
             Assert.That(profile.output.tensors[0].semantic, Is.EqualTo("pose.rows"));
 
@@ -51,6 +52,7 @@ namespace UniversalTracker.Tests
 
             Assert.That(profile.primaryTask, Is.EqualTo(VisionTaskType.Segmentation));
             Assert.That(profile.Supports(VisionModelCapability.Segmentation), Is.True);
+            Assert.That(profile.parserId, Is.EqualTo("yolo.segmentation.rows"));
             Assert.That(profile.output.TensorCount, Is.EqualTo(2));
             Assert.That(profile.output.tensors[1].semantic, Is.EqualTo("segmentation.prototype"));
 

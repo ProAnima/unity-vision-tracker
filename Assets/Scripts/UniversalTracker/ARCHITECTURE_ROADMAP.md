@@ -37,6 +37,7 @@ Configuration is profile-first:
 - `UniversalTrackerManager` delegates frame-source creation, profile resolution, output receiver routing, tracking, health event dispatch, and profile-validation logging to focused runtime services.
 - Frame source implementations are split into focused runtime files so new camera/video adapters can be added without extending a monolithic source module.
 - Editor tooling now includes `Tools/ProAnima Vision/Profile Validator`, `Tools/ProAnima Vision/Profile Wizard`, and asset creation shortcuts for YOLO detection, pose, segmentation, and pipeline profiles.
+- YOLO pose and segmentation profiles resolve to production parser contracts and have EditMode fixture coverage.
 - Prototype Unity Inference smoke MonoBehaviours have been removed from runtime code.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
 
@@ -44,7 +45,7 @@ Configuration is profile-first:
 
 1. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
 2. Add golden fixtures for pose and segmentation parsers.
-3. Add parser implementations and golden fixtures for YOLO pose and segmentation templates.
+3. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
 4. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
 5. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
 6. Add performance/allocation budgets for parser, overlay, and tracking paths.

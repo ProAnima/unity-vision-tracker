@@ -1,0 +1,101 @@
+using UnityEngine;
+
+namespace UniversalTracker.Core
+{
+    internal static class YoloOutputParserUtility
+    {
+        public static bool TryResolveRows(VisionRawTensor tensor, out int rowCount, out int stride)
+        {
+            rowCount = 0;
+            stride = 0;
+
+            if (tensor.shape.Length == 2)
+            {
+                rowCount = tensor.shape[0];
+                stride = tensor.shape[1];
+            }
+            else if (tensor.shape.Length == 3 && tensor.shape[0] == 1)
+            {
+                rowCount = tensor.shape[1];
+                stride = tensor.shape[2];
+            }
+
+            return rowCount > 0 && stride >= 6 && rowCount * stride <= tensor.ElementCount;
+        }
+
+        public static Rect CenterToRect(float centerX, float centerY, float width, float height)
+        {
+            float xMin = Mathf.Clamp01(centerX - width * 0.5f);
+            float yMin = Mathf.Clamp01(centerY - height * 0.5f);
+            float xMax = Mathf.Clamp01(centerX + width * 0.5f);
+            float yMax = Mathf.Clamp01(centerY + height * 0.5f);
+            return Rect.MinMaxRect(Mathf.Min(xMin, xMax), Mathf.Min(yMin, yMax), Mathf.Max(xMin, xMax), Mathf.Max(yMin, yMax));
+        }
+
+        public static Rect NormalizedToSourceRect(Rect normalized, Vector2Int sourceSize)
+        {
+            if (sourceSize.x <= 0 || sourceSize.y <= 0)
+                return default;
+
+            return new Rect(
+                normalized.x * sourceSize.x,
+                normalized.y * sourceSize.y,
+                normalized.width * sourceSize.x,
+                normalized.height * sourceSize.y);
+        }
+
+        public static Vector2 NormalizedToSourcePoint(Vector2 normalized, Vector2Int sourceSize)
+        {
+            if (sourceSize.x <= 0 || sourceSize.y <= 0)
+                return Vector2.zero;
+
+            return new Vector2(normalized.x * sourceSize.x, normalized.y * sourceSize.y);
+        }
+
+        public static int FindBestClass(float[] data, int offset, int count, out float score)
+        {
+            int bestIndex = 0;
+            score = 0f;
+
+            for (int i = 0; i < count; i++)
+            {
+                float value = Mathf.Clamp01(data[offset + i]);
+                if (value <= score)
+                    continue;
+
+                score = value;
+                bestIndex = i;
+            }
+
+            return bestIndex;
+        }
+
+        public static string ResolveLabel(int classId, string[] labels)
+        {
+            if (labels != null && classId >= 0 && classId < labels.Length && !string.IsNullOrWhiteSpace(labels[classId]))
+                return labels[classId];
+
+            return $"class_{classId}";
+        }
+
+        public static VisionDetection CreateDetection(
+            int classId,
+            string label,
+            float confidence,
+            Rect normalizedRect,
+            Vector2Int sourceSize)
+        {
+            return new VisionDetection
+            {
+                trackId = -1,
+                classId = classId,
+                label = label,
+                confidence = confidence,
+                normalizedRect = normalizedRect,
+                sourceRect = NormalizedToSourceRect(normalizedRect, sourceSize),
+                sourceCenter = NormalizedToSourcePoint(normalizedRect.center, sourceSize),
+                trackState = VisionTrackState.None
+            };
+        }
+    }
+}

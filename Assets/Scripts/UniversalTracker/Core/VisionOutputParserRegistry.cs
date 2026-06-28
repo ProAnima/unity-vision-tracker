@@ -14,6 +14,8 @@ namespace UniversalTracker.Core
         {
             var registry = new VisionOutputParserRegistry();
             registry.Register(new YoloDetectionOutputParser());
+            registry.Register(new YoloPose2DOutputParser());
+            registry.Register(new YoloSegmentationOutputParser());
             return registry;
         }
 
