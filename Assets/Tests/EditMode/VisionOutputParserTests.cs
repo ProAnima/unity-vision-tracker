@@ -72,6 +72,33 @@ namespace UniversalTracker.Tests
             Assert.That(parsed.detections[0].label, Is.EqualTo("person"));
             Assert.That(parsed.detections[0].confidence, Is.EqualTo(0.82f).Within(0.0001f));
             AssertRect(parsed.detections[0].sourceRect, new Rect(512, 216, 256, 288));
+            Assert.That(parsed.diagnostics.modelOutput, Does.Contain("1x84x2"));
+            Assert.That(parsed.diagnostics.candidateCount, Is.EqualTo(1));
+            Assert.That(parsed.diagnostics.acceptedCount, Is.EqualTo(1));
+            Assert.That(parsed.diagnostics.maxConfidence, Is.EqualTo(0.82f).Within(0.0001f));
+        }
+
+        [Test]
+        public void YoloDetectionParser_UsesFirstCompatibleTensor()
+        {
+            var parser = new YoloDetectionOutputParser();
+            var raw = new VisionRawModelOutput
+            {
+                tensors = new[]
+                {
+                    new VisionRawTensor("metadata", new[] { 1f, 2f, 3f }, new[] { 3 }),
+                    new VisionRawTensor(
+                        "detections",
+                        new[] { 0.5f, 0.5f, 0.2f, 0.2f, 0.9f, 0.8f },
+                        new[] { 1, 6 })
+                }
+            };
+            var context = new VisionOutputParserContext(new Vector2Int(100, 100), 0.25f, 0.5f, new[] { "person" });
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            Assert.That(parsed.diagnostics.modelOutput, Does.Contain("detections"));
         }
 
         [Test]

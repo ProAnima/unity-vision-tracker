@@ -17,6 +17,7 @@ namespace UniversalTracker.Core
         public VisionMask[] masks = Array.Empty<VisionMask>();
         public VisionClassification[] classifications = Array.Empty<VisionClassification>();
         public VisionPerformanceStats stats;
+        public VisionFrameDiagnostics diagnostics;
 
         [NonSerialized]
         public Texture sourceTexture;
@@ -36,6 +37,19 @@ namespace UniversalTracker.Core
                 timestamp = timestamp,
                 sourceSize = sourceSize
             };
+    }
+
+    [Serializable]
+    public struct VisionFrameDiagnostics
+    {
+        public string parserId;
+        public string modelOutput;
+        public int candidateCount;
+        public int acceptedCount;
+        public float maxConfidence;
+        public string message;
+
+        public bool HasModelOutput => !string.IsNullOrWhiteSpace(modelOutput);
     }
 
     [Serializable]

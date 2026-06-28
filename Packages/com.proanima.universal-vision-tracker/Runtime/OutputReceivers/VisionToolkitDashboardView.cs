@@ -26,6 +26,7 @@ namespace UniversalTracker.OutputReceivers
         public Label sourceLabel;
         public Label modelLabel;
         public Label runtimeLabel;
+        public Label diagnosticsLabel;
         public Label detectionCountLabel;
         public Label poseCountLabel;
         public Label errorLabel;
@@ -207,6 +208,7 @@ namespace UniversalTracker.OutputReceivers
             view.sourceLabel = AddStat(stats, "Source", "-");
             view.modelLabel = AddStat(stats, "Model", "-");
             view.runtimeLabel = AddStat(stats, "Runtime", "-");
+            view.diagnosticsLabel = AddStat(stats, "Model Output", "-", true);
             view.detectionCountLabel = AddStat(stats, "Detections", "0");
             view.poseCountLabel = AddStat(stats, "Poses", "0");
             view.errorLabel = AddStat(stats, "Errors", "0");

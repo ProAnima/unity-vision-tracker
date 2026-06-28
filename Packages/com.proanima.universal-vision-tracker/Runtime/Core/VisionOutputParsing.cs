@@ -59,6 +59,7 @@ namespace UniversalTracker.Core
         public VisionMask[] masks = Array.Empty<VisionMask>();
         public VisionClassification[] classifications = Array.Empty<VisionClassification>();
         public VisionPerformanceStats stats;
+        public VisionFrameDiagnostics diagnostics;
 
         public int TotalResultCount =>
             (detections?.Length ?? 0) +
@@ -79,7 +80,8 @@ namespace UniversalTracker.Core
                 poses = poses ?? Array.Empty<VisionPose>(),
                 masks = masks ?? Array.Empty<VisionMask>(),
                 classifications = classifications ?? Array.Empty<VisionClassification>(),
-                stats = stats
+                stats = stats,
+                diagnostics = diagnostics
             };
         }
     }
@@ -121,49 +123,116 @@ namespace UniversalTracker.Core
 
         public VisionParsedOutput Parse(VisionRawModelOutput rawOutput, VisionOutputParserContext context)
         {
-            if (rawOutput == null || !rawOutput.HasTensors || !rawOutput.tensors[0].IsValid)
-                return VisionParsedOutput.Empty;
+            if (rawOutput == null || !rawOutput.HasTensors)
+                return CreateEmpty(rawOutput, "No valid model tensor was produced.");
 
-            VisionRawTensor tensor = rawOutput.tensors[0];
-            if (!TryResolveRows(tensor, out YoloTensorRows rows))
-                return VisionParsedOutput.Empty;
+            if (!TryResolveFirstRows(rawOutput, out VisionRawTensor tensor, out YoloTensorRows rows))
+                return CreateEmpty(rawOutput, $"No supported YOLO tensor layout found. Outputs: {DescribeTensors(rawOutput)}.");
 
-            var detections = new List<VisionDetection>();
-            for (int row = 0; row < rows.rowCount; row++)
-            {
-                if (rows.stride < 6)
-                    continue;
-
-                int classOffset = rows.hasObjectness ? 5 : 4;
-                float objectness = rows.hasObjectness ? Mathf.Clamp01(rows.Get(row, 4)) : 1f;
-                int classId = FindBestClass(rows, row, classOffset, rows.stride - classOffset, out float classScore);
-                float confidence = Mathf.Clamp01(objectness * classScore);
-                if (confidence < context.confidenceThreshold)
-                    continue;
-
-                Rect normalized = CenterToRect(
-                    NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x),
-                    NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
-                    NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
-                    NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
-
-                detections.Add(new VisionDetection
-                {
-                    trackId = -1,
-                    classId = classId,
-                    label = ResolveLabel(classId, context.labels),
-                    confidence = confidence,
-                    normalizedRect = normalized,
-                    sourceRect = NormalizedToSourceRect(normalized, context.sourceSize),
-                    sourceCenter = NormalizedToSourcePoint(normalized.center, context.sourceSize),
-                    trackState = VisionTrackState.None
-                });
-            }
+            List<VisionDetection> candidates = CollectCandidates(rows, context, out float maxConfidence);
+            VisionDetection[] accepted = ApplyNms(candidates, context.nmsThreshold);
 
             return new VisionParsedOutput
             {
-                detections = ApplyNms(detections, context.nmsThreshold),
-                stats = VisionPerformanceStats.FromStages(0f, rawOutput.inferenceMs, 0f, 0f)
+                detections = accepted,
+                stats = VisionPerformanceStats.FromStages(0f, rawOutput.inferenceMs, 0f, 0f),
+                diagnostics = CreateDiagnostics(tensor, rows, candidates.Count, accepted.Length, maxConfidence, context.confidenceThreshold)
+            };
+        }
+
+        private VisionParsedOutput CreateEmpty(VisionRawModelOutput rawOutput, string message)
+        {
+            return new VisionParsedOutput
+            {
+                stats = VisionPerformanceStats.FromStages(0f, rawOutput?.inferenceMs ?? 0f, 0f, 0f),
+                diagnostics = new VisionFrameDiagnostics
+                {
+                    parserId = ParserId,
+                    modelOutput = DescribeFirstTensor(rawOutput),
+                    message = message
+                }
+            };
+        }
+
+        private static List<VisionDetection> CollectCandidates(
+            YoloTensorRows rows,
+            VisionOutputParserContext context,
+            out float maxConfidence)
+        {
+            var detections = new List<VisionDetection>();
+            maxConfidence = 0f;
+
+            for (int row = 0; row < rows.rowCount; row++)
+            {
+                if (TryReadDetection(rows, row, context, out VisionDetection detection, out float confidence))
+                {
+                    detections.Add(detection);
+                }
+
+                if (confidence > maxConfidence)
+                    maxConfidence = confidence;
+            }
+
+            return detections;
+        }
+
+        private static bool TryReadDetection(
+            YoloTensorRows rows,
+            int row,
+            VisionOutputParserContext context,
+            out VisionDetection detection,
+            out float confidence)
+        {
+            detection = default;
+            confidence = 0f;
+            if (rows.stride < 6)
+                return false;
+
+            int classOffset = rows.hasObjectness ? 5 : 4;
+            float objectness = rows.hasObjectness ? Mathf.Clamp01(rows.Get(row, 4)) : 1f;
+            int classId = FindBestClass(rows, row, classOffset, rows.stride - classOffset, out float classScore);
+            confidence = Mathf.Clamp01(objectness * classScore);
+            if (confidence < context.confidenceThreshold)
+                return false;
+
+            Rect normalized = CenterToRect(
+                NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x),
+                NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
+                NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
+                NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
+
+            detection = new VisionDetection
+            {
+                trackId = -1,
+                classId = classId,
+                label = ResolveLabel(classId, context.labels),
+                confidence = confidence,
+                normalizedRect = normalized,
+                sourceRect = NormalizedToSourceRect(normalized, context.sourceSize),
+                sourceCenter = NormalizedToSourcePoint(normalized.center, context.sourceSize),
+                trackState = VisionTrackState.None
+            };
+            return true;
+        }
+
+        private VisionFrameDiagnostics CreateDiagnostics(
+            VisionRawTensor tensor,
+            YoloTensorRows rows,
+            int candidateCount,
+            int acceptedCount,
+            float maxConfidence,
+            float threshold)
+        {
+            return new VisionFrameDiagnostics
+            {
+                parserId = ParserId,
+                modelOutput = $"{tensor.name} [{FormatShape(tensor.shape)}], {rows.LayoutLabel}",
+                candidateCount = candidateCount,
+                acceptedCount = acceptedCount,
+                maxConfidence = maxConfidence,
+                message = candidateCount == 0
+                    ? $"Max confidence {maxConfidence:0.00} is below threshold {threshold:0.00}."
+                    : null
             };
         }
 
@@ -186,6 +255,27 @@ namespace UniversalTracker.Core
             }
 
             return rows.IsValid;
+        }
+
+        private static bool TryResolveFirstRows(VisionRawModelOutput rawOutput, out VisionRawTensor tensor, out YoloTensorRows rows)
+        {
+            tensor = default;
+            rows = default;
+            if (rawOutput?.tensors == null)
+                return false;
+
+            for (int i = 0; i < rawOutput.tensors.Length; i++)
+            {
+                VisionRawTensor candidate = rawOutput.tensors[i];
+                if (!candidate.IsValid || !TryResolveRows(candidate, out YoloTensorRows candidateRows))
+                    continue;
+
+                tensor = candidate;
+                rows = candidateRows;
+                return true;
+            }
+
+            return false;
         }
 
         private static bool HasObjectness(int stride)
@@ -306,6 +396,38 @@ namespace UniversalTracker.Core
             return $"class_{classId}";
         }
 
+        private static string DescribeFirstTensor(VisionRawModelOutput rawOutput)
+        {
+            if (rawOutput == null || rawOutput.TensorCount == 0 || rawOutput.tensors == null)
+                return "-";
+
+            VisionRawTensor tensor = rawOutput.tensors[0];
+            return $"{tensor.name} [{FormatShape(tensor.shape)}]";
+        }
+
+        private static string DescribeTensors(VisionRawModelOutput rawOutput)
+        {
+            if (rawOutput == null || rawOutput.TensorCount == 0 || rawOutput.tensors == null)
+                return "-";
+
+            var parts = new string[rawOutput.tensors.Length];
+            for (int i = 0; i < rawOutput.tensors.Length; i++)
+            {
+                VisionRawTensor tensor = rawOutput.tensors[i];
+                parts[i] = $"{tensor.name} [{FormatShape(tensor.shape)}]";
+            }
+
+            return string.Join(", ", parts);
+        }
+
+        private static string FormatShape(int[] shape)
+        {
+            if (shape == null || shape.Length == 0)
+                return "-";
+
+            return string.Join("x", shape);
+        }
+
         private readonly struct YoloTensorRows
         {
             private readonly VisionRawTensor tensor;
@@ -314,6 +436,9 @@ namespace UniversalTracker.Core
             public readonly int rowCount;
             public readonly int stride;
             public readonly bool hasObjectness;
+            public string LayoutLabel => channelFirst
+                ? $"channels-first rows={rowCount} stride={stride}"
+                : $"rows={rowCount} stride={stride}";
 
             public YoloTensorRows(VisionRawTensor tensor, int rowCount, int stride, bool channelFirst, bool hasObjectness)
             {

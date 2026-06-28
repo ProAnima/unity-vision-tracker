@@ -50,6 +50,7 @@ namespace UniversalTracker.Tests
             var fpsLabel = new Label();
             var inferenceLabel = new Label();
             var budgetLabel = new Label();
+            var diagnosticsLabel = new Label();
             var detectionLabel = new Label();
             var poseLabel = new Label();
             var errorLabel = new Label();
@@ -60,6 +61,7 @@ namespace UniversalTracker.Tests
                 fpsLabel = fpsLabel,
                 inferenceLabel = inferenceLabel,
                 budgetLabel = budgetLabel,
+                diagnosticsLabel = diagnosticsLabel,
                 detectionCountLabel = detectionLabel,
                 poseCountLabel = poseLabel,
                 errorLabel = errorLabel,
@@ -68,6 +70,13 @@ namespace UniversalTracker.Tests
             var binder = new VisionToolkitDashboardStatsBinder(() => null);
             var result = VisionFrameResult.Empty(7, 0d, new Vector2Int(640, 480));
             result.stats.inferenceMs = 12.5f;
+            result.diagnostics = new VisionFrameDiagnostics
+            {
+                modelOutput = "output0 [1x84x8400], channels-first rows=8400 stride=84",
+                candidateCount = 2,
+                acceptedCount = 1,
+                maxConfidence = 0.86f
+            };
             result.detections = new[] { new VisionDetection() };
             result.poses = new[] { new VisionPose() };
             binder.Bind(view);
@@ -79,6 +88,8 @@ namespace UniversalTracker.Tests
             Assert.That(fpsLabel.text, Is.EqualTo("-"));
             Assert.That(inferenceLabel.text, Is.EqualTo("12.5 ms"));
             Assert.That(budgetLabel.text, Is.EqualTo("-"));
+            Assert.That(diagnosticsLabel.text, Does.Contain("1x84x8400"));
+            Assert.That(diagnosticsLabel.text, Does.Contain("candidates 2"));
             Assert.That(detectionLabel.text, Is.EqualTo("1"));
             Assert.That(poseLabel.text, Is.EqualTo("1"));
             Assert.That(errorLabel.text, Is.EqualTo("0"));

@@ -259,7 +259,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 123 tests, 123 passed, 0 failed
+EditMode: 124 tests, 124 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

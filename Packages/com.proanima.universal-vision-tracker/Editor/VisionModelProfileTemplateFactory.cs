@@ -58,7 +58,7 @@ namespace UniversalTracker.Editor
                 null,
                 BackendType.CPU,
                 640,
-                0.5f,
+                0.25f,
                 0.45f,
                 "Add model license before production",
                 "Add model source URL before production");

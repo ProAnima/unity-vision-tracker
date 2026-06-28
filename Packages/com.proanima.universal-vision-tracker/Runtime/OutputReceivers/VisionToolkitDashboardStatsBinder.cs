@@ -16,6 +16,7 @@ namespace UniversalTracker.OutputReceivers
         private Label sourceLabel;
         private Label modelLabel;
         private Label runtimeLabel;
+        private Label diagnosticsLabel;
         private Label detectionCountLabel;
         private Label poseCountLabel;
         private Label errorLabel;
@@ -36,6 +37,7 @@ namespace UniversalTracker.OutputReceivers
             sourceLabel = view.sourceLabel;
             modelLabel = view.modelLabel;
             runtimeLabel = view.runtimeLabel;
+            diagnosticsLabel = view.diagnosticsLabel;
             detectionCountLabel = view.detectionCountLabel;
             poseCountLabel = view.poseCountLabel;
             errorLabel = view.errorLabel;
@@ -55,11 +57,42 @@ namespace UniversalTracker.OutputReceivers
                 : "-";
             UpdateBudget(manager, result);
             UpdateRuntimeLabels(manager);
+            UpdateDiagnostics(result.diagnostics);
             detectionCountLabel.text = (result.detections?.Length ?? 0).ToString();
             poseCountLabel.text = (result.poses?.Length ?? 0).ToString();
             errorLabel.text = manager != null ? manager.ConsecutiveErrors.ToString() : "0";
             if (manager != null)
                 UpdateLastError(manager.LastError);
+        }
+
+        private void UpdateDiagnostics(VisionFrameDiagnostics diagnostics)
+        {
+            if (diagnosticsLabel == null)
+                return;
+
+            if (!diagnostics.HasModelOutput)
+            {
+                diagnosticsLabel.text = "-";
+                diagnosticsLabel.style.color = VisionDashboardTheme.MutedText;
+                return;
+            }
+
+            diagnosticsLabel.text = FormatDiagnostics(diagnostics);
+            diagnosticsLabel.style.color = diagnostics.acceptedCount > 0
+                ? VisionDashboardTheme.Good
+                : VisionDashboardTheme.Warning;
+        }
+
+        private static string FormatDiagnostics(VisionFrameDiagnostics diagnostics)
+        {
+            string summary =
+                $"{diagnostics.modelOutput}\n" +
+                $"max {diagnostics.maxConfidence.ToString("0.00", CultureInfo.InvariantCulture)}, " +
+                $"candidates {diagnostics.candidateCount}, kept {diagnostics.acceptedCount}";
+
+            return string.IsNullOrWhiteSpace(diagnostics.message)
+                ? summary
+                : $"{summary}\n{diagnostics.message}";
         }
 
         public void UpdateHealth(VisionHealthStatus status)

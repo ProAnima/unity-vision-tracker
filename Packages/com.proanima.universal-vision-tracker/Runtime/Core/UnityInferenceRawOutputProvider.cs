@@ -85,7 +85,19 @@ namespace UniversalTracker.Core
             return new VisionRawTensor(
                 string.IsNullOrWhiteSpace(schema.name) ? $"output{index}" : schema.name,
                 data,
-                schema.shape != null && schema.shape.Length > 0 ? schema.shape : new[] { data.Length });
+                ResolveTensorShape(cpuTensor));
+        }
+
+        private static int[] ResolveTensorShape(Tensor<float> tensor)
+        {
+            if (tensor == null || tensor.shape.rank <= 0)
+                return Array.Empty<int>();
+
+            var shape = new int[tensor.shape.rank];
+            for (int i = 0; i < shape.Length; i++)
+                shape[i] = tensor.shape[i];
+
+            return shape;
         }
 
         private static Tensor<float> CreateInputTensor(VisionInputSchema input)
