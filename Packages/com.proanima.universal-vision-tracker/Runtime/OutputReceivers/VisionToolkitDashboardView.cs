@@ -23,9 +23,13 @@ namespace UniversalTracker.OutputReceivers
         public Label fpsLabel;
         public Label inferenceLabel;
         public Label budgetLabel;
+        public Label sourceLabel;
+        public Label modelLabel;
+        public Label runtimeLabel;
         public Label detectionCountLabel;
         public Label poseCountLabel;
         public Label errorLabel;
+        public Label lastErrorLabel;
         public Button startButton;
         public Button stopButton;
     }
@@ -190,9 +194,13 @@ namespace UniversalTracker.OutputReceivers
             view.fpsLabel = AddStat(stats, "Runtime FPS", "-");
             view.inferenceLabel = AddStat(stats, "Inference", "-");
             view.budgetLabel = AddStat(stats, "Budget", "-");
+            view.sourceLabel = AddStat(stats, "Source", "-");
+            view.modelLabel = AddStat(stats, "Model", "-");
+            view.runtimeLabel = AddStat(stats, "Runtime", "-");
             view.detectionCountLabel = AddStat(stats, "Detections", "0");
             view.poseCountLabel = AddStat(stats, "Poses", "0");
             view.errorLabel = AddStat(stats, "Errors", "0");
+            view.lastErrorLabel = AddStat(stats, "Last Error", "-");
         }
 
         private static void AddResultList(VisualElement parent, VisionToolkitDashboardView view)

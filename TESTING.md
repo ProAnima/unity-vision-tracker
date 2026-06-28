@@ -26,6 +26,8 @@ Current coverage starts with:
 - Package sample manifest and file layout, including YOLO model-profile samples.
 - Optional module descriptor and package isolation rules.
 - Profile validation summary and dashboard budget status behavior.
+- Profile compatibility summary behavior for parser, runtime, capability, input, and output schemas.
+- Dashboard runtime context binding for source, model, runtime, and last error status.
 
 Run from PowerShell:
 
@@ -51,7 +53,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 106 tests, 106 passed, 0 failed
+EditMode: 109 tests, 109 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

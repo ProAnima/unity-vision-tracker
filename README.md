@@ -84,6 +84,7 @@ VisionFrameResult
 - `VisionPipeline` orchestration for source/runtime/result flow.
 - `VisionHealthStatus` lifecycle state and runtime health events.
 - Parser registry diagnostics for profile/output compatibility.
+- Profile Compatibility Inspector for runtime, parser, capability, input, and output-schema checks.
 - Setup Wizard for creating a profile-driven tracker object in the current scene.
 - IOU and SORT tracking implementations.
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
@@ -92,7 +93,7 @@ VisionFrameResult
 - Importable Minimal Pipeline, Dashboard Overlay, and YOLO Model Profiles samples.
 - Optional module package skeletons for AR Foundation, XR passthrough, MediaPipe, native runtimes, and remote runtimes.
 - Profile-driven performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
-- Dashboard budget status and profile validation summaries for faster debugging.
+- Dashboard budget, source, model, runtime, health, and last-error status for faster debugging.
 - Architecture roadmap for a production SDK evolution.
 
 ## Target Capabilities
@@ -169,7 +170,8 @@ It provides:
 - pose keypoints and skeleton bones with confidence-aware visibility;
 - mask overlays with contour-style bounds;
 - source/view/fit metrics for diagnosing aspect-ratio and letterbox issues;
-- frame, FPS, inference, detection, pose, and error counters;
+- frame, FPS, inference, budget, source, model, runtime, detection, pose, and error counters;
+- last error details from `VisionHealthStatus`;
 - runtime Start/Stop controls bound to `UniversalTrackerManager`.
 
 Usage:
@@ -253,7 +255,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 106 tests, 106 passed, 0 failed
+EditMode: 109 tests, 109 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

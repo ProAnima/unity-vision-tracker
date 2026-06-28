@@ -124,5 +124,74 @@ namespace UniversalTracker.Tests
                 Object.DestroyImmediate(go);
             }
         }
+
+        [Test]
+        public void StatsBinder_ReportsRuntimeContextAndLastError()
+        {
+            var go = new GameObject("RuntimeContextDashboardBinderTest");
+            try
+            {
+                UniversalTrackerManager manager = go.AddComponent<UniversalTrackerManager>();
+                manager.inputType = InputProviderType.RenderTexture;
+                manager.pipelineProfile = ScriptableObject.CreateInstance<VisionPipelineProfile>();
+                manager.pipelineProfile.models = new[]
+                {
+                    ScriptableObject.CreateInstance<VisionModelProfile>()
+                };
+                manager.pipelineProfile.models[0].displayName = "Pose Runtime";
+                manager.pipelineProfile.models[0].runtimeKind = VisionRuntimeKind.Mock;
+
+                var sourceLabel = new Label();
+                var modelLabel = new Label();
+                var runtimeLabel = new Label();
+                var lastErrorLabel = new Label();
+                var view = new VisionToolkitDashboardView
+                {
+                    frameLabel = new Label(),
+                    fpsLabel = new Label(),
+                    inferenceLabel = new Label(),
+                    budgetLabel = new Label(),
+                    sourceLabel = sourceLabel,
+                    modelLabel = modelLabel,
+                    runtimeLabel = runtimeLabel,
+                    detectionCountLabel = new Label(),
+                    poseCountLabel = new Label(),
+                    errorLabel = new Label(),
+                    lastErrorLabel = lastErrorLabel,
+                    statusLabel = new Label()
+                };
+                var binder = new VisionToolkitDashboardStatsBinder(() => manager);
+                binder.Bind(view);
+
+                binder.UpdateStats(VisionFrameResult.Empty(1, 0d, new Vector2Int(640, 480)));
+                binder.UpdateHealth(VisionHealthStatus.Create(
+                    VisionHealthState.Degraded,
+                    VisionHealthState.Running,
+                    VisionHealthEvent.Degraded,
+                    "source failed",
+                    new VisionError(VisionErrorCode.SourceNotReady, "Camera is warming up.")));
+
+                Assert.That(sourceLabel.text, Is.EqualTo("RenderTexture"));
+                Assert.That(modelLabel.text, Is.EqualTo("Pose Runtime"));
+                Assert.That(runtimeLabel.text, Is.EqualTo("Mock"));
+                Assert.That(lastErrorLabel.text, Does.Contain("SourceNotReady"));
+            }
+            finally
+            {
+                UniversalTrackerManager manager = go.GetComponent<UniversalTrackerManager>();
+                if (manager != null && manager.pipelineProfile != null)
+                {
+                    if (manager.pipelineProfile.models != null)
+                    {
+                        foreach (VisionModelProfile profile in manager.pipelineProfile.models)
+                            Object.DestroyImmediate(profile);
+                    }
+
+                    Object.DestroyImmediate(manager.pipelineProfile);
+                }
+
+                Object.DestroyImmediate(go);
+            }
+        }
     }
 }
