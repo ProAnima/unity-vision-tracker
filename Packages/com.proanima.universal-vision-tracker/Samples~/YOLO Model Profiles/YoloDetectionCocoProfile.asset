@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44ce3c6749949f2b9f17d85d6f9ad26, type: 3}
+  m_Name: YoloDetectionCocoProfile
+  m_EditorClassIdentifier:
+  profileId: sample-yolo-detection-coco
+  displayName: YOLO Detection COCO Sample
+  family: 1
+  primaryTask: 0
+  capabilities: 1
+  runtimeKind: 0
+  sourceFormat: 2
+  modelAsset: {fileID: 0}
+  backend: 257
+  input:
+    inputName: images
+    width: 640
+    height: 640
+    channels: 3
+    preserveAspectRatio: 1
+    normalize: 1
+  output:
+    tensors:
+    - name: output0
+      shape:
+      - 1
+      - 84
+      - 8400
+      semantic: detection.rows
+  parserId: yolo.detection.rows
+  labels: {fileID: 4900000, guid: d14222d3df7145e4ab1a2a3c8d5f2001, type: 3}
+  confidenceThreshold: 0.5
+  nmsThreshold: 0.45
+  modelLicense: Replace with the model license before production
+  modelSourceUrl: Replace with the model source URL before production

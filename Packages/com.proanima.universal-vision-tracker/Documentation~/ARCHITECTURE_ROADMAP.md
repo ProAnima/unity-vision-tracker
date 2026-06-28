@@ -45,6 +45,8 @@ Configuration is profile-first:
 - `VisionPipelineProfile` now carries simple performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
 - `Tools/ProAnima Vision/Setup Wizard` creates or updates a scene tracker with profile, source, tracking, and UI Toolkit dashboard wiring.
 - Package Manager samples now cover minimal profile-driven setup and dashboard overlay preview without requiring model assets.
+- Getting Started documentation now describes the profile-first happy path from install to scene setup, validator use, dashboard feedback, and production checklist.
+- Package Manager samples now include YOLO detection, pose, and segmentation model-profile templates with labels and parser schemas.
 - Optional module package skeletons now isolate AR Foundation, XR passthrough, MediaPipe, native runtime, and remote runtime work from the core package.
 - Profile validation now exposes a concise summary for setup tooling, and the UI Toolkit dashboard surfaces pipeline budget status.
 
@@ -52,9 +54,9 @@ Configuration is profile-first:
 
 1. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
 2. Add scene lifecycle smoke tests for `UniversalTrackerManager` startup, stop, failure, and recovery paths.
-3. Add model-profile samples for YOLO detection, pose, and segmentation once lightweight sample assets are available.
+3. Add runnable model-profile samples once lightweight model assets with clear redistribution licenses are available.
 4. Implement first real optional module integration behind compile symbols.
-5. Add richer model-profile samples for YOLO detection, pose, and segmentation once lightweight sample assets are available.
+5. Add richer model-profile samples for additional export layouts once lightweight model assets with clear redistribution licenses are available.
 
 ## Extension Rules
 

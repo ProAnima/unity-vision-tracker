@@ -23,7 +23,7 @@ Current coverage starts with:
 - UI Toolkit dashboard receiver and overlay renderer PlayMode smoke behavior.
 - Performance/allocation budget policy for parser, overlay, tracking, and pipeline stages.
 - Setup Wizard scene configuration behavior.
-- Package sample manifest and file layout.
+- Package sample manifest and file layout, including YOLO model-profile samples.
 - Optional module descriptor and package isolation rules.
 - Profile validation summary and dashboard budget status behavior.
 
@@ -51,7 +51,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 105 tests, 105 passed, 0 failed
+EditMode: 106 tests, 106 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

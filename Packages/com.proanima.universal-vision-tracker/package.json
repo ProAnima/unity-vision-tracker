@@ -27,6 +27,11 @@
       "displayName": "Dashboard Overlay",
       "description": "Synthetic VisionFrameResult fixture for previewing the UI Toolkit dashboard without a model.",
       "path": "Samples~/Dashboard Overlay"
+    },
+    {
+      "displayName": "YOLO Model Profiles",
+      "description": "Detection, pose, and segmentation VisionModelProfile templates with labels and parser schemas.",
+      "path": "Samples~/YOLO Model Profiles"
     }
   ],
   "author": {

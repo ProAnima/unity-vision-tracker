@@ -89,7 +89,7 @@ VisionFrameResult
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
 - Thin runtime manager facade over `VisionPipeline`.
 - Embedded UPM package layout: `com.proanima.universal-vision-tracker`.
-- Importable Minimal Pipeline and Dashboard Overlay samples.
+- Importable Minimal Pipeline, Dashboard Overlay, and YOLO Model Profiles samples.
 - Optional module package skeletons for AR Foundation, XR passthrough, MediaPipe, native runtimes, and remote runtimes.
 - Profile-driven performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
 - Dashboard budget status and profile validation summaries for faster debugging.
@@ -108,6 +108,8 @@ VisionFrameResult
 - Optional AR Foundation and XR passthrough frame sources.
 
 See the full roadmap: [ARCHITECTURE_ROADMAP.md](Packages/com.proanima.universal-vision-tracker/Documentation~/ARCHITECTURE_ROADMAP.md).
+
+Start here for setup: [GETTING_STARTED.md](Packages/com.proanima.universal-vision-tracker/Documentation~/GETTING_STARTED.md).
 
 Technology research and future-proofing notes: [TECHNOLOGY_RESEARCH.md](Documentation/TECHNOLOGY_RESEARCH.md).
 
@@ -151,6 +153,8 @@ git lfs pull
 4. Check the `UniversalTrackerManager` object and assign a `VisionPipelineProfile` or `VisionModelProfile`.
 5. Press Play.
 6. Watch the Unity Console and UI overlay for camera/inference status.
+
+For the current profile-first setup path, use [GETTING_STARTED.md](Packages/com.proanima.universal-vision-tracker/Documentation~/GETTING_STARTED.md).
 
 For setup rules and contribution constraints, see [CODEX.md](CODEX.md).
 
@@ -249,7 +253,8 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 72 tests, 72 passed, 0 failed
+EditMode: 106 tests, 106 passed, 0 failed
+PlayMode: 2 tests, 2 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

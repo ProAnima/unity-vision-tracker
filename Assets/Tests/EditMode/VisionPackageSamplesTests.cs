@@ -14,8 +14,10 @@ namespace UniversalTracker.Tests
             Assert.That(manifest, Does.Contain("\"samples\""));
             Assert.That(manifest, Does.Contain("\"Minimal Pipeline\""));
             Assert.That(manifest, Does.Contain("\"Dashboard Overlay\""));
+            Assert.That(manifest, Does.Contain("\"YOLO Model Profiles\""));
             Assert.That(manifest, Does.Contain("\"Samples~/Minimal Pipeline\""));
             Assert.That(manifest, Does.Contain("\"Samples~/Dashboard Overlay\""));
+            Assert.That(manifest, Does.Contain("\"Samples~/YOLO Model Profiles\""));
         }
 
         [Test]
@@ -32,6 +34,17 @@ namespace UniversalTracker.Tests
             Assert.That(File.Exists(PackagePath("Samples~/Dashboard Overlay/README.md")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Dashboard Overlay/ProAnimaVisionDashboardFixture.cs")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Dashboard Overlay/ProAnimaVision.Samples.DashboardOverlay.asmdef")), Is.True);
+        }
+
+        [Test]
+        public void YoloModelProfilesSample_ContainsProfilesLabelsAndReadme()
+        {
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Model Profiles/README.md")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Model Profiles/YoloDetectionCocoProfile.asset")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Model Profiles/YoloPose2DPersonProfile.asset")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Model Profiles/YoloSegmentationCocoProfile.asset")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Model Profiles/coco-80.labels.txt")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Model Profiles/person.labels.txt")), Is.True);
         }
 
         private static string PackagePath(string relativePath)

@@ -26,4 +26,6 @@ Documentation~/   Package documentation excluded from asset import
 Samples~/         Importable UPM samples
 ```
 
+Start with `Documentation~/GETTING_STARTED.md` for the shortest production setup path.
+
 Main user documentation lives in the repository root `README.md`. Production rules live in repository root `CODEX.md`.
