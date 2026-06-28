@@ -86,6 +86,70 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void StatsBinder_WithNoManager_PreservesExternalHealth()
+        {
+            var statusLabel = new Label();
+            var lastErrorLabel = new Label();
+            var view = new VisionToolkitDashboardView
+            {
+                frameLabel = new Label(),
+                fpsLabel = new Label(),
+                inferenceLabel = new Label(),
+                budgetLabel = new Label(),
+                detectionCountLabel = new Label(),
+                poseCountLabel = new Label(),
+                errorLabel = new Label(),
+                lastErrorLabel = lastErrorLabel,
+                statusLabel = statusLabel
+            };
+            var binder = new VisionToolkitDashboardStatsBinder(() => null);
+            binder.Bind(view);
+
+            binder.UpdateHealth(VisionHealthStatus.Create(
+                VisionHealthState.Running,
+                VisionHealthState.NotInitialized,
+                VisionHealthEvent.Recovered,
+                "WebCam preview is running."));
+            binder.UpdateStats(VisionFrameResult.Empty(3, 0d, new Vector2Int(1280, 720)));
+
+            Assert.That(statusLabel.text, Is.EqualTo("Running"));
+            Assert.That(lastErrorLabel.text, Is.EqualTo("-"));
+        }
+
+        [Test]
+        public void StatsBinder_WithNoManager_PreservesExternalCameraError()
+        {
+            var statusLabel = new Label();
+            var lastErrorLabel = new Label();
+            var view = new VisionToolkitDashboardView
+            {
+                frameLabel = new Label(),
+                fpsLabel = new Label(),
+                inferenceLabel = new Label(),
+                budgetLabel = new Label(),
+                detectionCountLabel = new Label(),
+                poseCountLabel = new Label(),
+                errorLabel = new Label(),
+                lastErrorLabel = lastErrorLabel,
+                statusLabel = statusLabel
+            };
+            var binder = new VisionToolkitDashboardStatsBinder(() => null);
+            binder.Bind(view);
+
+            binder.UpdateHealth(VisionHealthStatus.Create(
+                VisionHealthState.Degraded,
+                VisionHealthState.NotInitialized,
+                VisionHealthEvent.Degraded,
+                "Camera is warming up.",
+                new VisionError(VisionErrorCode.SourceNotReady, "Waiting for frames.")));
+            binder.UpdateStats(VisionFrameResult.Empty(3, 0d, new Vector2Int(16, 16)));
+
+            Assert.That(statusLabel.text, Is.EqualTo("Degraded"));
+            Assert.That(lastErrorLabel.text, Does.Contain("SourceNotReady"));
+        }
+
+
+        [Test]
         public void StatsBinder_ReportsPipelineBudgetStatus()
         {
             var go = new GameObject("BudgetDashboardBinderTest");

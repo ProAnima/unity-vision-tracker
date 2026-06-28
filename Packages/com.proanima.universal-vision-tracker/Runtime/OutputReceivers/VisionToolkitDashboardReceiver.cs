@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UniversalTracker.Core;
@@ -56,6 +57,8 @@ namespace UniversalTracker.OutputReceivers
         private VisionToolkitDashboardStatsBinder statsBinder;
         private readonly VisionToolkitDashboardResultListBinder resultListBinder = new VisionToolkitDashboardResultListBinder();
         private readonly VisionDashboardOverlayState overlayState = new VisionDashboardOverlayState();
+        private Action startCommand;
+        private Action stopCommand;
 
         private void Awake()
         {
@@ -113,6 +116,18 @@ namespace UniversalTracker.OutputReceivers
             resultListBinder.UpdateRows(result, CreateResultListSettings());
         }
 
+        public void SetCommandHandlers(Action start, Action stop)
+        {
+            startCommand = start;
+            stopCommand = stop;
+        }
+
+        public void SetHealthStatus(VisionHealthStatus status)
+        {
+            EnsureBuilt();
+            statsBinder.UpdateHealth(status);
+        }
+
         public void Clear()
         {
             VisionToolkitDashboardOverlayRenderer.Clear(overlayState);
@@ -168,8 +183,8 @@ namespace UniversalTracker.OutputReceivers
             VisionToolkitDashboardView view = VisionToolkitDashboardViewBuilder.Build(
                 document,
                 isReceiverEnabled,
-                () => trackerManager?.StartTracking(),
-                () => trackerManager?.StopTracking());
+                StartFromDashboard,
+                StopFromDashboard);
 
             if (view == null)
                 return;
@@ -281,6 +296,28 @@ namespace UniversalTracker.OutputReceivers
         private VisionDashboardResultListSettings CreateResultListSettings()
         {
             return new VisionDashboardResultListSettings(showDetections, showPoses, showMasks, maxRows);
+        }
+
+        private void StartFromDashboard()
+        {
+            if (startCommand != null)
+            {
+                startCommand.Invoke();
+                return;
+            }
+
+            trackerManager?.StartTracking();
+        }
+
+        private void StopFromDashboard()
+        {
+            if (stopCommand != null)
+            {
+                stopCommand.Invoke();
+                return;
+            }
+
+            trackerManager?.StopTracking();
         }
     }
 }

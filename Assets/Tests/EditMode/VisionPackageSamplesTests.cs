@@ -71,6 +71,17 @@ namespace UniversalTracker.Tests
             Assert.That(scene, Does.Not.Contain("frameSource:"));
         }
 
+        [Test]
+        public void ExperimentalSceneSample_ProvidesRuntimeWebCamControls()
+        {
+            string bootstrap = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneBootstrap.cs"));
+
+            Assert.That(bootstrap, Does.Contain("DropdownField"));
+            Assert.That(bootstrap, Does.Contain("SelectCamera"));
+            Assert.That(bootstrap, Does.Contain("RotatePreview"));
+            Assert.That(bootstrap, Does.Contain("ToggleMirror"));
+        }
+
         private static string PackagePath(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

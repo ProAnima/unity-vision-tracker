@@ -45,10 +45,12 @@ namespace UniversalTracker.OutputReceivers
             view.root = document.rootVisualElement;
             ConfigureRoot(view.root, isEnabled);
 
-            var side = CreatePanel(320, 0);
+            var side = CreatePanel(300, 0);
+            side.name = "VisionControlPanel";
             side.style.marginRight = 14;
             side.style.marginBottom = 14;
-            side.style.flexShrink = 1f;
+            side.style.flexShrink = 0f;
+            side.style.minWidth = 260;
             side.style.maxWidth = Length.Percent(100);
             view.root.Add(side);
 
@@ -78,7 +80,8 @@ namespace UniversalTracker.OutputReceivers
         {
             view.previewStage = new VisualElement { name = "VisionPreviewStage" };
             view.previewStage.style.flexGrow = 1f;
-            view.previewStage.style.minWidth = 280;
+            view.previewStage.style.flexBasis = 520;
+            view.previewStage.style.minWidth = 320;
             view.previewStage.style.minHeight = 260;
             view.previewStage.style.backgroundColor = new Color(0.02f, 0.026f, 0.032f, 1f);
             view.previewStage.style.borderTopLeftRadius = 8;
@@ -176,15 +179,18 @@ namespace UniversalTracker.OutputReceivers
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
             row.style.marginBottom = 14;
+            row.style.flexWrap = Wrap.Wrap;
             parent.Add(row);
 
             view.startButton = CreateCommandButton("Start", VisionDashboardTheme.Good);
             view.startButton.clicked += () => start?.Invoke();
+            view.startButton.style.marginBottom = 6;
             row.Add(view.startButton);
 
             view.stopButton = CreateCommandButton("Stop", VisionDashboardTheme.Warning);
             view.stopButton.clicked += () => stop?.Invoke();
             view.stopButton.style.marginLeft = 8;
+            view.stopButton.style.marginBottom = 6;
             row.Add(view.stopButton);
         }
 
@@ -204,7 +210,7 @@ namespace UniversalTracker.OutputReceivers
             view.detectionCountLabel = AddStat(stats, "Detections", "0");
             view.poseCountLabel = AddStat(stats, "Poses", "0");
             view.errorLabel = AddStat(stats, "Errors", "0");
-            view.lastErrorLabel = AddStat(stats, "Last Error", "-");
+            view.lastErrorLabel = AddStat(stats, "Last Error", "-", true);
         }
 
         private static void AddResultList(VisualElement parent, VisionToolkitDashboardView view)
@@ -245,23 +251,30 @@ namespace UniversalTracker.OutputReceivers
             return panel;
         }
 
-        private static Label AddStat(VisualElement parent, string name, string value)
+        private static Label AddStat(VisualElement parent, string name, string value, bool multiline = false)
         {
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
             row.style.justifyContent = Justify.SpaceBetween;
+            row.style.alignItems = multiline ? Align.FlexStart : Align.Center;
             row.style.marginBottom = 6;
             parent.Add(row);
 
             var label = new Label(name);
             label.style.color = VisionDashboardTheme.MutedText;
             label.style.fontSize = 12;
+            label.style.minWidth = multiline ? 76 : 88;
+            label.style.flexShrink = 0f;
             row.Add(label);
 
             var number = new Label(value);
             number.style.color = VisionDashboardTheme.Text;
             number.style.fontSize = 13;
             number.style.unityFontStyleAndWeight = FontStyle.Bold;
+            number.style.flexGrow = 1f;
+            number.style.flexShrink = 1f;
+            number.style.unityTextAlign = TextAnchor.UpperRight;
+            number.style.whiteSpace = multiline ? WhiteSpace.Normal : WhiteSpace.NoWrap;
             row.Add(number);
             return number;
         }
@@ -271,6 +284,7 @@ namespace UniversalTracker.OutputReceivers
             var button = new Button { text = text };
             button.style.height = 34;
             button.style.flexGrow = 1f;
+            button.style.minWidth = 108;
             button.style.borderTopLeftRadius = 6;
             button.style.borderTopRightRadius = 6;
             button.style.borderBottomLeftRadius = 6;

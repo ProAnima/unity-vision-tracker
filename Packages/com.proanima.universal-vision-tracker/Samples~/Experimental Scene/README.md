@@ -10,7 +10,7 @@ It opens with a polished UI Toolkit dashboard and a real `WebCamTexture` preview
 2. Open `ProAnimaVisionExperimentalScene.unity`.
 3. Press Play.
 
-The scene runs in WebCam preview mode by default. Select `ProAnima Vision Experimental Demo` to choose the camera device index/name, requested resolution/FPS, preview fit mode, rotation, and mirror settings.
+The scene runs in WebCam preview mode by default. Use the dashboard camera controls to choose a camera device, switch to the next device, rotate the preview, and mirror the image. Select `ProAnima Vision Experimental Demo` for requested resolution/FPS and advanced preview settings.
 
 ## Connect A Real Pipeline
 

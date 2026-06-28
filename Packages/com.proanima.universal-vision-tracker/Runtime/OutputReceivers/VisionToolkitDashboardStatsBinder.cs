@@ -45,7 +45,8 @@ namespace UniversalTracker.OutputReceivers
         public void UpdateStats(VisionFrameResult result)
         {
             UniversalTrackerManager manager = managerProvider?.Invoke();
-            UpdateHealth(manager != null ? manager.HealthStatus : null);
+            if (manager != null)
+                UpdateHealth(manager.HealthStatus);
 
             frameLabel.text = result.frameIndex.ToString();
             fpsLabel.text = manager != null ? manager.CurrentFPS.ToString("F1", CultureInfo.InvariantCulture) : "-";
@@ -57,7 +58,8 @@ namespace UniversalTracker.OutputReceivers
             detectionCountLabel.text = (result.detections?.Length ?? 0).ToString();
             poseCountLabel.text = (result.poses?.Length ?? 0).ToString();
             errorLabel.text = manager != null ? manager.ConsecutiveErrors.ToString() : "0";
-            UpdateLastError(manager?.LastError);
+            if (manager != null)
+                UpdateLastError(manager.LastError);
         }
 
         public void UpdateHealth(VisionHealthStatus status)
