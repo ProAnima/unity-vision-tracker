@@ -21,7 +21,7 @@ namespace UniversalTracker.Editor
         private VisionProfileValidationReport previewReport;
         private Vector2 scroll;
 
-        [MenuItem("Tools/ProAnima Vision/Profile Wizard")]
+        [MenuItem("Tools/ProAnima Vision/Advanced/Profile Wizard")]
         public static void Open()
         {
             var window = GetWindow<VisionProfileWizardWindow>("Vision Wizard");

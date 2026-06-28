@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -32,10 +34,13 @@ namespace UniversalTracker.Editor
             root.style.paddingTop = 18;
             root.style.paddingBottom = 18;
 
-            root.Add(CreateHeader());
-            root.Add(CreateWorkflow());
-            root.Add(CreateGrid());
-            root.Add(CreateFooter());
+            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            scroll.style.flexGrow = 1f;
+            root.Add(scroll);
+
+            scroll.Add(CreateHeader());
+            scroll.Add(CreateWorkflow());
+            scroll.Add(CreateGrid());
         }
 
         private static VisualElement CreateHeader()
@@ -98,42 +103,32 @@ namespace UniversalTracker.Editor
 
             grid.Add(CreateCard(
                 "1. Preview",
-                "Open the polished dashboard scene after importing it from Package Manager.",
-                ("Import Experimental Scene", ImportExperimentalScene),
-                ("Open Experimental Scene", OpenExperimentalScene),
+                "Import the package sample once, then open the polished dashboard scene.",
+                ("Import Sample", ImportExperimentalScene),
+                ("Open Scene", OpenExperimentalScene),
                 ("Open Samples Folder", () => EditorUtility.RevealInFinder(SamplesPath))));
 
             grid.Add(CreateCard(
                 "2. Profiles",
-                "Create model and pipeline profiles for runtime use.",
+                "Create runtime-ready model and pipeline assets.",
                 ("Model Profile Wizard", VisionProfileWizardWindow.Open),
                 ("Pipeline Profile", VisionProfileAssetCreator.CreatePipelineProfile),
                 ("YOLO Detection Profile", VisionProfileAssetCreator.CreateYoloDetectionProfile)));
 
             grid.Add(CreateCard(
                 "3. Setup",
-                "Create or update the tracker object and dashboard wiring.",
+                "Create scene objects, connect profiles, and inspect compatibility.",
                 ("Open Setup Wizard", VisionSetupWizardWindow.Open),
-                ("Compatibility Inspector", VisionProfileCompatibilityWindow.Open),
-                ("Profile Validator", VisionProfileValidatorWindow.Open)));
+                ("Compatibility Inspector", VisionProfileCompatibilityWindow.Open)));
 
             grid.Add(CreateCard(
                 "4. Validate",
-                "Check readiness and open the shortest reference docs.",
+                "Run readiness checks and open the shortest reference docs.",
                 ("Profile Validator", VisionProfileValidatorWindow.Open),
                 ("Getting Started", () => OpenAsset(GettingStartedPath)),
                 ("Architecture Roadmap", () => OpenAsset(RoadmapPath))));
 
             return grid;
-        }
-
-        private static VisualElement CreateFooter()
-        {
-            var footer = new Label("Recommended flow: import sample, create profiles, setup scene, validate, press Play.");
-            footer.style.marginTop = 12;
-            footer.style.color = new Color(0.54f, 0.64f, 0.68f);
-            footer.style.fontSize = 11;
-            return footer;
         }
 
         private static VisualElement CreateCard(string title, string description, params (string label, System.Action action)[] actions)
@@ -217,11 +212,58 @@ namespace UniversalTracker.Editor
 
         private static void ImportExperimentalScene()
         {
-            EditorApplication.ExecuteMenuItem("Window/Package Manager");
+            bool packageManagerOpened = TryOpenPackageManager();
+            string message = packageManagerOpened
+                ? "In Package Manager, select ProAnima Universal Vision Tracker, open Samples, and import Experimental Scene."
+                : "Open Window > Package Management > Package Manager, select ProAnima Universal Vision Tracker, open Samples, and import Experimental Scene.";
+
             EditorUtility.DisplayDialog(
-                "Experimental Scene",
-                "In Package Manager, select ProAnima Universal Vision Tracker and import the Experimental Scene sample.",
+                "Import Experimental Scene",
+                message,
                 "OK");
+        }
+
+        private static bool TryOpenPackageManager()
+        {
+            Type packageManagerWindow = Type.GetType(
+                "UnityEditor.PackageManager.UI.Window,UnityEditor.PackageManagerUI.Editor");
+            if (packageManagerWindow == null)
+                return false;
+
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static;
+            MethodInfo openPackage = packageManagerWindow.GetMethod(
+                "Open",
+                flags,
+                null,
+                new[] { typeof(string) },
+                null);
+            if (TryInvoke(openPackage, "com.proanima.universal-vision-tracker"))
+                return true;
+
+            MethodInfo open = packageManagerWindow.GetMethod(
+                "Open",
+                flags,
+                null,
+                Type.EmptyTypes,
+                null);
+            return TryInvoke(open);
+        }
+
+        private static bool TryInvoke(MethodInfo method, params object[] args)
+        {
+            if (method == null)
+                return false;
+
+            try
+            {
+                method.Invoke(null, args);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[ProAnima Vision] Package Manager could not be opened: {exception.Message}");
+                return false;
+            }
         }
 
         private static string FindExperimentalScenePath()
@@ -235,7 +277,7 @@ namespace UniversalTracker.Editor
 
         private static void OpenAsset(string path)
         {
-            Object asset = AssetDatabase.LoadAssetAtPath<Object>(path);
+            UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
             if (asset != null)
             {
                 AssetDatabase.OpenAsset(asset);

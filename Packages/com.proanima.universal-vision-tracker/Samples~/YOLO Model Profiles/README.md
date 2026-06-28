@@ -14,7 +14,7 @@ These profiles are templates, not runnable model packages. They intentionally le
 2. Move or duplicate the profile you need into your project settings folder.
 3. Assign a Unity `ModelAsset` converted from the matching ONNX export.
 4. Assign or replace the labels file.
-5. Open `Tools/ProAnima Vision/Profile Validator`.
+5. Open `Tools/ProAnima Vision/Control Center > Profile Validator`.
 6. Add the validated profile to a `VisionPipelineProfile`.
 
 ## Included Schemas

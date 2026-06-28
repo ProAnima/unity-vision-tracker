@@ -12,4 +12,4 @@ This sample provides a small bootstrap component for a profile-driven tracker ob
 
 The component configures `UniversalTrackerManager`, optional tracking, optional UI Toolkit dashboard, and the selected source type.
 
-For production scenes, prefer `Tools/ProAnima Vision/Setup Wizard`; this sample is intentionally tiny and readable.
+For production scenes, prefer `Tools/ProAnima Vision/Control Center > Open Setup Wizard`; this sample is intentionally tiny and readable.

@@ -16,7 +16,7 @@ namespace UniversalTracker.Editor
         private int targetFps = 30;
         private Vector2 scroll;
 
-        [MenuItem("Tools/ProAnima Vision/Setup Wizard", priority = 0)]
+        [MenuItem("Tools/ProAnima Vision/Advanced/Setup Wizard", priority = 0)]
         public static void Open()
         {
             var window = GetWindow<VisionSetupWizardWindow>("Vision Setup");

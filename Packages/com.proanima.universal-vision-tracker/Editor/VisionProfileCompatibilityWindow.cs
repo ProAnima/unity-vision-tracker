@@ -13,7 +13,7 @@ namespace UniversalTracker.Editor
         private Vector2 scroll;
         private IReadOnlyList<VisionProfileCompatibilitySummary> summaries;
 
-        [MenuItem("Tools/ProAnima Vision/Profile Compatibility Inspector")]
+        [MenuItem("Tools/ProAnima Vision/Advanced/Profile Compatibility Inspector")]
         public static void Open()
         {
             var window = GetWindow<VisionProfileCompatibilityWindow>("Vision Compatibility");

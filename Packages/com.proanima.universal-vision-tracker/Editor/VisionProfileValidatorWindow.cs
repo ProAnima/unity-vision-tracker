@@ -13,7 +13,7 @@ namespace UniversalTracker.Editor
         private VisionProfileValidationReport modelReport;
         private VisionProfileValidationReport pipelineReport;
 
-        [MenuItem("Tools/ProAnima Vision/Profile Validator")]
+        [MenuItem("Tools/ProAnima Vision/Advanced/Profile Validator")]
         public static void Open()
         {
             var window = GetWindow<VisionProfileValidatorWindow>("Vision Profiles");

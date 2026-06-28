@@ -18,14 +18,11 @@ Use one of these paths:
 1. Open this repository as a Unity project.
 2. Or add the embedded package from `Packages/com.proanima.universal-vision-tracker` to another Unity project.
 
-After install, confirm these menu items exist:
+After install, confirm this menu item exists:
 
 - `Tools/ProAnima Vision/Control Center`
-- `Tools/ProAnima Vision/Setup Wizard`
-- `Tools/ProAnima Vision/Profile Wizard`
-- `Tools/ProAnima Vision/Profile Validator`
 
-Use `Control Center` as the primary entry point. The other tools remain available directly for faster expert workflows.
+Use `Control Center` as the primary entry point. Expert tools remain available under `Tools/ProAnima Vision/Advanced` for direct workflows.
 
 ## Import Samples
 
@@ -40,7 +37,7 @@ The YOLO sample profiles are intentionally runtime-asset-free. They document par
 
 ## Create A Model Profile
 
-For a production scene, create a `VisionModelProfile` with `Tools/ProAnima Vision/Profile Wizard`.
+For a production scene, create a `VisionModelProfile` with `Control Center > Model Profile Wizard`.
 
 Recommended first pass:
 
@@ -49,7 +46,7 @@ Recommended first pass:
 3. Assign labels when the model outputs class ids.
 4. Keep input size at `640` unless the model was exported for a different size.
 5. Set `modelLicense` and `modelSourceUrl` before release.
-6. Run `Tools/ProAnima Vision/Profile Validator`.
+6. Run `Control Center > Profile Validator`.
 
 Validator warnings should be treated as release blockers unless they are documented sample placeholders such as a missing model asset.
 
@@ -70,7 +67,7 @@ Keep one default model selected and make fallback models explicit.
 
 ## Setup A Scene
 
-Use `Tools/ProAnima Vision/Setup Wizard`.
+Use `Control Center > Open Setup Wizard`.
 
 Recommended scene setup:
 

@@ -22,4 +22,4 @@ Select `ProAnima Vision Experimental Demo` in the scene and configure:
 - choose a frame source;
 - optionally enable `Auto Start Real Pipeline`.
 
-Use `Tools/ProAnima Vision/Profile Compatibility Inspector` before running real models.
+Use `Tools/ProAnima Vision/Control Center > Compatibility Inspector` before running real models.

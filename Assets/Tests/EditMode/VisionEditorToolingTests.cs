@@ -11,11 +11,37 @@ namespace UniversalTracker.Tests
         [Test]
         public void ControlCenterWindow_ExposesTopLevelMenuEntry()
         {
-            MethodInfo open = typeof(VisionControlCenterWindow).GetMethod(nameof(VisionControlCenterWindow.Open));
+            AssertMenuPath(
+                typeof(VisionControlCenterWindow),
+                nameof(VisionControlCenterWindow.Open),
+                "Tools/ProAnima Vision/Control Center");
+            AssertMenuPath(
+                typeof(VisionSetupWizardWindow),
+                nameof(VisionSetupWizardWindow.Open),
+                "Tools/ProAnima Vision/Advanced/Setup Wizard");
+            AssertMenuPath(
+                typeof(VisionProfileWizardWindow),
+                nameof(VisionProfileWizardWindow.Open),
+                "Tools/ProAnima Vision/Advanced/Profile Wizard");
+            AssertMenuPath(
+                typeof(VisionProfileValidatorWindow),
+                nameof(VisionProfileValidatorWindow.Open),
+                "Tools/ProAnima Vision/Advanced/Profile Validator");
+            AssertMenuPath(
+                typeof(VisionProfileCompatibilityWindow),
+                nameof(VisionProfileCompatibilityWindow.Open),
+                "Tools/ProAnima Vision/Advanced/Profile Compatibility Inspector");
+        }
+
+        private static void AssertMenuPath(System.Type type, string methodName, string menuPath)
+        {
+            MethodInfo open = type.GetMethod(methodName);
+            Assert.That(open, Is.Not.Null);
+
             var menu = open.GetCustomAttribute<MenuItem>();
 
             Assert.That(menu, Is.Not.Null);
-            Assert.That(menu.menuItem, Is.EqualTo("Tools/ProAnima Vision/Control Center"));
+            Assert.That(menu.menuItem, Is.EqualTo(menuPath));
         }
 
         [Test]

@@ -36,14 +36,14 @@ Configuration is profile-first:
 - UI Toolkit dashboard state binding is split into focused stats and result-list binders with EditMode coverage.
 - `UniversalTrackerManager` delegates frame-source creation, profile resolution, output receiver routing, tracking, health event dispatch, and profile-validation logging to focused runtime services.
 - Frame source implementations are split into focused runtime files so new camera/video adapters can be added without extending a monolithic source module.
-- Editor tooling now includes `Tools/ProAnima Vision/Profile Validator`, `Tools/ProAnima Vision/Profile Wizard`, and asset creation shortcuts for YOLO detection, pose, segmentation, and pipeline profiles.
+- Editor tooling now uses `Tools/ProAnima Vision/Control Center` as the main entry point, with advanced direct windows under `Tools/ProAnima Vision/Advanced`.
 - YOLO pose and segmentation profiles resolve to production parser contracts and have EditMode fixture coverage.
 - Prototype Unity Inference smoke MonoBehaviours have been removed from runtime code.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
 - UI Toolkit dashboard receiver and overlay renderer have PlayMode smoke coverage for runtime visual tree creation and detection/pose/mask element rendering.
 - Runtime and editor code now live in an embedded UPM package layout under `Packages/com.proanima.universal-vision-tracker`.
 - `VisionPipelineProfile` now carries simple performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
-- `Tools/ProAnima Vision/Setup Wizard` creates or updates a scene tracker with profile, source, tracking, and UI Toolkit dashboard wiring.
+- `Control Center > Open Setup Wizard` creates or updates a scene tracker with profile, source, tracking, and UI Toolkit dashboard wiring.
 - Package Manager samples now cover minimal profile-driven setup and dashboard overlay preview without requiring model assets.
 - Getting Started documentation now describes the profile-first happy path from install to scene setup, validator use, dashboard feedback, and production checklist.
 - Package Manager samples now include YOLO detection, pose, and segmentation model-profile templates with labels and parser schemas.
@@ -51,7 +51,7 @@ Configuration is profile-first:
 - `Tools/ProAnima Vision/Control Center` is now the primary editor entry point for setup, profile creation, validation, docs, and samples.
 - Optional module package skeletons now isolate AR Foundation, XR passthrough, MediaPipe, native runtime, and remote runtime work from the core package.
 - Profile validation now exposes a concise summary for setup tooling, and the UI Toolkit dashboard surfaces pipeline budget status.
-- `Tools/ProAnima Vision/Profile Compatibility Inspector` summarizes runtime, parser, capability, input, and output-schema readiness for model and pipeline profiles.
+- `Control Center > Compatibility Inspector` summarizes runtime, parser, capability, input, and output-schema readiness for model and pipeline profiles.
 - UI Toolkit dashboard status now includes source, model, runtime, budget, health, consecutive errors, and last error details.
 
 ## Next Production Steps
