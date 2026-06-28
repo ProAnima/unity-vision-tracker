@@ -41,7 +41,7 @@ Removed prototype contracts are not part of the production API. Do not reintrodu
 
 Primary baseline:
 
-- Unity `6000.3.15f1`
+- Unity `6000.5.1f1`
 - Unity Inference Engine `2.6.1`
 
 Compatibility goal:
@@ -89,14 +89,14 @@ Existing large files should be split when touched for substantive production wor
 Current baseline:
 
 ```text
-EditMode: 109 tests, 109 passed, 0 failed
+EditMode: 111 tests, 111 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 
 Run EditMode tests after code changes:
 
 ```powershell
-& 'D:\Unity\6000.3.15f1\Editor\Unity.exe' `
+& 'D:\Unity\6000.5.1f1\Editor\Unity.exe' `
   -batchmode `
   -projectPath 'D:\Projects\ProAnimaStudio\pas-UCT' `
   -runTests `
@@ -108,7 +108,7 @@ Run EditMode tests after code changes:
 Run PlayMode smoke tests after UI Toolkit, lifecycle, or scene-facing runtime changes:
 
 ```powershell
-& 'D:\Unity\6000.3.15f1\Editor\Unity.exe' `
+& 'D:\Unity\6000.5.1f1\Editor\Unity.exe' `
   -batchmode `
   -projectPath 'D:\Projects\ProAnimaStudio\pas-UCT' `
   -runTests `

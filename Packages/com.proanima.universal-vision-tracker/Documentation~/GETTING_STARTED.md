@@ -20,9 +20,12 @@ Use one of these paths:
 
 After install, confirm these menu items exist:
 
+- `Tools/ProAnima Vision/Control Center`
 - `Tools/ProAnima Vision/Setup Wizard`
 - `Tools/ProAnima Vision/Profile Wizard`
 - `Tools/ProAnima Vision/Profile Validator`
+
+Use `Control Center` as the primary entry point. The other tools remain available directly for faster expert workflows.
 
 ## Import Samples
 

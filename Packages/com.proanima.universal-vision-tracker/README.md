@@ -28,4 +28,6 @@ Samples~/         Importable UPM samples
 
 Start with `Documentation~/GETTING_STARTED.md` for the shortest production setup path.
 
+Use `Tools/ProAnima Vision/Control Center` as the primary editor entry point for setup, profiles, validation, docs, and samples.
+
 Main user documentation lives in the repository root `README.md`. Production rules live in repository root `CODEX.md`.

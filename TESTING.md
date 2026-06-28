@@ -28,11 +28,12 @@ Current coverage starts with:
 - Profile validation summary and dashboard budget status behavior.
 - Profile compatibility summary behavior for parser, runtime, capability, input, and output schemas.
 - Dashboard runtime context binding for source, model, runtime, and last error status.
+- Editor tooling entry points for Control Center and pipeline profile creation.
 
 Run from PowerShell:
 
 ```powershell
-& 'D:\Unity\6000.3.15f1\Editor\Unity.exe' `
+& 'D:\Unity\6000.5.1f1\Editor\Unity.exe' `
   -batchmode `
   -nographics `
   -projectPath 'D:\Projects\ProAnimaStudio\pas-UCT' `
@@ -44,7 +45,7 @@ Run from PowerShell:
 
 Do not pass `-quit` with `-runTests`; Unity Test Runner exits on its own after the run.
 
-On Unity `6000.3.15f1`, the log may report that results were saved to both the requested path and Unity's LocalLow default path. If the requested XML is missing, check:
+On Unity `6000.5.1f1`, the log may report that results were saved to both the requested path and Unity's LocalLow default path. If the requested XML is missing, check:
 
 ```text
 C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
@@ -53,14 +54,14 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 109 tests, 109 passed, 0 failed
+EditMode: 111 tests, 111 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 
 Run PlayMode smoke tests from PowerShell:
 
 ```powershell
-& 'D:\Unity\6000.3.15f1\Editor\Unity.exe' `
+& 'D:\Unity\6000.5.1f1\Editor\Unity.exe' `
   -batchmode `
   -projectPath 'D:\Projects\ProAnimaStudio\pas-UCT' `
   -runTests `

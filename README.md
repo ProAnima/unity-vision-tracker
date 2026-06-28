@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg"></a>
-  <img alt="Unity" src="https://img.shields.io/badge/Unity-6000.3.15f1-black.svg">
+  <img alt="Unity" src="https://img.shields.io/badge/Unity-6000.5.1f1-black.svg">
   <img alt="Inference Engine" src="https://img.shields.io/badge/Unity%20Inference%20Engine-2.6.1-blue.svg">
   <img alt="Status" src="https://img.shields.io/badge/status-productionization%20in%20progress-orange.svg">
 </p>
@@ -84,6 +84,7 @@ VisionFrameResult
 - `VisionPipeline` orchestration for source/runtime/result flow.
 - `VisionHealthStatus` lifecycle state and runtime health events.
 - Parser registry diagnostics for profile/output compatibility.
+- UI Toolkit Control Center as the primary editor entry point for setup, profiles, validation, docs, and samples.
 - Profile Compatibility Inspector for runtime, parser, capability, input, and output-schema checks.
 - Setup Wizard for creating a profile-driven tracker object in the current scene.
 - IOU and SORT tracking implementations.
@@ -135,7 +136,8 @@ ProjectSettings/                  Unity project settings
 
 ## Requirements
 
-- Unity `6000.3.15f1`.
+- Unity `6000.5.1f1` for current validation.
+- Unity `6000.0+` compatibility target for the package core.
 - Unity Inference Engine `2.6.1`.
 - Git LFS for model and media assets.
 
@@ -150,10 +152,10 @@ git lfs pull
 
 1. Clone the repository.
 2. Open the project in Unity 6.
-3. Open `Assets/Scenes/SampleScene.unity`.
-4. Check the `UniversalTrackerManager` object and assign a `VisionPipelineProfile` or `VisionModelProfile`.
-5. Press Play.
-6. Watch the Unity Console and UI overlay for camera/inference status.
+3. Open `Tools/ProAnima Vision/Control Center`.
+4. Open the Experimental Scene or create profiles from the Control Center.
+5. Use Setup Wizard to create or update a tracker object.
+6. Press Play and watch the UI Toolkit dashboard.
 
 For the current profile-first setup path, use [GETTING_STARTED.md](Packages/com.proanima.universal-vision-tracker/Documentation~/GETTING_STARTED.md).
 
@@ -257,7 +259,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 109 tests, 109 passed, 0 failed
+EditMode: 111 tests, 111 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

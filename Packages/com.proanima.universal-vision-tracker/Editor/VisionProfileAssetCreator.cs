@@ -25,6 +25,14 @@ namespace UniversalTracker.Editor
             CreateModelProfile(VisionModelProfileTemplate.YoloSegmentation);
         }
 
+        [MenuItem("Assets/Create/ProAnima Vision/Pipeline Profile", priority = 19)]
+        public static void CreatePipelineProfile()
+        {
+            List<VisionModelProfile> models = GetSelectedModelProfiles();
+            VisionPipelineProfile profile = VisionModelProfileTemplateFactory.CreatePipelineProfile(models.ToArray());
+            CreateAsset(profile, "VisionPipelineProfile.asset");
+        }
+
         [MenuItem("Assets/Create/ProAnima Vision/Pipeline Profile From Selected Models", true)]
         private static bool CanCreatePipelineFromSelection()
         {
@@ -34,9 +42,7 @@ namespace UniversalTracker.Editor
         [MenuItem("Assets/Create/ProAnima Vision/Pipeline Profile From Selected Models", priority = 20)]
         public static void CreatePipelineFromSelection()
         {
-            List<VisionModelProfile> models = GetSelectedModelProfiles();
-            VisionPipelineProfile profile = VisionModelProfileTemplateFactory.CreatePipelineProfile(models.ToArray());
-            CreateAsset(profile, "VisionPipelineProfile.asset");
+            CreatePipelineProfile();
         }
 
         public static void CreateModelProfile(VisionModelProfileTemplate template)
