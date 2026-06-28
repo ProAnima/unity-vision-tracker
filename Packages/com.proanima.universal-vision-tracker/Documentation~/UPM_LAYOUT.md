@@ -26,3 +26,4 @@ Packages/com.proanima.universal-vision-tracker/
 - Documentation that should not be imported as Unity assets belongs in `Documentation~/`.
 - Optional integrations such as AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes should be added as separate optional modules instead of making the core runtime depend on vendor packages.
 - Public integrations must continue through `IVisionFrameSource`, `IVisionRuntimeAdapter`, `IVisionModelAdapter`, `IVisionOutputParser`, and `IOutputReceiver`.
+- Performance policy should stay simple and profile-driven through `VisionPerformanceBudget`.

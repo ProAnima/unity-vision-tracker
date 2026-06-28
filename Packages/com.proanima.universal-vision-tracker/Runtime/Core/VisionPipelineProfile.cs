@@ -18,6 +18,9 @@ namespace UniversalTracker.Core
         [Header("Health")]
         [Range(1, 100)] public int maxConsecutiveRecoverableErrors = 10;
 
+        [Header("Performance Budgets")]
+        public VisionPerformanceBudget performanceBudget = VisionPerformanceBudget.Default;
+
         public bool HasModels => models != null && models.Length > 0;
 
         public VisionModelProfile GetDefaultModel()

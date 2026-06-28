@@ -21,6 +21,7 @@ Current coverage starts with:
 - Parser registry and raw-output runtime flow through `UnityInferenceRuntimeAdapter`.
 - Unity Inference raw output provider construction and missing-asset failure behavior.
 - UI Toolkit dashboard receiver and overlay renderer PlayMode smoke behavior.
+- Performance/allocation budget policy for parser, overlay, tracking, and pipeline stages.
 
 Run from PowerShell:
 
@@ -46,7 +47,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 87 tests, 87 passed, 0 failed
+EditMode: 92 tests, 92 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

@@ -42,14 +42,15 @@ Configuration is profile-first:
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
 - UI Toolkit dashboard receiver and overlay renderer have PlayMode smoke coverage for runtime visual tree creation and detection/pose/mask element rendering.
 - Runtime and editor code now live in an embedded UPM package layout under `Packages/com.proanima.universal-vision-tracker`.
+- `VisionPipelineProfile` now carries simple performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
 
 ## Next Production Steps
 
 1. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
-2. Add performance/allocation budgets for parser, overlay, and tracking paths.
-3. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
-4. Add scene lifecycle smoke tests for `UniversalTrackerManager` startup, stop, failure, and recovery paths.
-5. Add package samples for minimal profile-driven pipeline and UI Toolkit dashboard overlay.
+2. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
+3. Add scene lifecycle smoke tests for `UniversalTrackerManager` startup, stop, failure, and recovery paths.
+4. Add package samples for minimal profile-driven pipeline and UI Toolkit dashboard overlay.
+5. Surface budget status in the runtime dashboard without adding per-frame log noise.
 
 ## Extension Rules
 

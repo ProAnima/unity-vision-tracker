@@ -88,6 +88,7 @@ VisionFrameResult
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
 - Thin runtime manager facade over `VisionPipeline`.
 - Embedded UPM package layout: `com.proanima.universal-vision-tracker`.
+- Profile-driven performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
 - Architecture roadmap for a production SDK evolution.
 
 ## Target Capabilities

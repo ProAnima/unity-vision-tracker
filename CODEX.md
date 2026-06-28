@@ -89,7 +89,7 @@ Existing large files should be split when touched for substantive production wor
 Current baseline:
 
 ```text
-EditMode: 87 tests, 87 passed, 0 failed
+EditMode: 92 tests, 92 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 
@@ -131,6 +131,7 @@ Test coverage expectations:
 - New parsers require golden fixture tests before production release.
 - New tracking behavior requires sequence tests.
 - New UI overlay geometry requires pure geometry tests.
+- New performance budget policy requires EditMode tests for budget status and violation semantics.
 - Device/camera behavior should have manual or PlayMode test notes until automated device tests exist.
 
 ## Debug Visualization Rules
@@ -190,4 +191,4 @@ A production increment is done only when:
 5. Add parser/output schema fixtures.
 6. Add PlayMode smoke tests for UI Toolkit dashboard.
 7. Add optional package modules for AR/XR, MediaPipe, native plugin, and remote runtimes.
-8. Add performance and allocation budgets for parsers, overlay rendering, and tracking.
+8. Add package samples for minimal pipeline, dashboard overlay, and model profiles.
