@@ -30,6 +30,7 @@ namespace ProAnimaVision.Samples
         private VisionToolkitDashboardReceiver dashboard;
         private UniversalTrackerManager manager;
         private Texture2D previewTexture;
+        private Color32[] previewPixels;
         private float nextFrameTime;
         private int frameIndex;
 
@@ -98,6 +99,7 @@ namespace ProAnimaVision.Samples
 
             previewTexture = new Texture2D(320, 180, TextureFormat.RGBA32, false);
             previewTexture.name = "ProAnima Vision Synthetic Preview";
+            previewPixels = new Color32[previewTexture.width * previewTexture.height];
         }
 
         private void EnsureManager()
@@ -130,12 +132,15 @@ namespace ProAnimaVision.Samples
                 {
                     float horizontal = (float)x / Mathf.Max(1, previewTexture.width - 1);
                     float grid = x % 32 == 0 || y % 32 == 0 ? 0.055f : 0f;
-                    previewTexture.SetPixel(x, y, Color.Lerp(left, right, horizontal) + new Color(grid, grid, grid, 0f));
+                    previewPixels[y * previewTexture.width + x] =
+                        Color.Lerp(left, right, horizontal) + new Color(grid, grid, grid, 0f);
                 }
             }
 
+            previewTexture.SetPixels32(previewPixels);
             previewTexture.Apply(false);
         }
+
         private VisionFrameResult CreateSyntheticResult()
         {
             float walk = Mathf.PingPong(Time.time * 0.12f, 0.28f);
@@ -157,6 +162,7 @@ namespace ProAnimaVision.Samples
                 stats = VisionPerformanceStats.FromStages(0.7f, 6.4f, 1.1f, 0.35f)
             };
         }
+
         private static VisionDetection Detection(int trackId, int classId, string label, float confidence, Rect rect)
         {
             return new VisionDetection
@@ -171,6 +177,7 @@ namespace ProAnimaVision.Samples
                 trackState = VisionTrackState.Tracking
             };
         }
+
         private static VisionMask Mask(int trackId, string label, float confidence, Rect rect)
         {
             return new VisionMask
@@ -183,6 +190,7 @@ namespace ProAnimaVision.Samples
                 sourceRect = Scale(rect)
             };
         }
+
         private static VisionPose Pose(int personId, Rect rect)
         {
             return new VisionPose
@@ -208,6 +216,7 @@ namespace ProAnimaVision.Samples
                 trackState = VisionTrackState.Tracking
             };
         }
+
         private static VisionKeypoint[] CreateKeypoints(Rect rect)
         {
             var keypoints = new VisionKeypoint[17];

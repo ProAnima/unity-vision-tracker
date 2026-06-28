@@ -7,8 +7,6 @@ namespace UniversalTracker.Editor
 {
     public sealed class VisionControlCenterWindow : EditorWindow
     {
-        private const string ExperimentalScenePath =
-            "Packages/com.proanima.universal-vision-tracker/Samples~/Experimental Scene/ProAnimaVisionExperimentalScene.unity";
         private const string GettingStartedPath =
             "Packages/com.proanima.universal-vision-tracker/Documentation~/GETTING_STARTED.md";
         private const string RoadmapPath =
@@ -67,8 +65,8 @@ namespace UniversalTracker.Editor
 
             grid.Add(CreateCard(
                 "Start",
-                "Build or open the fastest working dashboard scene.",
-                ("Open Control Scene", OpenExperimentalScene),
+                "Open the polished dashboard scene after importing it from Package Manager.",
+                ("Open Experimental Scene", OpenExperimentalScene),
                 ("Open Setup Wizard", VisionSetupWizardWindow.Open),
                 ("Open Samples Folder", () => EditorUtility.RevealInFinder(SamplesPath))));
 
@@ -98,7 +96,7 @@ namespace UniversalTracker.Editor
 
         private static VisualElement CreateFooter()
         {
-            var footer = new Label("Recommended flow: Experimental Scene -> Model Profile -> Pipeline Profile -> Setup Wizard -> Compatibility Inspector.");
+            var footer = new Label("Recommended flow: Import Experimental Scene -> Model Profile -> Pipeline Profile -> Setup Wizard -> Compatibility Inspector.");
             footer.style.marginTop = 12;
             footer.style.color = new Color(0.54f, 0.64f, 0.68f);
             footer.style.fontSize = 11;
@@ -170,7 +168,26 @@ namespace UniversalTracker.Editor
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
-            EditorSceneManager.OpenScene(ExperimentalScenePath);
+            string path = FindExperimentalScenePath();
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                EditorSceneManager.OpenScene(path);
+                return;
+            }
+
+            EditorUtility.DisplayDialog(
+                "Experimental Scene",
+                "Import the Experimental Scene sample from Package Manager, then open it from Control Center.",
+                "OK");
+        }
+
+        private static string FindExperimentalScenePath()
+        {
+            string[] guids = AssetDatabase.FindAssets("ProAnimaVisionExperimentalScene t:Scene", new[] { "Assets" });
+            if (guids != null && guids.Length > 0)
+                return AssetDatabase.GUIDToAssetPath(guids[0]);
+
+            return null;
         }
 
         private static void OpenAsset(string path)
