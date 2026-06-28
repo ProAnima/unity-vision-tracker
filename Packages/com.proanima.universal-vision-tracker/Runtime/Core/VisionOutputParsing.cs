@@ -92,6 +92,7 @@ namespace UniversalTracker.Core
         public readonly float confidenceThreshold;
         public readonly float nmsThreshold;
         public readonly Vector2Int modelInputSize;
+        public readonly VisionOutputCoordinateTransform coordinateTransform;
         public readonly string[] labels;
 
         public VisionOutputParserContext(
@@ -99,13 +100,25 @@ namespace UniversalTracker.Core
             float confidenceThreshold,
             float nmsThreshold,
             string[] labels = null,
-            Vector2Int modelInputSize = default)
+            Vector2Int modelInputSize = default,
+            VisionOutputCoordinateTransform coordinateTransform = default)
         {
             this.sourceSize = sourceSize;
             this.confidenceThreshold = confidenceThreshold;
             this.nmsThreshold = nmsThreshold;
             this.modelInputSize = modelInputSize;
+            this.coordinateTransform = ResolveCoordinateTransform(coordinateTransform);
             this.labels = labels ?? Array.Empty<string>();
+        }
+
+        private static VisionOutputCoordinateTransform ResolveCoordinateTransform(VisionOutputCoordinateTransform transform)
+        {
+            if (transform.scaleX <= 0f)
+                transform.scaleX = 1f;
+            if (transform.scaleY <= 0f)
+                transform.scaleY = 1f;
+
+            return transform;
         }
     }
 
@@ -200,6 +213,7 @@ namespace UniversalTracker.Core
                 NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
                 NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
                 NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
+            normalized = context.coordinateTransform.Apply(normalized);
 
             detection = new VisionDetection
             {

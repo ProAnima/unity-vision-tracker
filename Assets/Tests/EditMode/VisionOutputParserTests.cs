@@ -102,6 +102,29 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void YoloDetectionParser_AppliesOutputCoordinateTransform()
+        {
+            var parser = new YoloDetectionOutputParser();
+            float[] data = new float[84];
+            WriteChannelFirstBox(data, 1, 0, 320f, 160f, 128f, 128f, classId: 0, score: 0.82f);
+            VisionOutputCoordinateTransform transform = VisionOutputCoordinateTransform.Identity;
+            transform.flipY = true;
+            VisionRawModelOutput raw = VisionRawModelOutput.Single("output0", data, 1, 84, 1);
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640),
+                transform);
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            AssertRect(parsed.detections[0].sourceRect, new Rect(512, 468, 256, 144));
+        }
+
+        [Test]
         public void YoloDetectionParser_AppliesClassAwareNms()
         {
             var parser = new YoloDetectionOutputParser();

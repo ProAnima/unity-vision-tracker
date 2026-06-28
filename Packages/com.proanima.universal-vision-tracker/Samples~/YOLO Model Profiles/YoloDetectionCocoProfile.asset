@@ -36,6 +36,14 @@ MonoBehaviour:
       - 84
       - 8400
       semantic: detection.rows
+  outputTransform:
+    flipX: 0
+    flipY: 1
+    scaleX: 1
+    scaleY: 1
+    offsetX: 0
+    offsetY: 0
+    scaleSize: 0
   parserId: yolo.detection.rows
   labels: {fileID: 4900000, guid: d14222d3df7145e4ab1a2a3c8d5f2001, type: 3}
   confidenceThreshold: 0.25
