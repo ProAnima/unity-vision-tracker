@@ -44,13 +44,14 @@ Configuration is profile-first:
 - Runtime and editor code now live in an embedded UPM package layout under `Packages/com.proanima.universal-vision-tracker`.
 - `VisionPipelineProfile` now carries simple performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
 - `Tools/ProAnima Vision/Setup Wizard` creates or updates a scene tracker with profile, source, tracking, and UI Toolkit dashboard wiring.
+- Package Manager samples now cover minimal profile-driven setup and dashboard overlay preview without requiring model assets.
 
 ## Next Production Steps
 
 1. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
 2. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
 3. Add scene lifecycle smoke tests for `UniversalTrackerManager` startup, stop, failure, and recovery paths.
-4. Add package samples for minimal profile-driven pipeline and UI Toolkit dashboard overlay.
+4. Add model-profile samples for YOLO detection, pose, and segmentation once lightweight sample assets are available.
 5. Surface budget status in the runtime dashboard without adding per-frame log noise.
 
 ## Extension Rules

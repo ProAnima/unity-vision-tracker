@@ -7,3 +7,4 @@
 - Included UI Toolkit dashboard, output receivers, tracking, profile validation, frame sources, and YOLO parser contracts in the package runtime.
 - Included editor profile validator, profile wizard, and profile asset creation tooling in the package editor assembly.
 - Added Setup Wizard scene bootstrap tooling for profile-driven tracker objects.
+- Added importable Minimal Pipeline and Dashboard Overlay samples.

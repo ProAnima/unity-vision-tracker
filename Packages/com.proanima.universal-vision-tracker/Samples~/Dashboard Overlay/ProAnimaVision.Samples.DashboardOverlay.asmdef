@@ -1,0 +1,17 @@
+{
+  "name": "ProAnimaVision.Samples.DashboardOverlay",
+  "rootNamespace": "ProAnimaVision.Samples",
+  "references": [
+    "UniversalTracker.Runtime",
+    "UnityEngine.UIElementsModule"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

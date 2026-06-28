@@ -17,6 +17,18 @@
     "com.unity.ai.inference": "2.6.1",
     "com.unity.ugui": "2.0.0"
   },
+  "samples": [
+    {
+      "displayName": "Minimal Pipeline",
+      "description": "Small scene bootstrap script for profile-driven tracker setup.",
+      "path": "Samples~/Minimal Pipeline"
+    },
+    {
+      "displayName": "Dashboard Overlay",
+      "description": "Synthetic VisionFrameResult fixture for previewing the UI Toolkit dashboard without a model.",
+      "path": "Samples~/Dashboard Overlay"
+    }
+  ],
   "author": {
     "name": "ProAnima",
     "url": "https://github.com/ProAnima"
