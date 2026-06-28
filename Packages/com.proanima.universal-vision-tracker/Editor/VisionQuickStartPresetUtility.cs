@@ -7,14 +7,6 @@ using UniversalTracker.Core;
 
 namespace UniversalTracker.Editor
 {
-    internal enum VisionQuickStartPreset
-    {
-        WebCamPreview,
-        YoloDetectionWebCam,
-        YoloPoseWebCam,
-        YoloSegmentationWebCam
-    }
-
     internal static class VisionQuickStartPresetUtility
     {
         private const string ProfileFolder = "Assets/ProAnima Vision/Profiles";
@@ -26,16 +18,19 @@ namespace UniversalTracker.Editor
 
             if (preset == VisionQuickStartPreset.WebCamPreview)
             {
-                VisionControlCenterWindow.ImportAndOpenExperimentalScene();
+                VisionControlCenterWindow.EnsureExperimentalSceneImportedAndOpen();
                 return;
             }
+
+            if (!VisionControlCenterWindow.EnsureExperimentalSceneImportedAndOpen())
+                return;
 
             VisionModelProfile model = CreateModelProfile(ToTemplate(preset));
             VisionPipelineProfile pipeline = VisionModelProfileTemplateFactory.CreatePipelineProfile(new[] { model });
             pipeline.name = $"{model.displayName} WebCam Pipeline";
             pipeline.targetFps = 30;
             pipeline.enableTracking = true;
-            CreateAsset(pipeline, $"{ProfileFolder}/{Sanitize(pipeline.name)}.asset");
+            pipeline = CreateOrUpdateAsset(pipeline, $"{ProfileFolder}/{Sanitize(pipeline.name)}.asset");
 
             string sceneObjectName = ResolveSceneObjectName();
             VisionSceneSetupResult result = VisionSceneSetupUtility.CreateOrUpdate(new VisionSceneSetupOptions(
@@ -55,8 +50,8 @@ namespace UniversalTracker.Editor
             EditorUtility.DisplayDialog(
                 "Preset Applied",
                 model.modelAsset == null
-                    ? "Profiles and WebCam scene wiring were created. Assign a ModelAsset in the model profile, then run Profile Validator before pressing Play."
-                    : "Profiles and WebCam scene wiring were created. Press Play to start.",
+                    ? "The demo scene and profiles are ready. Assign a ModelAsset in the model profile, then run Profile Validator before pressing Play."
+                    : "The demo scene and profiles are ready. Press Play to start.",
                 "OK");
         }
 
@@ -79,8 +74,7 @@ namespace UniversalTracker.Editor
 
             VisionModelProfile profile = VisionModelProfileTemplateFactory.Create(template, settings);
             profile.name = profile.displayName;
-            CreateAsset(profile, $"{ProfileFolder}/{VisionModelProfileTemplateFactory.DefaultAssetName(template)}");
-            return profile;
+            return CreateOrUpdateAsset(profile, $"{ProfileFolder}/{VisionModelProfileTemplateFactory.DefaultAssetName(template)}");
         }
 
         private static VisionModelProfileTemplate ToTemplate(VisionQuickStartPreset preset)
@@ -93,11 +87,23 @@ namespace UniversalTracker.Editor
             };
         }
 
-        private static void CreateAsset(Object asset, string path)
+        private static T CreateOrUpdateAsset<T>(T asset, string path)
+            where T : Object
         {
-            string uniquePath = AssetDatabase.GenerateUniqueAssetPath(path);
-            AssetDatabase.CreateAsset(asset, uniquePath);
+            T existing = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (existing != null)
+            {
+                EditorUtility.CopySerialized(asset, existing);
+                existing.name = asset.name;
+                EditorUtility.SetDirty(existing);
+                Object.DestroyImmediate(asset);
+                AssetDatabase.SaveAssets();
+                return existing;
+            }
+
+            AssetDatabase.CreateAsset(asset, path);
             AssetDatabase.SaveAssets();
+            return asset;
         }
 
         private static string ResolveSceneObjectName()

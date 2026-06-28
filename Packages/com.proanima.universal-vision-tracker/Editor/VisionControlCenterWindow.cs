@@ -1,9 +1,4 @@
-using System;
-using System.Collections;
-using System.Reflection;
 using UnityEditor;
-using UnityEditor.PackageManager;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -17,12 +12,10 @@ namespace UniversalTracker.Editor
             "Packages/com.proanima.universal-vision-tracker/Documentation~/ARCHITECTURE_ROADMAP.md";
         private const string SamplesPath =
             "Packages/com.proanima.universal-vision-tracker/Samples~";
-        private const string PackageJsonPath =
-            "Packages/com.proanima.universal-vision-tracker/package.json";
-        private const string PackageName =
-            "com.proanima.universal-vision-tracker";
-        private const string ExperimentalSceneSampleName =
-            "Experimental Scene";
+        private VisionQuickStartPresetDefinition selectedPreset = VisionQuickStartPresetDefinition.All[0];
+        private Label presetDescriptionLabel;
+        private Label presetRequirementLabel;
+        private Button presetActionButton;
 
         [MenuItem("Tools/ProAnima Vision/Control Center", priority = -100)]
         public static void Open()
@@ -47,8 +40,9 @@ namespace UniversalTracker.Editor
             root.Add(scroll);
 
             scroll.Add(CreateHeader());
-            scroll.Add(CreateWorkflow());
-            scroll.Add(CreateGrid());
+            scroll.Add(CreatePreviewSceneBlock());
+            scroll.Add(CreatePresetBlock());
+            scroll.Add(CreateAdvancedBlock());
         }
 
         private static VisualElement CreateHeader()
@@ -70,92 +64,101 @@ namespace UniversalTracker.Editor
             return header;
         }
 
-        private static VisualElement CreateWorkflow()
+        private VisualElement CreatePreviewSceneBlock()
         {
+            VisualElement panel = CreatePanel();
+
+            var heading = CreateHeading("Scene Preview");
+            panel.Add(heading);
+            panel.Add(CreateBodyText("Import and open the polished WebCam demo scene. This is the fastest way to verify camera access, preview fitting, rotation, mirroring, and overlay layout."));
+
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
             row.style.flexWrap = Wrap.Wrap;
-            row.style.marginBottom = 14;
-            row.Add(CreateStep("1", "Preview"));
-            row.Add(CreateStep("2", "Profiles"));
-            row.Add(CreateStep("3", "Setup"));
-            row.Add(CreateStep("4", "Validate"));
-            return row;
+            row.style.marginTop = 8;
+            panel.Add(row);
+
+            row.Add(CreateButton("Import / Open Demo Scene", () => EnsureExperimentalSceneImportedAndOpen(), true));
+            row.Add(CreateButton("Open Samples Folder", () => EditorUtility.RevealInFinder(SamplesPath), false));
+            return panel;
         }
 
-        private static Label CreateStep(string number, string text)
+        private VisualElement CreatePresetBlock()
         {
-            var step = new Label($"{number}. {text}");
-            step.style.marginRight = 8;
-            step.style.marginBottom = 6;
-            step.style.paddingLeft = 9;
-            step.style.paddingRight = 9;
-            step.style.paddingTop = 5;
-            step.style.paddingBottom = 5;
-            step.style.borderTopLeftRadius = 6;
-            step.style.borderTopRightRadius = 6;
-            step.style.borderBottomLeftRadius = 6;
-            step.style.borderBottomRightRadius = 6;
-            step.style.backgroundColor = new Color(0.1f, 0.14f, 0.16f, 1f);
-            step.style.color = new Color(0.78f, 0.88f, 0.88f, 1f);
-            step.style.unityFontStyleAndWeight = FontStyle.Bold;
-            return step;
+            VisualElement panel = CreatePanel();
+            panel.style.backgroundColor = new Color(0.055f, 0.075f, 0.082f, 1f);
+
+            panel.Add(CreateHeading("Quick Start Preset"));
+            panel.Add(CreateBodyText("Choose the scenario you want to run. The preset creates or updates the required profiles, opens the demo scene, wires the dashboard, and keeps advanced setup hidden."));
+
+            var dropdown = new DropdownField("Preset", VisionQuickStartPresetDefinition.Labels(), selectedPreset.Label);
+            dropdown.style.marginTop = 10;
+            dropdown.style.marginBottom = 8;
+            dropdown.RegisterValueChangedCallback(evt =>
+            {
+                selectedPreset = VisionQuickStartPresetDefinition.FromLabel(evt.newValue);
+                RefreshPresetDetails();
+            });
+            panel.Add(dropdown);
+
+            presetDescriptionLabel = CreateBodyText(string.Empty);
+            presetDescriptionLabel.style.marginTop = 2;
+            panel.Add(presetDescriptionLabel);
+
+            presetRequirementLabel = CreateMutedPill(string.Empty);
+            presetRequirementLabel.style.marginTop = 8;
+            panel.Add(presetRequirementLabel);
+
+            presetActionButton = CreateButton(string.Empty, () => VisionQuickStartPresetUtility.Apply(selectedPreset.Preset), true);
+            presetActionButton.style.marginTop = 12;
+            panel.Add(presetActionButton);
+
+            RefreshPresetDetails();
+            return panel;
         }
 
-        private static VisualElement CreateGrid()
+        private static VisualElement CreateAdvancedBlock()
         {
+            var foldout = new Foldout { text = "Advanced tools", value = false };
+            foldout.style.marginTop = 4;
+            foldout.style.color = new Color(0.78f, 0.88f, 0.88f, 1f);
+
+            VisualElement panel = CreatePanel();
+            panel.style.marginTop = 8;
+            foldout.Add(panel);
+
+            panel.Add(CreateBodyText("Use these only when you need to inspect profiles, validate compatibility, or build a custom scene manually."));
+
             var grid = new VisualElement();
             grid.style.flexDirection = FlexDirection.Row;
             grid.style.flexWrap = Wrap.Wrap;
-            grid.style.flexGrow = 1f;
+            grid.style.marginTop = 8;
+            panel.Add(grid);
 
-            grid.Add(CreateCard(
-                "0. Presets",
-                "Choose a supported starting point and let the tool create profiles and scene wiring.",
-                ("WebCam Preview", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.WebCamPreview)),
-                ("YOLO Detection + WebCam", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.YoloDetectionWebCam)),
-                ("YOLO Pose + WebCam", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.YoloPoseWebCam)),
-                ("YOLO Segmentation + WebCam", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.YoloSegmentationWebCam))));
-
-            grid.Add(CreateCard(
-                "1. Preview",
-                "Import the package sample once, then open the polished dashboard scene.",
-                ("Import Sample", ImportExperimentalScene),
-                ("Open Scene", OpenExperimentalScene),
-                ("Open Samples Folder", () => EditorUtility.RevealInFinder(SamplesPath))));
-
-            grid.Add(CreateCard(
-                "2. Profiles",
-                "Create runtime-ready model and pipeline assets.",
-                ("Model Profile Wizard", VisionProfileWizardWindow.Open),
-                ("Pipeline Profile", VisionProfileAssetCreator.CreatePipelineProfile),
-                ("YOLO Detection Profile", VisionProfileAssetCreator.CreateYoloDetectionProfile)));
-
-            grid.Add(CreateCard(
-                "3. Setup",
-                "Create scene objects, connect profiles, and inspect compatibility.",
-                ("Open Setup Wizard", VisionSetupWizardWindow.Open),
-                ("Compatibility Inspector", VisionProfileCompatibilityWindow.Open)));
-
-            grid.Add(CreateCard(
-                "4. Validate",
-                "Run readiness checks and open the shortest reference docs.",
-                ("Profile Validator", VisionProfileValidatorWindow.Open),
-                ("Getting Started", () => OpenAsset(GettingStartedPath)),
-                ("Architecture Roadmap", () => OpenAsset(RoadmapPath))));
-
-            return grid;
+            grid.Add(CreateButton("Model Profile Wizard", VisionProfileWizardWindow.Open, false));
+            grid.Add(CreateButton("Pipeline Profile", VisionProfileAssetCreator.CreatePipelineProfile, false));
+            grid.Add(CreateButton("Setup Wizard", VisionSetupWizardWindow.Open, false));
+            grid.Add(CreateButton("Compatibility Inspector", VisionProfileCompatibilityWindow.Open, false));
+            grid.Add(CreateButton("Profile Validator", VisionProfileValidatorWindow.Open, false));
+            grid.Add(CreateButton("Getting Started", () => OpenAsset(GettingStartedPath), false));
+            grid.Add(CreateButton("Architecture Roadmap", () => OpenAsset(RoadmapPath), false));
+            return foldout;
         }
 
-        private static VisualElement CreateCard(string title, string description, params (string label, System.Action action)[] actions)
+        private void RefreshPresetDetails()
         {
-            var card = new VisualElement();
-            card.style.width = Length.Percent(50);
-            card.style.minWidth = 300;
-            card.style.maxWidth = Length.Percent(100);
-            card.style.paddingRight = 8;
-            card.style.paddingBottom = 8;
+            if (presetDescriptionLabel != null)
+                presetDescriptionLabel.text = selectedPreset.Description;
 
+            if (presetRequirementLabel != null)
+                presetRequirementLabel.text = selectedPreset.Requirement;
+
+            if (presetActionButton != null)
+                presetActionButton.text = selectedPreset.ActionLabel;
+        }
+
+        private static VisualElement CreatePanel()
+        {
             var panel = new VisualElement();
             panel.style.backgroundColor = new Color(0.07f, 0.085f, 0.098f, 1f);
             panel.style.borderTopLeftRadius = 8;
@@ -174,31 +177,52 @@ namespace UniversalTracker.Editor
             panel.style.paddingRight = 14;
             panel.style.paddingTop = 14;
             panel.style.paddingBottom = 14;
-            card.Add(panel);
+            panel.style.marginBottom = 12;
+            return panel;
+        }
 
-            var heading = new Label(title);
-            heading.style.fontSize = 15;
+        private static Label CreateHeading(string text)
+        {
+            var heading = new Label(text);
+            heading.style.fontSize = 16;
             heading.style.unityFontStyleAndWeight = FontStyle.Bold;
             heading.style.color = new Color(0.92f, 0.96f, 0.98f);
-            panel.Add(heading);
+            return heading;
+        }
 
-            var text = new Label(description);
-            text.style.marginTop = 4;
-            text.style.marginBottom = 10;
-            text.style.whiteSpace = WhiteSpace.Normal;
-            text.style.color = new Color(0.62f, 0.72f, 0.76f);
-            panel.Add(text);
+        private static Label CreateBodyText(string text)
+        {
+            var label = new Label(text);
+            label.style.marginTop = 4;
+            label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.color = new Color(0.62f, 0.72f, 0.76f);
+            return label;
+        }
 
-            for (int i = 0; i < actions.Length; i++)
-                panel.Add(CreateButton(actions[i].label, actions[i].action, i == 0));
-
-            return card;
+        private static Label CreateMutedPill(string text)
+        {
+            var label = new Label(text);
+            label.style.alignSelf = Align.FlexStart;
+            label.style.paddingLeft = 8;
+            label.style.paddingRight = 8;
+            label.style.paddingTop = 4;
+            label.style.paddingBottom = 4;
+            label.style.borderTopLeftRadius = 6;
+            label.style.borderTopRightRadius = 6;
+            label.style.borderBottomLeftRadius = 6;
+            label.style.borderBottomRightRadius = 6;
+            label.style.backgroundColor = new Color(0.12f, 0.16f, 0.18f, 1f);
+            label.style.color = new Color(0.78f, 0.88f, 0.88f, 1f);
+            label.style.unityFontStyleAndWeight = FontStyle.Bold;
+            return label;
         }
 
         private static Button CreateButton(string text, System.Action action, bool primary)
         {
             var button = new Button(() => action?.Invoke()) { text = text };
             button.style.height = 30;
+            button.style.minWidth = 150;
+            button.style.marginRight = 7;
             button.style.marginTop = 5;
             button.style.unityFontStyleAndWeight = FontStyle.Bold;
             button.style.color = primary ? Color.black : new Color(0.88f, 0.94f, 0.96f);
@@ -208,29 +232,6 @@ namespace UniversalTracker.Editor
             return button;
         }
 
-        private static void OpenExperimentalScene()
-        {
-            OpenExperimentalScene(null);
-        }
-
-        private static void OpenExperimentalScene(string preferredPath)
-        {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                return;
-
-            string path = string.IsNullOrWhiteSpace(preferredPath) ? FindExperimentalScenePath() : preferredPath;
-            if (!string.IsNullOrWhiteSpace(path))
-            {
-                EditorSceneManager.OpenScene(path);
-                return;
-            }
-
-            EditorUtility.DisplayDialog(
-                "Experimental Scene",
-                "Import the Experimental Scene sample from Package Manager, then open it from Control Center.",
-                "OK");
-        }
-
         private static void ImportExperimentalScene()
         {
             ImportAndOpenExperimentalScene();
@@ -238,211 +239,12 @@ namespace UniversalTracker.Editor
 
         internal static void ImportAndOpenExperimentalScene()
         {
-            if (TryImportExperimentalSceneSample(out string importedScenePath, out string importError))
-            {
-                bool openScene = EditorUtility.DisplayDialog(
-                    "Experimental Scene Imported",
-                    "Experimental Scene was imported into Assets/Samples. Open it now?",
-                    "Open Scene",
-                    "Later");
-
-                if (openScene)
-                    OpenExperimentalScene(importedScenePath);
-                return;
-            }
-
-            bool packageManagerOpened = TryOpenPackageManager();
-            string message = packageManagerOpened
-                ? "In Package Manager, select ProAnima Universal Vision Tracker, open Samples, and import Experimental Scene."
-                : "Open Window > Package Management > Package Manager, select ProAnima Universal Vision Tracker, open Samples, and import Experimental Scene.";
-
-            if (!string.IsNullOrWhiteSpace(importError))
-                message += $"\n\nAutomatic import was not available: {importError}";
-
-            EditorUtility.DisplayDialog(
-                "Import Experimental Scene",
-                message,
-                "OK");
+            VisionExperimentalSceneSampleUtility.ImportAndOpen();
         }
 
-        private static bool TryImportExperimentalSceneSample(out string importedScenePath, out string error)
+        internal static bool EnsureExperimentalSceneImportedAndOpen()
         {
-            importedScenePath = null;
-            error = null;
-
-            Type sampleType = FindType("UnityEditor.PackageManager.UI.Sample");
-            if (sampleType == null)
-            {
-                error = "Unity Package Manager sample API was not found.";
-                return false;
-            }
-
-            UnityEditor.PackageManager.PackageInfo packageInfo =
-                UnityEditor.PackageManager.PackageInfo.FindForAssetPath(PackageJsonPath);
-            string packageVersion = packageInfo != null ? packageInfo.version : null;
-            if (string.IsNullOrWhiteSpace(packageVersion))
-            {
-                error = "Package version could not be resolved.";
-                return false;
-            }
-
-            MethodInfo findByPackage = sampleType.GetMethod(
-                "FindByPackage",
-                BindingFlags.Public | BindingFlags.Static,
-                null,
-                new[] { typeof(string), typeof(string) },
-                null);
-            if (findByPackage == null)
-            {
-                error = "Sample.FindByPackage API was not found.";
-                return false;
-            }
-
-            IEnumerable samples;
-            try
-            {
-                samples = findByPackage.Invoke(null, new object[] { PackageName, packageVersion }) as IEnumerable;
-            }
-            catch (Exception exception)
-            {
-                error = exception.Message;
-                return false;
-            }
-
-            object sample = FindSampleByDisplayName(sampleType, samples, ExperimentalSceneSampleName);
-            if (sample == null)
-            {
-                error = "Experimental Scene sample was not found in the package manifest.";
-                return false;
-            }
-
-            if (!TryImportSample(sampleType, sample, out error))
-                return false;
-
-            AssetDatabase.Refresh();
-            importedScenePath = FindExperimentalScenePath();
-            if (!string.IsNullOrWhiteSpace(importedScenePath))
-                return true;
-
-            error = "Sample import completed, but the scene was not found under Assets/Samples.";
-            return false;
-        }
-
-        private static Type FindType(string fullName)
-        {
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                Type type = assembly.GetType(fullName, false);
-                if (type != null)
-                    return type;
-            }
-
-            return null;
-        }
-
-        private static object FindSampleByDisplayName(Type sampleType, IEnumerable samples, string displayName)
-        {
-            if (samples == null)
-                return null;
-
-            PropertyInfo displayNameProperty = sampleType.GetProperty("displayName");
-            foreach (object sample in samples)
-            {
-                string sampleName = displayNameProperty?.GetValue(sample) as string;
-                if (string.Equals(sampleName, displayName, StringComparison.OrdinalIgnoreCase))
-                    return sample;
-            }
-
-            return null;
-        }
-
-        private static bool TryImportSample(Type sampleType, object sample, out string error)
-        {
-            error = null;
-            Type optionsType = sampleType.GetNestedType("ImportOptions", BindingFlags.Public);
-            MethodInfo import = optionsType == null
-                ? sampleType.GetMethod("Import", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null)
-                : sampleType.GetMethod("Import", BindingFlags.Public | BindingFlags.Instance, null, new[] { optionsType }, null);
-            if (import == null)
-            {
-                error = "Sample.Import API was not found.";
-                return false;
-            }
-
-            try
-            {
-                object[] args = optionsType == null ? null : new[] { ResolveImportOptions(optionsType) };
-                object result = import.Invoke(sample, args);
-                return result is not bool imported || imported;
-            }
-            catch (Exception exception)
-            {
-                error = exception.Message;
-                return false;
-            }
-        }
-
-        private static object ResolveImportOptions(Type optionsType)
-        {
-            foreach (string name in Enum.GetNames(optionsType))
-            {
-                if (name.IndexOf("Override", StringComparison.OrdinalIgnoreCase) >= 0)
-                    return Enum.Parse(optionsType, name);
-            }
-
-            return Enum.ToObject(optionsType, 0);
-        }
-
-        private static bool TryOpenPackageManager()
-        {
-            Type packageManagerWindow = Type.GetType(
-                "UnityEditor.PackageManager.UI.Window,UnityEditor.PackageManagerUI.Editor");
-            if (packageManagerWindow == null)
-                return false;
-
-            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static;
-            MethodInfo openPackage = packageManagerWindow.GetMethod(
-                "Open",
-                flags,
-                null,
-                new[] { typeof(string) },
-                null);
-            if (TryInvoke(openPackage, "com.proanima.universal-vision-tracker"))
-                return true;
-
-            MethodInfo open = packageManagerWindow.GetMethod(
-                "Open",
-                flags,
-                null,
-                Type.EmptyTypes,
-                null);
-            return TryInvoke(open);
-        }
-
-        private static bool TryInvoke(MethodInfo method, params object[] args)
-        {
-            if (method == null)
-                return false;
-
-            try
-            {
-                method.Invoke(null, args);
-                return true;
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"[ProAnima Vision] Package Manager could not be opened: {exception.Message}");
-                return false;
-            }
-        }
-
-        private static string FindExperimentalScenePath()
-        {
-            string[] guids = AssetDatabase.FindAssets("ProAnimaVisionExperimentalScene t:Scene", new[] { "Assets" });
-            if (guids != null && guids.Length > 0)
-                return AssetDatabase.GUIDToAssetPath(guids[0]);
-
-            return null;
+            return VisionExperimentalSceneSampleUtility.EnsureImportedAndOpen();
         }
 
         private static void OpenAsset(string path)

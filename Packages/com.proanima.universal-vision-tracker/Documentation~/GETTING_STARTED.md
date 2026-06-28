@@ -22,7 +22,7 @@ After install, confirm this menu item exists:
 
 - `Tools/ProAnima Vision/Control Center`
 
-Use `Control Center` as the primary entry point. Expert tools remain available under `Tools/ProAnima Vision/Advanced` for direct workflows.
+Use `Control Center` as the primary entry point. The main flow is intentionally short: import/open the demo scene, choose a Quick Start preset from the dropdown, apply it, then press Play. Expert tools remain available under `Tools/ProAnima Vision/Advanced` and inside the collapsed `Advanced tools` section.
 
 ## Import Samples
 
@@ -33,13 +33,24 @@ Open Unity Package Manager, select `ProAnima Universal Vision Tracker`, then imp
 - `YOLO Model Profiles` for detection, pose, and segmentation profile templates.
 - `Experimental Scene` for a polished runnable WebCam dashboard scene with fit, rotation, and mirror controls.
 
-You can also use `Control Center > Import Sample`; it attempts to import the Experimental Scene automatically and falls back to Package Manager instructions if Unity does not expose the sample import API.
+You can also use `Control Center > Import / Open Demo Scene`; it attempts to import the Experimental Scene automatically and falls back to Package Manager instructions if Unity does not expose the sample import API.
 
 The YOLO sample profiles are intentionally runtime-asset-free. They document parser ids, tensor schemas, labels, thresholds, and governance fields so you can add your own model asset safely.
 
-## Create A Model Profile
+## Apply A Quick Start Preset
 
-For a production scene, create a `VisionModelProfile` with `Control Center > Model Profile Wizard`.
+Open `Tools/ProAnima Vision/Control Center`, choose one preset, then click the primary action:
+
+- `WebCam Preview` imports/opens the demo scene and requires no model.
+- `YOLO Detection + WebCam` creates or updates detection profiles, opens the demo scene, and wires the camera pipeline.
+- `YOLO Pose + WebCam` creates or updates pose profiles and skeleton overlay wiring.
+- `YOLO Segmentation + WebCam` creates or updates segmentation profiles and mask overlay wiring.
+
+Preset assets are written under `Assets/ProAnima Vision/Profiles`. Re-applying the same preset updates the same assets instead of creating duplicates.
+
+## Create A Model Profile Manually
+
+For a custom production scene, create a `VisionModelProfile` with `Control Center > Advanced tools > Model Profile Wizard`.
 
 Recommended first pass:
 
@@ -69,7 +80,7 @@ Keep one default model selected and make fallback models explicit.
 
 ## Setup A Scene
 
-Use `Control Center > Open Setup Wizard`.
+Use `Control Center > Advanced tools > Setup Wizard`.
 
 Recommended scene setup:
 

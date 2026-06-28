@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Unity.InferenceEngine;
@@ -94,6 +95,23 @@ namespace UniversalTracker.Tests
 
             foreach (string path in paths)
                 Assert.That(AssetDatabase.LoadAssetAtPath<ModelAsset>(path), Is.Not.Null, path);
+        }
+
+        [Test]
+        public void QuickStartPresets_AreDropdownReady()
+        {
+            var labels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            Assert.That(VisionQuickStartPresetDefinition.All, Has.Length.EqualTo(4));
+            foreach (VisionQuickStartPresetDefinition definition in VisionQuickStartPresetDefinition.All)
+            {
+                Assert.That(definition.Label, Is.Not.Empty);
+                Assert.That(definition.Description, Is.Not.Empty);
+                Assert.That(definition.Requirement, Is.Not.Empty);
+                Assert.That(definition.ActionLabel, Is.Not.Empty);
+                Assert.That(labels.Add(definition.Label), Is.True, definition.Label);
+                Assert.That(VisionQuickStartPresetDefinition.FromLabel(definition.Label), Is.SameAs(definition));
+            }
         }
 
         [Test]
