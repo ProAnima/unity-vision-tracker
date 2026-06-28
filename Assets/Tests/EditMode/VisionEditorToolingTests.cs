@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
+using Unity.InferenceEngine;
 using UnityEditor;
 using UniversalTracker.Core;
 using UniversalTracker.Editor;
@@ -79,6 +80,20 @@ namespace UniversalTracker.Tests
                 null,
                 new object[] { packageInfo.name, packageInfo.version }) as IEnumerable;
             Assert.That(ContainsSample(sampleType, samples, "Experimental Scene"), Is.True);
+        }
+
+        [Test]
+        public void RepositoryYoloModels_AreImportableAsUnityModelAssets()
+        {
+            string[] paths =
+            {
+                "Assets/Models/yolo26n.onnx",
+                "Assets/Models/yolo26n-pose.onnx",
+                "Assets/Models/yolo26n-seg.onnx"
+            };
+
+            foreach (string path in paths)
+                Assert.That(AssetDatabase.LoadAssetAtPath<ModelAsset>(path), Is.Not.Null, path);
         }
 
         [Test]

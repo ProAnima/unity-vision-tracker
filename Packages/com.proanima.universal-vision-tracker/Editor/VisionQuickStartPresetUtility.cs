@@ -1,5 +1,7 @@
 using System.IO;
+using Unity.InferenceEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UniversalTracker.Core;
 
@@ -16,6 +18,7 @@ namespace UniversalTracker.Editor
     internal static class VisionQuickStartPresetUtility
     {
         private const string ProfileFolder = "Assets/ProAnima Vision/Profiles";
+        private const string ExperimentalSceneObjectName = "ProAnima Vision Experimental Demo";
 
         public static void Apply(VisionQuickStartPreset preset)
         {
@@ -34,8 +37,9 @@ namespace UniversalTracker.Editor
             pipeline.enableTracking = true;
             CreateAsset(pipeline, $"{ProfileFolder}/{Sanitize(pipeline.name)}.asset");
 
-            VisionSceneSetupUtility.CreateOrUpdate(new VisionSceneSetupOptions(
-                VisionSceneSetupUtility.DefaultObjectName,
+            string sceneObjectName = ResolveSceneObjectName();
+            VisionSceneSetupResult result = VisionSceneSetupUtility.CreateOrUpdate(new VisionSceneSetupOptions(
+                sceneObjectName,
                 pipeline,
                 null,
                 VisionSceneSetupSource.WebCam,
@@ -43,6 +47,7 @@ namespace UniversalTracker.Editor
                 enableTracking: true,
                 autoStart: model.modelAsset != null,
                 targetFps: pipeline.targetFps));
+            ConfigureExperimentalBootstrap(result.root, pipeline, model.modelAsset != null);
 
             Selection.activeObject = pipeline;
             EditorGUIUtility.PingObject(pipeline);
@@ -57,9 +62,22 @@ namespace UniversalTracker.Editor
 
         private static VisionModelProfile CreateModelProfile(VisionModelProfileTemplate template)
         {
-            VisionModelProfile profile = VisionModelProfileTemplateFactory.Create(
-                template,
-                VisionModelProfileTemplateSettings.Defaults(template));
+            VisionModelProfileTemplateSettings defaults = VisionModelProfileTemplateSettings.Defaults(template);
+            ModelAsset modelAsset = ResolveModelAsset(template);
+            TextAsset labels = ResolveLabels(template);
+            var settings = new VisionModelProfileTemplateSettings(
+                defaults.profileId,
+                defaults.displayName,
+                modelAsset,
+                labels,
+                defaults.backend,
+                defaults.inputSize,
+                defaults.confidenceThreshold,
+                defaults.nmsThreshold,
+                "Repository model asset - verify upstream license before release",
+                modelAsset != null ? AssetDatabase.GetAssetPath(modelAsset) : defaults.modelSourceUrl);
+
+            VisionModelProfile profile = VisionModelProfileTemplateFactory.Create(template, settings);
             profile.name = profile.displayName;
             CreateAsset(profile, $"{ProfileFolder}/{VisionModelProfileTemplateFactory.DefaultAssetName(template)}");
             return profile;
@@ -80,6 +98,102 @@ namespace UniversalTracker.Editor
             string uniquePath = AssetDatabase.GenerateUniqueAssetPath(path);
             AssetDatabase.CreateAsset(asset, uniquePath);
             AssetDatabase.SaveAssets();
+        }
+
+        private static string ResolveSceneObjectName()
+        {
+            return GameObject.Find(ExperimentalSceneObjectName) != null
+                ? ExperimentalSceneObjectName
+                : VisionSceneSetupUtility.DefaultObjectName;
+        }
+
+        private static void ConfigureExperimentalBootstrap(GameObject root, VisionPipelineProfile pipeline, bool autoStart)
+        {
+            Component bootstrap = FindExperimentalBootstrap(root);
+            if (bootstrap == null)
+                return;
+
+            var serialized = new SerializedObject(bootstrap);
+            SetBool(serialized, "runWebCamPreview", true);
+            SetBool(serialized, "configureRealPipeline", true);
+            SetObject(serialized, "pipelineProfile", pipeline);
+            SetObject(serialized, "modelProfile", null);
+            SetBool(serialized, "autoStartRealPipeline", autoStart);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(bootstrap);
+            EditorSceneManager.MarkSceneDirty(root.scene);
+        }
+
+        private static Component FindExperimentalBootstrap(GameObject root)
+        {
+            if (root == null)
+                return null;
+
+            foreach (Component component in root.GetComponents<Component>())
+            {
+                if (component != null && component.GetType().Name == "ProAnimaVisionExperimentalSceneBootstrap")
+                    return component;
+            }
+
+            return null;
+        }
+
+        private static void SetBool(SerializedObject serialized, string propertyName, bool value)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+                property.boolValue = value;
+        }
+
+        private static void SetObject(SerializedObject serialized, string propertyName, Object value)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+                property.objectReferenceValue = value;
+        }
+
+        private static ModelAsset ResolveModelAsset(VisionModelProfileTemplate template)
+        {
+            foreach (string path in CandidateModelPaths(template))
+            {
+                ModelAsset asset = AssetDatabase.LoadAssetAtPath<ModelAsset>(path);
+                if (asset != null)
+                    return asset;
+            }
+
+            return null;
+        }
+
+        private static string[] CandidateModelPaths(VisionModelProfileTemplate template)
+        {
+            return template switch
+            {
+                VisionModelProfileTemplate.YoloPose2D => new[]
+                {
+                    "Assets/Models/yolo26n-pose.onnx",
+                    "Assets/Models/yolo11n-pose.onnx",
+                    "Assets/Models/yolo26s-pose.onnx"
+                },
+                VisionModelProfileTemplate.YoloSegmentation => new[]
+                {
+                    "Assets/Models/yolo26n-seg.onnx"
+                },
+                _ => new[]
+                {
+                    "Assets/Models/yolo26n.onnx",
+                    "Assets/Models/yolo11n.onnx",
+                    "Assets/Models/yolo26s.onnx",
+                    "Assets/Models/yolo11s.onnx"
+                }
+            };
+        }
+
+        private static TextAsset ResolveLabels(VisionModelProfileTemplate template)
+        {
+            string path = template == VisionModelProfileTemplate.YoloPose2D
+                ? "Packages/com.proanima.universal-vision-tracker/Samples~/YOLO Model Profiles/person.labels.txt"
+                : "Packages/com.proanima.universal-vision-tracker/Samples~/YOLO Model Profiles/coco-80.labels.txt";
+            return AssetDatabase.LoadAssetAtPath<TextAsset>(path);
         }
 
         private static void EnsureFolder(string folder)

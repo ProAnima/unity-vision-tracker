@@ -58,6 +58,19 @@ namespace UniversalTracker.Tests
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVision.Samples.ExperimentalScene.asmdef")), Is.True);
         }
 
+        [Test]
+        public void ExperimentalSceneSample_IsWebCamFirst()
+        {
+            string scene = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalScene.unity"));
+
+            Assert.That(scene, Does.Contain("runWebCamPreview: 1"));
+            Assert.That(scene, Does.Contain("requestedWidth: 1280"));
+            Assert.That(scene, Does.Contain("requestedHeight: 720"));
+            Assert.That(scene, Does.Contain("previewScaleMode: 2"));
+            Assert.That(scene, Does.Not.Contain("runSyntheticPreview"));
+            Assert.That(scene, Does.Not.Contain("frameSource:"));
+        }
+
         private static string PackagePath(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

@@ -1,47 +1,24 @@
-# 🤖 Модели YOLO для Universal Tracker
+# YOLO Models
 
-Автоматически загружено: 1 моделей
+This folder contains repository-supplied YOLO ONNX models for local testing.
 
-## 📦 Загруженные модели
+Unity Inference Engine imports these `.onnx` files as `ModelAsset` assets. The ProAnima Vision quick-start presets look here first when creating runtime profiles:
 
-- `yolo26n-seg.onnx` - YOLO26 segmentation (nano)
+- `yolo26n.onnx` for detection.
+- `yolo26n-pose.onnx` for 2D pose.
+- `yolo26n-seg.onnx` for segmentation.
+- `yolo11n.onnx` and other variants are fallback or comparison models.
 
+## Quick Test
 
-## 🎯 Как использовать в Unity
+1. Open `Tools > ProAnima Vision > Control Center`.
+2. Choose `YOLO Detection + WebCam`, `YOLO Pose + WebCam`, or `YOLO Segmentation + WebCam`.
+3. The tool creates `VisionModelProfile` and `VisionPipelineProfile` assets under `Assets/ProAnima Vision/Profiles`.
+4. If the Experimental Scene is open, the preset wires that scene directly; otherwise it creates or updates a `ProAnima Vision Tracker` object in the active scene.
+5. Run `Profile Validator`, then press Play.
 
-1. Модели уже импортированы в Unity (Assets/Models/)
-2. Создайте `ModelConfig` в Inspector
-3. Назначьте .onnx файл в `Model Asset`
-4. Система автоматически определит версию и тип модели
+## Production Notes
 
-## ⚙️ Параметры экспорта
-
-- **Format**: ONNX
-- **Opset**: 13 (совместимо с Unity InferenceEngine)
-- **Input size**: 640x640 (по умолчанию)
-- **Simplified**: Yes
-- **Dynamic**: No (фиксированный размер для стабильности)
-
-## 📊 Рекомендации
-
-### Для Mobile/Edge:
-- `yolo26n.onnx` - детекция
-- `yolo26n-pose.onnx` - поза
-
-### Для Desktop:
-- `yolo26s.onnx` или `yolo26m.onnx` - детекция
-- `yolo26s-pose.onnx` - поза
-
-### Резервная (стабильная):
-- `yolo11n.onnx` - проверенная детекция
-
-## 🔄 Обновление моделей
-
-Запустите скрипт снова:
-```bash
-python download_models_advanced.py --preset recommended
-```
-
----
-📅 Создано: автоматически
-🤖 Universal Tracker System
+- Keep model binaries in Git LFS.
+- Verify upstream model licenses before shipping an app.
+- Keep profile parser ids and tensor schemas aligned with the exported model layout.

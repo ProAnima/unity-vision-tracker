@@ -122,13 +122,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f7b012d1f05437bb1b0e9287f5e6801, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  runSyntheticPreview: 1
-  syntheticFps: 24
+  runWebCamPreview: 1
+  deviceIndex: 0
+  deviceNameOverride:
+  requestedWidth: 1280
+  requestedHeight: 720
+  requestedFps: 30
+  previewScaleMode: 2
+  previewRotationDegrees: 0
+  mirrorPreviewX: 0
+  mirrorPreviewY: 0
   configureRealPipeline: 0
   pipelineProfile: {fileID: 0}
   modelProfile: {fileID: 0}
-  frameSource: 0
   autoStartRealPipeline: 0
-  showDetections: 1
-  showPoses: 1
-  showMasks: 1
+  syntheticFallbackWhenNoCamera: 1
