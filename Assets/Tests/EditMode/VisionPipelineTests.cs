@@ -57,6 +57,7 @@ namespace UniversalTracker.Tests
             Assert.That(processed, Is.True);
             Assert.That(result, Is.Not.Null);
             Assert.That(result.frameIndex, Is.EqualTo(1));
+            Assert.That(result.sourceTexture, Is.SameAs(source.Texture));
             Assert.That(pipeline.LastResult, Is.SameAs(result));
             Assert.That(emitted, Is.SameAs(result));
         }
@@ -168,6 +169,7 @@ namespace UniversalTracker.Tests
             public bool Ready = true;
             public int InitializeCount { get; private set; }
             public bool Disposed { get; private set; }
+            public Texture Texture => texture;
             public bool IsReady => Ready;
             public Vector2Int SourceSize => new Vector2Int(16, 16);
             public VisionFrameSourceType SourceType => VisionFrameSourceType.Texture;

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UniversalTracker;
@@ -9,7 +7,7 @@ using UniversalTracker.OutputReceivers;
 namespace ProAnimaVision.Samples
 {
     [DisallowMultipleComponent]
-    public sealed class ProAnimaVisionExperimentalSceneBootstrap : MonoBehaviour
+    public sealed partial class ProAnimaVisionExperimentalSceneBootstrap : MonoBehaviour
     {
         [Header("WebCam Preview")]
         public bool runWebCamPreview = true;
@@ -50,7 +48,8 @@ namespace ProAnimaVision.Samples
             EnsureDashboard();
             EnsureManager();
             EnsureCameraControls();
-            StartWebCamPreview();
+            if (!configureRealPipeline)
+                StartWebCamPreview();
         }
 
         private void Start()
@@ -61,6 +60,7 @@ namespace ProAnimaVision.Samples
 
         private void Update()
         {
+            EnsureDocumentPanelSettings();
             ApplyDashboardPreviewSettings();
 
             if (configureRealPipeline)
@@ -115,7 +115,7 @@ namespace ProAnimaVision.Samples
 
         private void StartWebCamPreview()
         {
-            if (!runWebCamPreview)
+            if (!runWebCamPreview || configureRealPipeline)
                 return;
 
             string deviceName = ResolveDeviceName();
@@ -163,9 +163,7 @@ namespace ProAnimaVision.Samples
         private void EnsureDashboard()
         {
             document = GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
-            panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
-            panelSettings.name = "ProAnima Vision WebCam Panel";
-            document.panelSettings = panelSettings;
+            EnsureDocumentPanelSettings();
 
             dashboard = GetComponent<VisionToolkitDashboardReceiver>() ?? gameObject.AddComponent<VisionToolkitDashboardReceiver>();
             dashboard.autoFindManager = false;
@@ -177,6 +175,21 @@ namespace ProAnimaVision.Samples
             dashboard.showMasks = true;
             dashboard.maxRows = 10;
             ApplyDashboardPreviewSettings();
+        }
+
+        private void EnsureDocumentPanelSettings()
+        {
+            if (document == null)
+                return;
+
+            if (panelSettings == null)
+            {
+                panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                panelSettings.name = "ProAnima Vision WebCam Panel";
+            }
+
+            if (document.panelSettings == null)
+                document.panelSettings = panelSettings;
         }
 
         private void ApplyDashboardPreviewSettings()
@@ -220,139 +233,6 @@ namespace ProAnimaVision.Samples
             dashboard.trackerManager = null;
             dashboard.subscribeToManagerEvent = false;
             dashboard.SetCommandHandlers(RestartWebCamPreview, StopWebCamPreview);
-        }
-
-        private void EnsureCameraControls()
-        {
-            VisualElement controlPanel = document.rootVisualElement.Q<VisualElement>("VisionControlPanel");
-            if (controlPanel == null || controlPanel.Q<VisualElement>("WebCamControls") != null)
-                return;
-
-            var section = new VisualElement { name = "WebCamControls" };
-            section.style.marginTop = 2;
-            section.style.marginBottom = 14;
-            section.style.paddingTop = 12;
-            section.style.borderTopWidth = 1;
-            section.style.borderTopColor = new Color(0.28f, 0.36f, 0.42f, 0.75f);
-
-            var title = new Label("Camera");
-            title.style.fontSize = 12;
-            title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            title.style.color = new Color(0.78f, 0.86f, 0.9f, 1f);
-            title.style.marginBottom = 6;
-            section.Add(title);
-
-            cameraDropdown = new DropdownField();
-            cameraDropdown.style.marginBottom = 8;
-            cameraDropdown.RegisterValueChangedCallback(evt => SelectCamera(evt.newValue));
-            section.Add(cameraDropdown);
-            RefreshCameraDropdown();
-
-            var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.flexWrap = Wrap.Wrap;
-            section.Add(row);
-
-            row.Add(CreateSmallButton("Next", UseNextWebCam));
-            row.Add(CreateSmallButton("Rotate", RotatePreview));
-            row.Add(CreateSmallButton(mirrorPreviewX ? "Mirror On" : "Mirror", ToggleMirror));
-
-            controlPanel.Insert(Mathf.Min(3, controlPanel.childCount), section);
-        }
-
-        private Button CreateSmallButton(string text, Action action)
-        {
-            var button = new Button(() => action?.Invoke()) { text = text };
-            button.style.height = 28;
-            button.style.minWidth = 78;
-            button.style.flexGrow = 1f;
-            button.style.marginRight = 6;
-            button.style.marginBottom = 6;
-            button.style.borderTopLeftRadius = 5;
-            button.style.borderTopRightRadius = 5;
-            button.style.borderBottomLeftRadius = 5;
-            button.style.borderBottomRightRadius = 5;
-            button.style.backgroundColor = new Color(0.12f, 0.16f, 0.18f, 1f);
-            button.style.color = new Color(0.86f, 0.92f, 0.95f, 1f);
-            return button;
-        }
-
-        private void RefreshCameraDropdown()
-        {
-            if (cameraDropdown == null)
-                return;
-
-            List<string> choices = GetCameraChoices();
-            cameraDropdown.choices = choices;
-            cameraDropdown.SetValueWithoutNotify(ResolveCameraDropdownValue(choices));
-        }
-
-        private List<string> GetCameraChoices()
-        {
-            WebCamDevice[] devices = WebCamTexture.devices;
-            var choices = new List<string> { "Default Camera" };
-            if (devices == null || devices.Length == 0)
-                return choices;
-
-            for (int i = 0; i < devices.Length; i++)
-                choices.Add(devices[i].name);
-
-            return choices;
-        }
-
-        private string ResolveCameraDropdownValue(List<string> choices)
-        {
-            string deviceName = ResolveDeviceName();
-            if (!string.IsNullOrWhiteSpace(deviceName) && choices.Contains(deviceName))
-                return deviceName;
-
-            return choices[0];
-        }
-
-        private void SelectCamera(string selected)
-        {
-            if (string.IsNullOrWhiteSpace(selected))
-                return;
-
-            deviceNameOverride = selected == "Default Camera" ? null : selected;
-            WebCamDevice[] devices = WebCamTexture.devices;
-            if (devices != null)
-            {
-                for (int i = 0; i < devices.Length; i++)
-                {
-                    if (devices[i].name == deviceNameOverride)
-                    {
-                        deviceIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            RestartWebCamPreview();
-            UpdateManagerCameraSettings();
-        }
-
-        private void RotatePreview()
-        {
-            previewRotationDegrees = (previewRotationDegrees + 90) % 360;
-            ApplyDashboardPreviewSettings();
-        }
-
-        private void ToggleMirror()
-        {
-            mirrorPreviewX = !mirrorPreviewX;
-            ApplyDashboardPreviewSettings();
-        }
-
-        private void UpdateManagerCameraSettings()
-        {
-            if (manager == null)
-                return;
-
-            manager.webCamDeviceName = ResolveDeviceName();
-            manager.webCamRequestedWidth = requestedWidth;
-            manager.webCamRequestedHeight = requestedHeight;
-            manager.webCamRequestedFps = requestedFps;
         }
 
         private VisionFrameResult CreatePreviewResult(Texture texture)

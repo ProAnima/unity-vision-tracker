@@ -100,7 +100,7 @@ namespace UniversalTracker.OutputReceivers
 
         public void ReceiveVisionResult(VisionFrameResult result)
         {
-            ReceiveVisionResult(result, lastTexture);
+            ReceiveVisionResult(result, result?.sourceTexture ?? lastTexture);
         }
 
         public void ReceiveVisionResult(VisionFrameResult result, Texture sourceTexture)
@@ -109,7 +109,7 @@ namespace UniversalTracker.OutputReceivers
                 return;
 
             EnsureBuilt();
-            lastTexture = sourceTexture ?? lastTexture;
+            lastTexture = sourceTexture ?? result.sourceTexture ?? lastTexture;
             UpdatePreview(lastTexture);
             statsBinder.UpdateStats(result);
             UpdateOverlay(result);

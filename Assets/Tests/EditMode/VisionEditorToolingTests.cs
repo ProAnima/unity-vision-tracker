@@ -115,6 +115,16 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void QuickStartPresetUtility_RealPipelineDisablesStandalonePreview()
+        {
+            string utility = System.IO.File.ReadAllText(
+                "Packages/com.proanima.universal-vision-tracker/Editor/VisionQuickStartPresetUtility.cs");
+
+            Assert.That(utility, Does.Contain("SetBool(serialized, \"runWebCamPreview\", false)"));
+            Assert.That(utility, Does.Contain("SetBool(serialized, \"configureRealPipeline\", true)"));
+        }
+
+        [Test]
         public void PipelineProfileTemplate_CanBeCreatedWithoutSelectedModels()
         {
             VisionPipelineProfile profile = VisionModelProfileTemplateFactory.CreatePipelineProfile(null);

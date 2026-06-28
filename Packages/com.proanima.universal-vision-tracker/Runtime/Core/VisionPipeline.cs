@@ -109,6 +109,7 @@ namespace UniversalTracker.Core
                 return false;
             }
 
+            result.sourceTexture = frame.texture;
             LastResult = result;
             consecutiveRecoverableErrors = 0;
             VisionHealthStatus health = Context.MarkRunning("Pipeline recovered and processed a valid frame.");

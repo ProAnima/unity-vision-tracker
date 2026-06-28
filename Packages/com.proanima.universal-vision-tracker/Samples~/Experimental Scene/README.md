@@ -21,4 +21,6 @@ Select `ProAnima Vision Experimental Demo` in the scene and configure:
 - assign a `VisionPipelineProfile` or `VisionModelProfile`;
 - optionally enable `Auto Start Real Pipeline`.
 
+Quick Start YOLO presets disable the standalone `Run WebCam Preview` option on purpose. In that mode the real `VisionPipeline` owns the camera and passes the same source texture to the dashboard, avoiding two competing `WebCamTexture` instances.
+
 Use `Tools/ProAnima Vision/Control Center > Compatibility Inspector` before running real models.

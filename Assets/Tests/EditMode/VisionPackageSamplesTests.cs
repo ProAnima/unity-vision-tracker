@@ -55,7 +55,10 @@ namespace UniversalTracker.Tests
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/README.md")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalScene.unity")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneBootstrap.cs")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneCameraControls.cs")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVision.Samples.ExperimentalScene.asmdef")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/Editor/ProAnimaVisionExperimentalSceneBootstrapEditor.cs")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/Editor/ProAnimaVision.ExperimentalScene.Editor.asmdef")), Is.True);
         }
 
         [Test]
@@ -74,12 +77,13 @@ namespace UniversalTracker.Tests
         [Test]
         public void ExperimentalSceneSample_ProvidesRuntimeWebCamControls()
         {
-            string bootstrap = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneBootstrap.cs"));
+            string bootstrap = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneCameraControls.cs"));
 
             Assert.That(bootstrap, Does.Contain("DropdownField"));
             Assert.That(bootstrap, Does.Contain("SelectCamera"));
             Assert.That(bootstrap, Does.Contain("RotatePreview"));
             Assert.That(bootstrap, Does.Contain("ToggleMirror"));
+            Assert.That(bootstrap, Does.Contain("RestartPipelineIfNeeded"));
         }
 
         private static string PackagePath(string relativePath)

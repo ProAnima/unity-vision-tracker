@@ -1,0 +1,19 @@
+{
+  "name": "ProAnimaVision.Samples.ExperimentalScene.Editor",
+  "rootNamespace": "ProAnimaVision.Samples.Editor",
+  "references": [
+    "ProAnimaVision.Samples.ExperimentalScene",
+    "UniversalTracker.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

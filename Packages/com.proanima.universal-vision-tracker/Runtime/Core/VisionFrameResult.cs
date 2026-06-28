@@ -18,6 +18,9 @@ namespace UniversalTracker.Core
         public VisionClassification[] classifications = Array.Empty<VisionClassification>();
         public VisionPerformanceStats stats;
 
+        [NonSerialized]
+        public Texture sourceTexture;
+
         public int TotalResultCount =>
             (detections?.Length ?? 0) +
             (poses?.Length ?? 0) +
@@ -148,4 +151,3 @@ namespace UniversalTracker.Core
         }
     }
 }
-

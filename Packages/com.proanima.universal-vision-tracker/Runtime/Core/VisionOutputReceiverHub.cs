@@ -68,7 +68,7 @@ namespace UniversalTracker.Core
 
                 try
                 {
-                    receiver.ReceiveVisionResult(result);
+                    receiver.ReceiveVisionResult(result, result.sourceTexture);
                 }
                 catch (Exception e)
                 {

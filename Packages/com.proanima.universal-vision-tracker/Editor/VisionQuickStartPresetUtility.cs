@@ -120,7 +120,7 @@ namespace UniversalTracker.Editor
                 return;
 
             var serialized = new SerializedObject(bootstrap);
-            SetBool(serialized, "runWebCamPreview", true);
+            SetBool(serialized, "runWebCamPreview", false);
             SetBool(serialized, "configureRealPipeline", true);
             SetObject(serialized, "pipelineProfile", pipeline);
             SetObject(serialized, "modelProfile", null);
