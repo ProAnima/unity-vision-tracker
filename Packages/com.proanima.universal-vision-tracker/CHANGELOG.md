@@ -9,3 +9,4 @@
 - Added Setup Wizard scene bootstrap tooling for profile-driven tracker objects.
 - Added importable Minimal Pipeline and Dashboard Overlay samples.
 - Added optional module descriptor contract for vendor-isolated extension packages.
+- Added profile validation summaries and dashboard budget status.

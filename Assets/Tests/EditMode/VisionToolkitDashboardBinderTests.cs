@@ -49,6 +49,7 @@ namespace UniversalTracker.Tests
             var frameLabel = new Label();
             var fpsLabel = new Label();
             var inferenceLabel = new Label();
+            var budgetLabel = new Label();
             var detectionLabel = new Label();
             var poseLabel = new Label();
             var errorLabel = new Label();
@@ -58,6 +59,7 @@ namespace UniversalTracker.Tests
                 frameLabel = frameLabel,
                 fpsLabel = fpsLabel,
                 inferenceLabel = inferenceLabel,
+                budgetLabel = budgetLabel,
                 detectionCountLabel = detectionLabel,
                 poseCountLabel = poseLabel,
                 errorLabel = errorLabel,
@@ -76,10 +78,51 @@ namespace UniversalTracker.Tests
             Assert.That(frameLabel.text, Is.EqualTo("7"));
             Assert.That(fpsLabel.text, Is.EqualTo("-"));
             Assert.That(inferenceLabel.text, Is.EqualTo("12.5 ms"));
+            Assert.That(budgetLabel.text, Is.EqualTo("-"));
             Assert.That(detectionLabel.text, Is.EqualTo("1"));
             Assert.That(poseLabel.text, Is.EqualTo("1"));
             Assert.That(errorLabel.text, Is.EqualTo("0"));
             Assert.That(statusLabel.text, Is.EqualTo("Running"));
+        }
+
+        [Test]
+        public void StatsBinder_ReportsPipelineBudgetStatus()
+        {
+            var go = new GameObject("BudgetDashboardBinderTest");
+            try
+            {
+                UniversalTrackerManager manager = go.AddComponent<UniversalTrackerManager>();
+                manager.pipelineProfile = ScriptableObject.CreateInstance<VisionPipelineProfile>();
+                manager.pipelineProfile.performanceBudget.pipeline = new VisionStagePerformanceBudget(1f, 0, 1);
+                var budgetLabel = new Label();
+                var view = new VisionToolkitDashboardView
+                {
+                    frameLabel = new Label(),
+                    fpsLabel = new Label(),
+                    inferenceLabel = new Label(),
+                    budgetLabel = budgetLabel,
+                    detectionCountLabel = new Label(),
+                    poseCountLabel = new Label(),
+                    errorLabel = new Label(),
+                    statusLabel = new Label()
+                };
+                var result = VisionFrameResult.Empty(1, 0d, new Vector2Int(640, 480));
+                result.stats = VisionPerformanceStats.FromStages(0f, 2f, 0f, 0f);
+                result.detections = new[] { new VisionDetection(), new VisionDetection() };
+                var binder = new VisionToolkitDashboardStatsBinder(() => manager);
+                binder.Bind(view);
+
+                binder.UpdateStats(result);
+
+                Assert.That(budgetLabel.text, Is.EqualTo("Over"));
+            }
+            finally
+            {
+                UniversalTrackerManager manager = go.GetComponent<UniversalTrackerManager>();
+                if (manager != null && manager.pipelineProfile != null)
+                    Object.DestroyImmediate(manager.pipelineProfile);
+                Object.DestroyImmediate(go);
+            }
         }
     }
 }

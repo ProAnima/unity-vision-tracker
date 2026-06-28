@@ -111,7 +111,7 @@ namespace UniversalTracker.Editor
                 ? (previewReport.WarningCount > 0 ? MessageType.Warning : MessageType.Info)
                 : MessageType.Error;
             EditorGUILayout.HelpBox(
-                $"Errors: {previewReport.ErrorCount}   Warnings: {previewReport.WarningCount}   Messages: {previewReport.Messages.Count}",
+                $"{previewReport.Summary}\nErrors: {previewReport.ErrorCount}   Warnings: {previewReport.WarningCount}   Messages: {previewReport.Messages.Count}",
                 summaryType);
 
             foreach (VisionValidationMessage message in previewReport.Messages)

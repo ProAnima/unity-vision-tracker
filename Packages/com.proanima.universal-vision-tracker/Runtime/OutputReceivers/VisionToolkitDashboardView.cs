@@ -22,6 +22,7 @@ namespace UniversalTracker.OutputReceivers
         public Label frameLabel;
         public Label fpsLabel;
         public Label inferenceLabel;
+        public Label budgetLabel;
         public Label detectionCountLabel;
         public Label poseCountLabel;
         public Label errorLabel;
@@ -188,6 +189,7 @@ namespace UniversalTracker.OutputReceivers
             view.frameLabel = AddStat(stats, "Frame", "-");
             view.fpsLabel = AddStat(stats, "Runtime FPS", "-");
             view.inferenceLabel = AddStat(stats, "Inference", "-");
+            view.budgetLabel = AddStat(stats, "Budget", "-");
             view.detectionCountLabel = AddStat(stats, "Detections", "0");
             view.poseCountLabel = AddStat(stats, "Poses", "0");
             view.errorLabel = AddStat(stats, "Errors", "0");

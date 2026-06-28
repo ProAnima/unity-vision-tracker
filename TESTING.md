@@ -25,6 +25,7 @@ Current coverage starts with:
 - Setup Wizard scene configuration behavior.
 - Package sample manifest and file layout.
 - Optional module descriptor and package isolation rules.
+- Profile validation summary and dashboard budget status behavior.
 
 Run from PowerShell:
 
@@ -50,7 +51,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 103 tests, 103 passed, 0 failed
+EditMode: 105 tests, 105 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

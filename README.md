@@ -92,6 +92,7 @@ VisionFrameResult
 - Importable Minimal Pipeline and Dashboard Overlay samples.
 - Optional module package skeletons for AR Foundation, XR passthrough, MediaPipe, native runtimes, and remote runtimes.
 - Profile-driven performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
+- Dashboard budget status and profile validation summaries for faster debugging.
 - Architecture roadmap for a production SDK evolution.
 
 ## Target Capabilities

@@ -33,6 +33,7 @@ namespace UniversalTracker.Core
         public int ErrorCount { get; private set; }
         public int WarningCount { get; private set; }
         public bool IsValid => ErrorCount == 0;
+        public string Summary => CreateSummary();
 
         public void Add(VisionValidationSeverity severity, string code, string message)
         {
@@ -57,6 +58,20 @@ namespace UniversalTracker.Core
             }
 
             return string.Join(Environment.NewLine, lines);
+        }
+
+        private string CreateSummary()
+        {
+            if (messages.Count == 0)
+                return "Validation passed.";
+
+            if (ErrorCount > 0)
+                return $"{ErrorCount} error(s), {WarningCount} warning(s). Fix errors before runtime use.";
+
+            if (WarningCount > 0)
+                return $"{WarningCount} warning(s). Runtime can proceed, but production metadata should be reviewed.";
+
+            return "Profile is compatible.";
         }
     }
 

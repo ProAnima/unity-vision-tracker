@@ -128,6 +128,21 @@ namespace UniversalTracker.Tests
             Assert.That(log, Does.Contain("Something is wrong."));
         }
 
+        [Test]
+        public void ValidationReport_Summary_DescribesErrorsWarningsAndCompatibility()
+        {
+            var warningReport = new VisionProfileValidationReport();
+            warningReport.Add(VisionValidationSeverity.Warning, "sample.warning", "Review metadata.");
+            var errorReport = new VisionProfileValidationReport();
+            errorReport.Add(VisionValidationSeverity.Error, "sample.error", "Fix profile.");
+            var validReport = new VisionProfileValidationReport();
+            validReport.Add(VisionValidationSeverity.Info, "parser.selected", "Parser selected.");
+
+            Assert.That(warningReport.Summary, Does.Contain("warning"));
+            Assert.That(errorReport.Summary, Does.Contain("Fix errors"));
+            Assert.That(validReport.Summary, Is.EqualTo("Profile is compatible."));
+        }
+
         private static VisionModelProfile CreateValidProfile()
         {
             var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
