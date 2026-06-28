@@ -120,6 +120,9 @@ namespace UniversalTracker.OutputReceivers
 
             for (int i = 0; i < result.masks.Length; i++)
             {
+                if (result.masks[i].texture == null)
+                    continue;
+
                 VisualElement element = VisionDashboardElementPool.GetElement(
                     state.masks,
                     state.maskLayer,

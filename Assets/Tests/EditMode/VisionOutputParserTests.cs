@@ -125,6 +125,27 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void YoloDetectionParser_ParsesYolo26EndToEndOutput()
+        {
+            var parser = new YoloDetectionOutputParser();
+            float[] data = new float[300 * 6];
+            WriteYolo26Row(data, 6, 0, 100f, 50f, 300f, 250f, 0.82f, 0);
+            VisionRawModelOutput raw = VisionRawModelOutput.Single("output0", data, 1, 300, 6);
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640));
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            Assert.That(parsed.detections[0].label, Is.EqualTo("person"));
+            AssertRect(parsed.detections[0].sourceRect, new Rect(200, 56.25f, 400, 225));
+        }
+
+        [Test]
         public void YoloDetectionParser_AppliesClassAwareNms()
         {
             var parser = new YoloDetectionOutputParser();
@@ -191,6 +212,29 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void YoloPoseParser_ParsesYolo26EndToEndPoseOutput()
+        {
+            var parser = new YoloPose2DOutputParser();
+            float[] data = new float[300 * 57];
+            WriteYolo26Row(data, 57, 0, 100f, 50f, 300f, 250f, 0.82f, 0);
+            WriteYolo26PoseKeypoints(data, 57, 0, 200f, 150f, 0.75f);
+            VisionRawModelOutput raw = VisionRawModelOutput.Single("pose", data, 1, 300, 57);
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640));
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            Assert.That(parsed.poses, Has.Length.EqualTo(1));
+            AssertRect(parsed.detections[0].sourceRect, new Rect(200, 56.25f, 400, 225));
+            Assert.That(parsed.poses[0].keypoints[0].sourcePosition, Is.EqualTo(new Vector2(400, 168.75f)));
+        }
+
+        [Test]
         public void YoloSegmentationParser_ParsesMaskFixtureToDetectionsAndMasks()
         {
             var parser = new YoloSegmentationOutputParser();
@@ -251,6 +295,35 @@ namespace UniversalTracker.Tests
             Assert.That(parsed.masks, Has.Length.EqualTo(1));
             AssertRect(parsed.detections[0].sourceRect, new Rect(512, 108, 256, 144));
             Assert.That(parsed.diagnostics.modelOutput, Does.Contain("1x116x1"));
+        }
+
+        [Test]
+        public void YoloSegmentationParser_ParsesYolo26EndToEndSegmentationOutput()
+        {
+            var parser = new YoloSegmentationOutputParser();
+            float[] data = new float[300 * 38];
+            WriteYolo26Row(data, 38, 0, 100f, 50f, 300f, 250f, 0.82f, 0);
+            var raw = new VisionRawModelOutput
+            {
+                tensors = new[]
+                {
+                    new VisionRawTensor("seg", data, new[] { 1, 300, 38 }),
+                    new VisionRawTensor("proto", new float[32 * 160 * 160], new[] { 1, 32, 160, 160 })
+                }
+            };
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640));
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            Assert.That(parsed.masks, Has.Length.EqualTo(1));
+            AssertRect(parsed.detections[0].sourceRect, new Rect(200, 56.25f, 400, 225));
+            Assert.That(parsed.masks[0].texture, Is.Null);
         }
 
         [Test]
@@ -411,6 +484,38 @@ namespace UniversalTracker.Tests
                 data[offset * rowCount + row] = centerX;
                 data[(offset + 1) * rowCount + row] = centerY;
                 data[(offset + 2) * rowCount + row] = 0.8f;
+            }
+        }
+
+        private static void WriteYolo26Row(
+            float[] data,
+            int stride,
+            int row,
+            float x1,
+            float y1,
+            float x2,
+            float y2,
+            float score,
+            int classId)
+        {
+            int offset = row * stride;
+            data[offset] = x1;
+            data[offset + 1] = y1;
+            data[offset + 2] = x2;
+            data[offset + 3] = y2;
+            data[offset + 4] = score;
+            data[offset + 5] = classId;
+        }
+
+        private static void WriteYolo26PoseKeypoints(float[] data, int stride, int row, float x, float y, float score)
+        {
+            int rowOffset = row * stride;
+            for (int i = 0; i < 17; i++)
+            {
+                int offset = rowOffset + 6 + i * 3;
+                data[offset] = x;
+                data[offset + 1] = y;
+                data[offset + 2] = score;
             }
         }
     }

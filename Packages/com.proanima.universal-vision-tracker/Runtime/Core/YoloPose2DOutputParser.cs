@@ -27,65 +27,72 @@ namespace UniversalTracker.Core
             if (!YoloOutputParserUtility.TryResolveRows(tensor, out YoloTensorRows rows) || rows.stride < 5 + KeypointCount * 3)
                 return VisionParsedOutput.Empty;
 
-            var detections = new List<VisionDetection>();
-            var poses = new List<VisionPose>();
+            bool isEndToEnd = YoloOutputParserUtility.IsEndToEndRows(rows, 57);
+            var candidates = new List<PoseCandidate>();
+            float maxConfidence = 0f;
             for (int row = 0; row < rows.rowCount; row++)
             {
                 float confidence = Mathf.Clamp01(rows.Get(row, 4));
+                maxConfidence = Mathf.Max(maxConfidence, confidence);
                 if (confidence < context.confidenceThreshold)
                     continue;
 
-                Rect normalized = YoloOutputParserUtility.CenterToNormalizedRect(rows, row, context);
+                Rect normalized = isEndToEnd
+                    ? YoloOutputParserUtility.CornersToNormalizedRect(rows, row, context)
+                    : YoloOutputParserUtility.CenterToNormalizedRect(rows, row, context);
+                int classId = isEndToEnd ? Mathf.Max(0, Mathf.RoundToInt(rows.Get(row, 5))) : 0;
 
                 VisionDetection detection = YoloOutputParserUtility.CreateDetection(
-                    0,
-                    ResolvePersonLabel(context.labels),
+                    classId,
+                    ResolvePersonLabel(classId, context.labels),
                     confidence,
                     normalized,
                     context.sourceSize);
 
-                detections.Add(detection);
-                poses.Add(new VisionPose
-                {
-                    personId = -1,
-                    confidence = confidence,
-                    normalizedRect = normalized,
-                    sourceRect = detection.sourceRect,
-                    keypoints = ParseKeypoints(rows, row, context),
-                    skeleton = CocoSkeleton,
-                    trackState = VisionTrackState.None
-                });
+                candidates.Add(new PoseCandidate(
+                    detection,
+                    new VisionPose
+                    {
+                        personId = -1,
+                        confidence = confidence,
+                        normalizedRect = normalized,
+                        sourceRect = detection.sourceRect,
+                        keypoints = ParseKeypoints(rows, row, context, isEndToEnd ? 6 : 5),
+                        skeleton = CocoSkeleton,
+                        trackState = VisionTrackState.None
+                    }));
             }
 
+            ApplyNms(candidates, context.nmsThreshold, out VisionDetection[] detections, out VisionPose[] poses);
             return new VisionParsedOutput
             {
-                detections = detections.ToArray(),
-                poses = poses.ToArray(),
+                detections = detections,
+                poses = poses,
                 stats = VisionPerformanceStats.FromStages(0f, rawOutput.inferenceMs, 0f, 0f),
                 diagnostics = new VisionFrameDiagnostics
                 {
                     parserId = ParserId,
                     modelOutput = $"{tensor.name} [{FormatShape(tensor.shape)}], {rows.LayoutLabel}",
-                    candidateCount = detections.Count,
-                    acceptedCount = detections.Count,
-                    maxConfidence = ResolveMaxConfidence(poses)
+                    candidateCount = candidates.Count,
+                    acceptedCount = detections.Length,
+                    maxConfidence = maxConfidence
                 }
             };
         }
 
-        private static string ResolvePersonLabel(string[] labels)
+        private static string ResolvePersonLabel(int classId, string[] labels)
         {
-            return labels != null && labels.Length > 0 && !string.IsNullOrWhiteSpace(labels[0])
-                ? labels[0]
+            return labels != null && classId >= 0 && classId < labels.Length && !string.IsNullOrWhiteSpace(labels[classId])
+                ? labels[classId]
                 : "person";
         }
 
-        private static VisionKeypoint[] ParseKeypoints(YoloTensorRows rows, int row, VisionOutputParserContext context)
+        private static VisionKeypoint[] ParseKeypoints(YoloTensorRows rows, int row, VisionOutputParserContext context, int offset)
         {
             var keypoints = new VisionKeypoint[KeypointCount];
             for (int i = 0; i < KeypointCount; i++)
             {
-                int keypointOffset = 5 + i * 3;
+                int keypointOffset = offset + i * 3;
                 Vector2 normalized = YoloOutputParserUtility.ReadNormalizedPoint(rows, row, keypointOffset, keypointOffset + 1, context);
                 float confidence = Mathf.Clamp01(rows.Get(row, keypointOffset + 2));
                 keypoints[i] = new VisionKeypoint
@@ -102,13 +109,41 @@ namespace UniversalTracker.Core
             return keypoints;
         }
 
-        private static float ResolveMaxConfidence(List<VisionPose> poses)
+        private static void ApplyNms(List<PoseCandidate> candidates, float threshold, out VisionDetection[] detections, out VisionPose[] poses)
         {
-            float max = 0f;
-            for (int i = 0; i < poses.Count; i++)
-                max = Mathf.Max(max, poses[i].confidence);
+            if (candidates.Count == 0)
+            {
+                detections = Array.Empty<VisionDetection>();
+                poses = Array.Empty<VisionPose>();
+                return;
+            }
 
-            return max;
+            candidates.Sort((a, b) => b.detection.confidence.CompareTo(a.detection.confidence));
+            var keptDetections = new List<VisionDetection>();
+            var keptPoses = new List<VisionPose>();
+            var suppressed = new bool[candidates.Count];
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                if (suppressed[i])
+                    continue;
+
+                PoseCandidate current = candidates[i];
+                keptDetections.Add(current.detection);
+                keptPoses.Add(current.pose);
+
+                for (int j = i + 1; j < candidates.Count; j++)
+                {
+                    if (suppressed[j])
+                        continue;
+
+                    if (YoloOutputParserUtility.CalculateIoU(current.detection.normalizedRect, candidates[j].detection.normalizedRect) > threshold)
+                        suppressed[j] = true;
+                }
+            }
+
+            detections = keptDetections.ToArray();
+            poses = keptPoses.ToArray();
         }
 
         private static string FormatShape(int[] shape)
@@ -150,6 +185,18 @@ namespace UniversalTracker.Core
         private static VisionSkeletonBone Bone(int from, int to, string name)
         {
             return new VisionSkeletonBone { from = from, to = to, name = name };
+        }
+
+        private readonly struct PoseCandidate
+        {
+            public readonly VisionDetection detection;
+            public readonly VisionPose pose;
+
+            public PoseCandidate(VisionDetection detection, VisionPose pose)
+            {
+                this.detection = detection;
+                this.pose = pose;
+            }
         }
     }
 }

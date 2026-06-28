@@ -201,6 +201,9 @@ namespace UniversalTracker.Core
             if (rows.stride < 6)
                 return false;
 
+            if (IsEndToEndDetection(rows))
+                return TryReadEndToEndDetection(rows, row, context, out detection, out confidence);
+
             int classOffset = rows.hasObjectness ? 5 : 4;
             float objectness = rows.hasObjectness ? Mathf.Clamp01(rows.Get(row, 4)) : 1f;
             int classId = FindBestClass(rows, row, classOffset, rows.stride - classOffset, out float classScore);
@@ -209,6 +212,40 @@ namespace UniversalTracker.Core
                 return false;
 
             Rect normalized = CenterToRect(
+                NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x),
+                NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
+                NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
+                NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
+            normalized = context.coordinateTransform.Apply(normalized);
+
+            detection = new VisionDetection
+            {
+                trackId = -1,
+                classId = classId,
+                label = ResolveLabel(classId, context.labels),
+                confidence = confidence,
+                normalizedRect = normalized,
+                sourceRect = NormalizedToSourceRect(normalized, context.sourceSize),
+                sourceCenter = NormalizedToSourcePoint(normalized.center, context.sourceSize),
+                trackState = VisionTrackState.None
+            };
+            return true;
+        }
+
+        private static bool TryReadEndToEndDetection(
+            YoloTensorRows rows,
+            int row,
+            VisionOutputParserContext context,
+            out VisionDetection detection,
+            out float confidence)
+        {
+            detection = default;
+            confidence = Mathf.Clamp01(rows.Get(row, 4));
+            if (confidence < context.confidenceThreshold)
+                return false;
+
+            int classId = Mathf.Max(0, Mathf.RoundToInt(rows.Get(row, 5)));
+            Rect normalized = CornersToRect(
                 NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x),
                 NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
                 NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
@@ -297,6 +334,11 @@ namespace UniversalTracker.Core
             return stride == 85 || stride == 117 || stride == 57 || stride <= 10;
         }
 
+        private static bool IsEndToEndDetection(YoloTensorRows rows)
+        {
+            return rows.rowCount > 16 && rows.rowCount <= 300 && rows.stride == 6;
+        }
+
         private static bool IsKnownYoloStride(int stride)
         {
             return stride == 84 || stride == 85 || stride == 56 || stride == 57 || stride == 116 || stride == 117;
@@ -336,6 +378,15 @@ namespace UniversalTracker.Core
             float xMax = Mathf.Clamp01(centerX + width * 0.5f);
             float yMax = Mathf.Clamp01(centerY + height * 0.5f);
             return Rect.MinMaxRect(Mathf.Min(xMin, xMax), Mathf.Min(yMin, yMax), Mathf.Max(xMin, xMax), Mathf.Max(yMin, yMax));
+        }
+
+        private static Rect CornersToRect(float x1, float y1, float x2, float y2)
+        {
+            return Rect.MinMaxRect(
+                Mathf.Clamp01(Mathf.Min(x1, x2)),
+                Mathf.Clamp01(Mathf.Min(y1, y2)),
+                Mathf.Clamp01(Mathf.Max(x1, x2)),
+                Mathf.Clamp01(Mathf.Max(y1, y2)));
         }
 
         private static VisionDetection[] ApplyNms(List<VisionDetection> detections, float threshold)

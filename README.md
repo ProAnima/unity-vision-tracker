@@ -78,7 +78,7 @@ VisionFrameResult
 ## Current Capabilities
 
 - Production frame sources for WebCamTexture, Unity Camera, Texture, RenderTexture, and VideoPlayer.
-- YOLO-family adapter path through Unity Inference Engine raw tensors and output parsers.
+- YOLO-family adapter path through Unity Inference Engine raw tensors and output parsers, including YOLO11-style raw-grid outputs and YOLO26 end-to-end detection, pose, and segmentation rows.
 - Unity Inference Engine runtime usage.
 - Capability-based `VisionModelProfile` contract for plugin/adapters architecture.
 - `VisionPipeline` orchestration for source/runtime/result flow.
@@ -259,7 +259,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 127 tests, 127 passed, 0 failed
+EditMode: 130 tests, 130 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

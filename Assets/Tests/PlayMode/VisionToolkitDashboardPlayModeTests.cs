@@ -42,6 +42,7 @@ namespace UniversalTracker.Tests
         [UnityTest]
         public IEnumerator OverlayRenderer_CreatesDetectionPoseAndMaskElements()
         {
+            var maskTexture = new Texture2D(4, 4);
             var state = new VisionDashboardOverlayState
             {
                 maskLayer = new VisualElement(),
@@ -52,7 +53,7 @@ namespace UniversalTracker.Tests
             };
 
             VisionToolkitDashboardOverlayRenderer.Render(
-                CreateFrameResult(),
+                CreateFrameResult(maskTexture),
                 state,
                 new Vector2(640, 480),
                 new Vector2(640, 480),
@@ -72,9 +73,11 @@ namespace UniversalTracker.Tests
             Assert.That(state.bones.Count, Is.GreaterThan(0));
             Assert.That(state.detectionLayer.childCount, Is.EqualTo(1));
             Assert.That(state.labelLayer.childCount, Is.EqualTo(1));
+
+            Object.Destroy(maskTexture);
         }
 
-        private static VisionFrameResult CreateFrameResult()
+        private static VisionFrameResult CreateFrameResult(Texture2D maskTexture = null)
         {
             return new VisionFrameResult
             {
@@ -101,6 +104,7 @@ namespace UniversalTracker.Tests
                         classId = 0,
                         label = "person",
                         confidence = 0.88f,
+                        texture = maskTexture,
                         normalizedRect = new Rect(0.25f, 0.25f, 0.5f, 0.5f)
                     }
                 },

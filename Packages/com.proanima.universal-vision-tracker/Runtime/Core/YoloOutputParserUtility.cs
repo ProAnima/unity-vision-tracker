@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace UniversalTracker.Core
@@ -61,6 +62,24 @@ namespace UniversalTracker.Core
                 NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
                 NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
                 NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
+
+            return context.coordinateTransform.Apply(rect);
+        }
+
+        public static Rect CornersToNormalizedRect(
+            YoloTensorRows rows,
+            int row,
+            VisionOutputParserContext context)
+        {
+            float x1 = NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x);
+            float y1 = NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y);
+            float x2 = NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x);
+            float y2 = NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y);
+            Rect rect = Rect.MinMaxRect(
+                Mathf.Min(x1, x2),
+                Mathf.Min(y1, y2),
+                Mathf.Max(x1, x2),
+                Mathf.Max(y1, y2));
 
             return context.coordinateTransform.Apply(rect);
         }
@@ -159,9 +178,60 @@ namespace UniversalTracker.Core
             };
         }
 
+        public static VisionDetection[] ApplyNms(List<VisionDetection> detections, float threshold, List<int> keptIndices = null)
+        {
+            keptIndices?.Clear();
+            if (detections == null || detections.Count == 0)
+                return System.Array.Empty<VisionDetection>();
+
+            detections.Sort((a, b) => b.confidence.CompareTo(a.confidence));
+            var kept = new List<VisionDetection>();
+            var suppressed = new bool[detections.Count];
+
+            for (int i = 0; i < detections.Count; i++)
+            {
+                if (suppressed[i])
+                    continue;
+
+                VisionDetection current = detections[i];
+                kept.Add(current);
+                keptIndices?.Add(i);
+
+                for (int j = i + 1; j < detections.Count; j++)
+                {
+                    if (suppressed[j] || detections[j].classId != current.classId)
+                        continue;
+
+                    if (CalculateIoU(current.normalizedRect, detections[j].normalizedRect) > threshold)
+                        suppressed[j] = true;
+                }
+            }
+
+            return kept.ToArray();
+        }
+
+        public static bool IsEndToEndRows(YoloTensorRows rows, int stride)
+        {
+            return rows.rowCount > 16 && rows.rowCount <= 300 && rows.stride == stride;
+        }
+
+        public static float CalculateIoU(Rect a, Rect b)
+        {
+            float x1 = Mathf.Max(a.xMin, b.xMin);
+            float y1 = Mathf.Max(a.yMin, b.yMin);
+            float x2 = Mathf.Min(a.xMax, b.xMax);
+            float y2 = Mathf.Min(a.yMax, b.yMax);
+            if (x2 <= x1 || y2 <= y1)
+                return 0f;
+
+            float intersection = (x2 - x1) * (y2 - y1);
+            float union = a.width * a.height + b.width * b.height - intersection;
+            return union > 0f ? intersection / union : 0f;
+        }
+
         private static bool IsKnownYoloStride(int stride)
         {
-            return stride == 56 || stride == 57 || stride == 84 || stride == 85 || stride == 116 || stride == 117;
+            return stride == 6 || stride == 38 || stride == 56 || stride == 57 || stride == 84 || stride == 85 || stride == 116 || stride == 117;
         }
     }
 

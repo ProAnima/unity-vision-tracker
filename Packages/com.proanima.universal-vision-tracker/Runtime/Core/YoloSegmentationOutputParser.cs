@@ -26,56 +26,78 @@ namespace UniversalTracker.Core
             if (!YoloOutputParserUtility.TryResolveRows(rowsTensor, out YoloTensorRows rows))
                 return VisionParsedOutput.Empty;
 
+            bool isEndToEnd = YoloOutputParserUtility.IsEndToEndRows(rows, 38);
             int maskCoefficientCount = ResolveMaskCoefficientCount(prototypeTensor);
             bool hasObjectness = YoloOutputParserUtility.HasObjectness(rows.stride);
             int classOffset = hasObjectness ? 5 : 4;
             int classScoreCount = rows.stride - classOffset - maskCoefficientCount;
-            if (maskCoefficientCount <= 0 || classScoreCount <= 0)
+            if (!isEndToEnd && (maskCoefficientCount <= 0 || classScoreCount <= 0))
                 return VisionParsedOutput.Empty;
 
-            var detections = new List<VisionDetection>();
-            var masks = new List<VisionMask>();
+            var candidates = new List<SegmentationCandidate>();
             float maxConfidence = 0f;
             for (int row = 0; row < rows.rowCount; row++)
             {
-                float objectness = hasObjectness ? Mathf.Clamp01(rows.Get(row, 4)) : 1f;
-                int classId = FindBestClass(rows, row, classOffset, classScoreCount, out float classScore);
-                float confidence = objectness * classScore;
+                int classId = ResolveClass(rows, row, classOffset, classScoreCount, isEndToEnd, out float confidence);
                 maxConfidence = Mathf.Max(maxConfidence, confidence);
                 if (confidence < context.confidenceThreshold)
                     continue;
 
-                Rect normalized = YoloOutputParserUtility.CenterToNormalizedRect(rows, row, context);
+                Rect normalized = isEndToEnd
+                    ? YoloOutputParserUtility.CornersToNormalizedRect(rows, row, context)
+                    : YoloOutputParserUtility.CenterToNormalizedRect(rows, row, context);
 
                 string label = YoloOutputParserUtility.ResolveLabel(classId, context.labels);
                 VisionDetection detection = YoloOutputParserUtility.CreateDetection(classId, label, confidence, normalized, context.sourceSize);
-                detections.Add(detection);
-                masks.Add(new VisionMask
-                {
-                    trackId = -1,
-                    classId = classId,
-                    label = label,
-                    confidence = confidence,
-                    normalizedRect = normalized,
-                    sourceRect = detection.sourceRect,
-                    texture = null
-                });
+                candidates.Add(new SegmentationCandidate(
+                    detection,
+                    new VisionMask
+                    {
+                        trackId = -1,
+                        classId = classId,
+                        label = label,
+                        confidence = confidence,
+                        normalizedRect = normalized,
+                        sourceRect = detection.sourceRect,
+                        texture = null
+                    }));
             }
 
+            ApplyNms(candidates, context.nmsThreshold, out VisionDetection[] detections, out VisionMask[] masks);
             return new VisionParsedOutput
             {
-                detections = detections.ToArray(),
-                masks = masks.ToArray(),
+                detections = detections,
+                masks = masks,
                 stats = VisionPerformanceStats.FromStages(0f, rawOutput.inferenceMs, 0f, 0f),
                 diagnostics = new VisionFrameDiagnostics
                 {
                     parserId = ParserId,
                     modelOutput = $"{rowsTensor.name} [{FormatShape(rowsTensor.shape)}], {rows.LayoutLabel}",
-                    candidateCount = detections.Count,
-                    acceptedCount = detections.Count,
+                    candidateCount = candidates.Count,
+                    acceptedCount = detections.Length,
                     maxConfidence = maxConfidence
                 }
             };
+        }
+
+        private static int ResolveClass(
+            YoloTensorRows rows,
+            int row,
+            int classOffset,
+            int classScoreCount,
+            bool isEndToEnd,
+            out float confidence)
+        {
+            if (isEndToEnd)
+            {
+                confidence = Mathf.Clamp01(rows.Get(row, 4));
+                return Mathf.Max(0, Mathf.RoundToInt(rows.Get(row, 5)));
+            }
+
+            float objectness = YoloOutputParserUtility.HasObjectness(rows.stride) ? Mathf.Clamp01(rows.Get(row, 4)) : 1f;
+            int classId = FindBestClass(rows, row, classOffset, classScoreCount, out float classScore);
+            confidence = objectness * classScore;
+            return classId;
         }
 
         private static int FindBestClass(YoloTensorRows rows, int row, int offset, int count, out float score)
@@ -107,12 +129,61 @@ namespace UniversalTracker.Core
             return 0;
         }
 
+        private static void ApplyNms(List<SegmentationCandidate> candidates, float threshold, out VisionDetection[] detections, out VisionMask[] masks)
+        {
+            if (candidates.Count == 0)
+            {
+                detections = Array.Empty<VisionDetection>();
+                masks = Array.Empty<VisionMask>();
+                return;
+            }
+
+            candidates.Sort((a, b) => b.detection.confidence.CompareTo(a.detection.confidence));
+            var keptDetections = new List<VisionDetection>();
+            var keptMasks = new List<VisionMask>();
+            var suppressed = new bool[candidates.Count];
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                if (suppressed[i])
+                    continue;
+
+                SegmentationCandidate current = candidates[i];
+                keptDetections.Add(current.detection);
+                keptMasks.Add(current.mask);
+
+                for (int j = i + 1; j < candidates.Count; j++)
+                {
+                    if (suppressed[j] || candidates[j].detection.classId != current.detection.classId)
+                        continue;
+
+                    if (YoloOutputParserUtility.CalculateIoU(current.detection.normalizedRect, candidates[j].detection.normalizedRect) > threshold)
+                        suppressed[j] = true;
+                }
+            }
+
+            detections = keptDetections.ToArray();
+            masks = keptMasks.ToArray();
+        }
+
         private static string FormatShape(int[] shape)
         {
             if (shape == null || shape.Length == 0)
                 return "-";
 
             return string.Join("x", shape);
+        }
+
+        private readonly struct SegmentationCandidate
+        {
+            public readonly VisionDetection detection;
+            public readonly VisionMask mask;
+
+            public SegmentationCandidate(VisionDetection detection, VisionMask mask)
+            {
+                this.detection = detection;
+                this.mask = mask;
+            }
         }
     }
 }
