@@ -114,7 +114,7 @@ If startup fails:
 - Confirm parser id matches the output schema.
 - Confirm texture or camera source reports a non-zero size.
 - Check that labels count matches the expected classes.
-- Use CPU or `GPUPixel` if a GPU compute backend is not available on the target device.
+- Keep CPU for first-run validation. Try `GPUCompute` or `GPUPixel` only after the CPU path is healthy on the target device.
 
 If overlay geometry looks wrong:
 

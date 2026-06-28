@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using UnityEngine;
 using UniversalTracker.Core;
@@ -126,6 +127,27 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void TryProcessNext_RuntimeException_PreservesExceptionDetails()
+        {
+            using var pipeline = new VisionPipeline();
+            var source = new FakeFrameSource();
+            var runtime = new FakeRuntimeAdapter { ThrowOnProcess = true };
+            VisionError error = null;
+            pipeline.ErrorReceived += e => error = e;
+            pipeline.Configure(null, source, runtime);
+            pipeline.Start();
+
+            bool processed = pipeline.TryProcessNext(out VisionFrameResult result);
+
+            Assert.That(processed, Is.False);
+            Assert.That(result, Is.Null);
+            Assert.That(error.code, Is.EqualTo(VisionErrorCode.InferenceFailed));
+            Assert.That(error.exceptionType, Is.EqualTo(nameof(InvalidOperationException)));
+            Assert.That(error.message, Does.Contain("synthetic inference failure"));
+        }
+
+
+        [Test]
         public void Dispose_ReleasesSourceAndRuntime()
         {
             var pipeline = new VisionPipeline();
@@ -156,9 +178,9 @@ namespace UniversalTracker.Tests
 
             Assert.That(profile.GetDefaultModel(), Is.SameAs(second));
 
-            Object.DestroyImmediate(profile);
-            Object.DestroyImmediate(first);
-            Object.DestroyImmediate(second);
+            UnityEngine.Object.DestroyImmediate(profile);
+            UnityEngine.Object.DestroyImmediate(first);
+            UnityEngine.Object.DestroyImmediate(second);
         }
 
         private sealed class FakeFrameSource : IVisionFrameSource
@@ -190,7 +212,7 @@ namespace UniversalTracker.Tests
             {
                 Disposed = true;
                 if (texture != null)
-                    Object.DestroyImmediate(texture);
+                    UnityEngine.Object.DestroyImmediate(texture);
             }
         }
 
@@ -198,6 +220,7 @@ namespace UniversalTracker.Tests
         {
             public int InitializeCount { get; private set; }
             public bool ReturnNullResult { get; set; }
+            public bool ThrowOnProcess { get; set; }
             public bool Disposed { get; private set; }
             public VisionRuntimeKind RuntimeKind => VisionRuntimeKind.Mock;
             public VisionModelCapability Capabilities => VisionModelCapability.Detection;
@@ -211,6 +234,9 @@ namespace UniversalTracker.Tests
 
             public VisionFrameResult ProcessFrame(VisionFrame frame)
             {
+                if (ThrowOnProcess)
+                    throw new InvalidOperationException("synthetic inference failure");
+
                 if (ReturnNullResult)
                     return null;
 

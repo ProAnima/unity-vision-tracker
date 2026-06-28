@@ -3,7 +3,10 @@ using Unity.InferenceEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UIElements;
+using UniversalTracker;
 using UniversalTracker.Core;
+using UniversalTracker.OutputReceivers;
 
 namespace UniversalTracker.Editor
 {
@@ -32,13 +35,14 @@ namespace UniversalTracker.Editor
             pipeline.enableTracking = true;
             pipeline = CreateOrUpdateAsset(pipeline, $"{ProfileFolder}/{Sanitize(pipeline.name)}.asset");
 
-            string sceneObjectName = ResolveSceneObjectName();
+            bool useExperimentalSceneBootstrap = GameObject.Find(ExperimentalSceneObjectName) != null;
+            string sceneObjectName = useExperimentalSceneBootstrap ? ExperimentalSceneObjectName : VisionSceneSetupUtility.DefaultObjectName;
             VisionSceneSetupResult result = VisionSceneSetupUtility.CreateOrUpdate(new VisionSceneSetupOptions(
                 sceneObjectName,
                 pipeline,
                 null,
                 VisionSceneSetupSource.WebCam,
-                addDashboard: true,
+                addDashboard: !useExperimentalSceneBootstrap,
                 enableTracking: true,
                 autoStart: model.modelAsset != null,
                 targetFps: pipeline.targetFps));
@@ -106,19 +110,13 @@ namespace UniversalTracker.Editor
             return asset;
         }
 
-        private static string ResolveSceneObjectName()
-        {
-            return GameObject.Find(ExperimentalSceneObjectName) != null
-                ? ExperimentalSceneObjectName
-                : VisionSceneSetupUtility.DefaultObjectName;
-        }
-
         private static void ConfigureExperimentalBootstrap(GameObject root, VisionPipelineProfile pipeline, bool autoStart)
         {
             Component bootstrap = FindExperimentalBootstrap(root);
             if (bootstrap == null)
                 return;
 
+            CleanupEditTimeDashboard(root);
             var serialized = new SerializedObject(bootstrap);
             SetBool(serialized, "runWebCamPreview", false);
             SetBool(serialized, "configureRealPipeline", true);
@@ -128,6 +126,25 @@ namespace UniversalTracker.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(bootstrap);
             EditorSceneManager.MarkSceneDirty(root.scene);
+        }
+
+        private static void CleanupEditTimeDashboard(GameObject root)
+        {
+            VisionToolkitDashboardReceiver dashboard = root.GetComponent<VisionToolkitDashboardReceiver>();
+            if (dashboard != null)
+                Undo.DestroyObjectImmediate(dashboard);
+
+            UIDocument document = root.GetComponent<UIDocument>();
+            if (document != null)
+                Undo.DestroyObjectImmediate(document);
+
+            UniversalTrackerManager manager = root.GetComponent<UniversalTrackerManager>();
+            if (manager != null)
+            {
+                manager.manualToolkitDashboardReceiver = null;
+                manager.useToolkitDashboard = false;
+                EditorUtility.SetDirty(manager);
+            }
         }
 
         private static Component FindExperimentalBootstrap(GameObject root)

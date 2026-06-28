@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Unity.InferenceEngine;
 using UnityEngine;
 using UniversalTracker.Core;
 using UniversalTracker.Editor;
@@ -20,6 +21,7 @@ namespace UniversalTracker.Tests
             Assert.That(profile.primaryTask, Is.EqualTo(VisionTaskType.Detection));
             Assert.That(profile.capabilities, Is.EqualTo(VisionModelCapability.Detection));
             Assert.That(profile.parserId, Is.EqualTo("yolo.detection.rows"));
+            Assert.That(profile.backend, Is.EqualTo(BackendType.CPU));
             Assert.That(profile.output.TensorCount, Is.EqualTo(1));
             Assert.That(report.IsValid, Is.True);
 

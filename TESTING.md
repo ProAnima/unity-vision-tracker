@@ -54,7 +54,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 121 tests, 121 passed, 0 failed
+EditMode: 122 tests, 122 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

@@ -56,7 +56,7 @@ namespace UniversalTracker.Editor
                 DefaultDisplayName(template),
                 null,
                 null,
-                BackendType.GPUPixel,
+                BackendType.CPU,
                 640,
                 0.5f,
                 0.45f,

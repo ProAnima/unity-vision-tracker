@@ -20,7 +20,7 @@ MonoBehaviour:
   runtimeKind: 0
   sourceFormat: 2
   modelAsset: {fileID: 0}
-  backend: 257
+  backend: 0
   input:
     inputName: images
     width: 640

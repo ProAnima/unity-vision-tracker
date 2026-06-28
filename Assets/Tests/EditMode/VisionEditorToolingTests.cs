@@ -122,6 +122,8 @@ namespace UniversalTracker.Tests
 
             Assert.That(utility, Does.Contain("SetBool(serialized, \"runWebCamPreview\", false)"));
             Assert.That(utility, Does.Contain("SetBool(serialized, \"configureRealPipeline\", true)"));
+            Assert.That(utility, Does.Contain("addDashboard: !useExperimentalSceneBootstrap"));
+            Assert.That(utility, Does.Contain("CleanupEditTimeDashboard"));
         }
 
         [Test]

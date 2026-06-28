@@ -305,7 +305,24 @@ namespace UniversalTracker
             }
 
             if (error.code != VisionErrorCode.SourceNotReady)
-                RegisterError($"[TrackerManager] Recoverable pipeline error: {error.code} {error.message}", false);
+                RegisterPipelineError(error);
+        }
+
+        private void RegisterPipelineError(VisionError error)
+        {
+            consecutiveErrors++;
+            ConsecutiveErrors = consecutiveErrors;
+            EmitHealth(VisionHealthStatus.Create(
+                VisionHealthState.Degraded,
+                HealthState,
+                VisionHealthEvent.Degraded,
+                error.message,
+                error,
+                consecutiveErrors));
+
+            if (verboseLogging)
+                Debug.LogWarning($"[TrackerManager] Recoverable pipeline error: {error.code} {error.message}");
+            CheckErrorThreshold();
         }
 
         private void RegisterError(string message, bool emitHealth = true)

@@ -137,7 +137,7 @@ namespace UniversalTracker.Core
 
         private void ReportFailure(VisionErrorCode code, string message, bool recoverable, Exception exception = null)
         {
-            var error = new VisionError(code, message, recoverable, exception);
+            var error = new VisionError(code, FormatErrorMessage(message, exception), recoverable, exception);
 
             if (recoverable)
             {
@@ -151,6 +151,14 @@ namespace UniversalTracker.Core
             }
 
             ErrorReceived?.Invoke(error);
+        }
+
+        private static string FormatErrorMessage(string message, Exception exception)
+        {
+            if (exception == null || string.IsNullOrWhiteSpace(exception.Message))
+                return message;
+
+            return $"{message} {exception.GetType().Name}: {exception.Message}";
         }
 
         private void EmitHealth(VisionHealthStatus status)
