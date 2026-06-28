@@ -32,6 +32,11 @@
       "displayName": "YOLO Model Profiles",
       "description": "Detection, pose, and segmentation VisionModelProfile templates with labels and parser schemas.",
       "path": "Samples~/YOLO Model Profiles"
+    },
+    {
+      "displayName": "Experimental Scene",
+      "description": "Polished synthetic VisionFrameResult scene for validating dashboard rendering before adding real models.",
+      "path": "Samples~/Experimental Scene"
     }
   ],
   "author": {

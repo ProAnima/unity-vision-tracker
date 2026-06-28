@@ -90,7 +90,7 @@ VisionFrameResult
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
 - Thin runtime manager facade over `VisionPipeline`.
 - Embedded UPM package layout: `com.proanima.universal-vision-tracker`.
-- Importable Minimal Pipeline, Dashboard Overlay, and YOLO Model Profiles samples.
+- Importable Minimal Pipeline, Dashboard Overlay, YOLO Model Profiles, and Experimental Scene samples.
 - Optional module package skeletons for AR Foundation, XR passthrough, MediaPipe, native runtimes, and remote runtimes.
 - Profile-driven performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
 - Dashboard budget, source, model, runtime, health, and last-error status for faster debugging.
@@ -156,6 +156,8 @@ git lfs pull
 6. Watch the Unity Console and UI overlay for camera/inference status.
 
 For the current profile-first setup path, use [GETTING_STARTED.md](Packages/com.proanima.universal-vision-tracker/Documentation~/GETTING_STARTED.md).
+
+For the fastest visual smoke test, import the `Experimental Scene` sample and open `ProAnimaVisionExperimentalScene.unity`.
 
 For setup rules and contribution constraints, see [CODEX.md](CODEX.md).
 

@@ -31,6 +31,7 @@ Open Unity Package Manager, select `ProAnima Universal Vision Tracker`, then imp
 - `Minimal Pipeline` for a compact manager bootstrap.
 - `Dashboard Overlay` for UI Toolkit overlay preview without a camera or model.
 - `YOLO Model Profiles` for detection, pose, and segmentation profile templates.
+- `Experimental Scene` for a polished runnable dashboard scene with synthetic detections, pose, and masks.
 
 The YOLO sample profiles are intentionally runtime-asset-free. They document parser ids, tensor schemas, labels, thresholds, and governance fields so you can add your own model asset safely.
 

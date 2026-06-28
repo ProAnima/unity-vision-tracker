@@ -47,6 +47,7 @@ Configuration is profile-first:
 - Package Manager samples now cover minimal profile-driven setup and dashboard overlay preview without requiring model assets.
 - Getting Started documentation now describes the profile-first happy path from install to scene setup, validator use, dashboard feedback, and production checklist.
 - Package Manager samples now include YOLO detection, pose, and segmentation model-profile templates with labels and parser schemas.
+- Package Manager samples now include an Experimental Scene that validates dashboard rendering with synthetic `VisionFrameResult` data before real model hookup.
 - Optional module package skeletons now isolate AR Foundation, XR passthrough, MediaPipe, native runtime, and remote runtime work from the core package.
 - Profile validation now exposes a concise summary for setup tooling, and the UI Toolkit dashboard surfaces pipeline budget status.
 - `Tools/ProAnima Vision/Profile Compatibility Inspector` summarizes runtime, parser, capability, input, and output-schema readiness for model and pipeline profiles.
