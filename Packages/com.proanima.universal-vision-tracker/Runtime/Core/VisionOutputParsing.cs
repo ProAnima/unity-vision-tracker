@@ -89,17 +89,20 @@ namespace UniversalTracker.Core
         public readonly Vector2Int sourceSize;
         public readonly float confidenceThreshold;
         public readonly float nmsThreshold;
+        public readonly Vector2Int modelInputSize;
         public readonly string[] labels;
 
         public VisionOutputParserContext(
             Vector2Int sourceSize,
             float confidenceThreshold,
             float nmsThreshold,
-            string[] labels = null)
+            string[] labels = null,
+            Vector2Int modelInputSize = default)
         {
             this.sourceSize = sourceSize;
             this.confidenceThreshold = confidenceThreshold;
             this.nmsThreshold = nmsThreshold;
+            this.modelInputSize = modelInputSize;
             this.labels = labels ?? Array.Empty<string>();
         }
     }
@@ -122,27 +125,27 @@ namespace UniversalTracker.Core
                 return VisionParsedOutput.Empty;
 
             VisionRawTensor tensor = rawOutput.tensors[0];
-            if (!TryResolveRows(tensor, out int rowCount, out int stride))
+            if (!TryResolveRows(tensor, out YoloTensorRows rows))
                 return VisionParsedOutput.Empty;
 
             var detections = new List<VisionDetection>();
-            for (int row = 0; row < rowCount; row++)
+            for (int row = 0; row < rows.rowCount; row++)
             {
-                int offset = row * stride;
-                if (stride < 6 || offset + stride > tensor.data.Length)
+                if (rows.stride < 6)
                     continue;
 
-                float objectness = Mathf.Clamp01(tensor.data[offset + 4]);
-                int classId = FindBestClass(tensor.data, offset + 5, stride - 5, out float classScore);
-                float confidence = objectness * classScore;
+                int classOffset = rows.hasObjectness ? 5 : 4;
+                float objectness = rows.hasObjectness ? Mathf.Clamp01(rows.Get(row, 4)) : 1f;
+                int classId = FindBestClass(rows, row, classOffset, rows.stride - classOffset, out float classScore);
+                float confidence = Mathf.Clamp01(objectness * classScore);
                 if (confidence < context.confidenceThreshold)
                     continue;
 
                 Rect normalized = CenterToRect(
-                    tensor.data[offset],
-                    tensor.data[offset + 1],
-                    tensor.data[offset + 2],
-                    tensor.data[offset + 3]);
+                    NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x),
+                    NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
+                    NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
+                    NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
 
                 detections.Add(new VisionDetection
                 {
@@ -164,33 +167,45 @@ namespace UniversalTracker.Core
             };
         }
 
-        private static bool TryResolveRows(VisionRawTensor tensor, out int rowCount, out int stride)
+        private static bool TryResolveRows(VisionRawTensor tensor, out YoloTensorRows rows)
         {
-            rowCount = 0;
-            stride = 0;
+            rows = default;
 
             if (tensor.shape.Length == 2)
             {
-                rowCount = tensor.shape[0];
-                stride = tensor.shape[1];
+                rows = new YoloTensorRows(tensor, tensor.shape[0], tensor.shape[1], false, HasObjectness(tensor.shape[1]));
             }
             else if (tensor.shape.Length == 3 && tensor.shape[0] == 1)
             {
-                rowCount = tensor.shape[1];
-                stride = tensor.shape[2];
+                int first = tensor.shape[1];
+                int second = tensor.shape[2];
+                bool channelFirst = IsKnownYoloStride(first) || (first >= 6 && first < second);
+                rows = channelFirst
+                    ? new YoloTensorRows(tensor, second, first, true, HasObjectness(first))
+                    : new YoloTensorRows(tensor, first, second, false, HasObjectness(second));
             }
 
-            return rowCount > 0 && stride >= 6 && rowCount * stride <= tensor.ElementCount;
+            return rows.IsValid;
         }
 
-        private static int FindBestClass(float[] data, int offset, int count, out float score)
+        private static bool HasObjectness(int stride)
+        {
+            return stride == 85 || stride == 117 || stride == 57 || stride <= 10;
+        }
+
+        private static bool IsKnownYoloStride(int stride)
+        {
+            return stride == 84 || stride == 85 || stride == 56 || stride == 57 || stride == 116 || stride == 117;
+        }
+
+        private static int FindBestClass(YoloTensorRows rows, int row, int offset, int count, out float score)
         {
             int bestIndex = 0;
             score = 0f;
 
             for (int i = 0; i < count; i++)
             {
-                float value = Mathf.Clamp01(data[offset + i]);
+                float value = Mathf.Clamp01(rows.Get(row, offset + i));
                 if (value <= score)
                     continue;
 
@@ -199,6 +214,15 @@ namespace UniversalTracker.Core
             }
 
             return bestIndex;
+        }
+
+        private static float NormalizeCoordinate(float value, int modelAxis)
+        {
+            if (value >= 0f && value <= 1f)
+                return value;
+
+            int divisor = modelAxis > 0 ? modelAxis : 640;
+            return Mathf.Clamp01(value / divisor);
         }
 
         private static Rect CenterToRect(float centerX, float centerY, float width, float height)
@@ -280,6 +304,38 @@ namespace UniversalTracker.Core
                 return labels[classId];
 
             return $"class_{classId}";
+        }
+
+        private readonly struct YoloTensorRows
+        {
+            private readonly VisionRawTensor tensor;
+            private readonly bool channelFirst;
+
+            public readonly int rowCount;
+            public readonly int stride;
+            public readonly bool hasObjectness;
+
+            public YoloTensorRows(VisionRawTensor tensor, int rowCount, int stride, bool channelFirst, bool hasObjectness)
+            {
+                this.tensor = tensor;
+                this.rowCount = rowCount;
+                this.stride = stride;
+                this.channelFirst = channelFirst;
+                this.hasObjectness = hasObjectness;
+            }
+
+            public bool IsValid => rowCount > 0 && stride >= 6 && rowCount * stride <= tensor.ElementCount;
+
+            public float Get(int row, int column)
+            {
+                if (tensor.data == null || row < 0 || row >= rowCount || column < 0 || column >= stride)
+                    return 0f;
+
+                int index = channelFirst
+                    ? column * rowCount + row
+                    : row * stride + column;
+                return index >= 0 && index < tensor.data.Length ? tensor.data[index] : 0f;
+            }
         }
     }
 }

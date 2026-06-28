@@ -52,6 +52,29 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void YoloDetectionParser_ParsesChannelFirstYoloOutputWithoutObjectness()
+        {
+            var parser = new YoloDetectionOutputParser();
+            float[] data = new float[84 * 2];
+            WriteChannelFirstBox(data, 2, 0, 320f, 320f, 128f, 256f, classId: 0, score: 0.82f);
+            WriteChannelFirstBox(data, 2, 1, 120f, 120f, 64f, 64f, classId: 2, score: 0.12f);
+            VisionRawModelOutput raw = VisionRawModelOutput.Single("output0", data, 1, 84, 2);
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person", "bicycle", "car" },
+                new Vector2Int(640, 640));
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            Assert.That(parsed.detections[0].label, Is.EqualTo("person"));
+            Assert.That(parsed.detections[0].confidence, Is.EqualTo(0.82f).Within(0.0001f));
+            AssertRect(parsed.detections[0].sourceRect, new Rect(512, 216, 256, 288));
+        }
+
+        [Test]
         public void YoloDetectionParser_AppliesClassAwareNms()
         {
             var parser = new YoloDetectionOutputParser();
@@ -240,6 +263,24 @@ namespace UniversalTracker.Tests
             }
 
             return row;
+        }
+
+        private static void WriteChannelFirstBox(
+            float[] data,
+            int rowCount,
+            int row,
+            float centerX,
+            float centerY,
+            float width,
+            float height,
+            int classId,
+            float score)
+        {
+            data[0 * rowCount + row] = centerX;
+            data[1 * rowCount + row] = centerY;
+            data[2 * rowCount + row] = width;
+            data[3 * rowCount + row] = height;
+            data[(4 + classId) * rowCount + row] = score;
         }
     }
 }

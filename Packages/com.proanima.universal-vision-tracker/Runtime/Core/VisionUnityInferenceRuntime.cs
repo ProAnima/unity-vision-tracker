@@ -47,7 +47,8 @@ namespace UniversalTracker.Core
                 frame.sourceSize,
                 activeProfile != null ? activeProfile.confidenceThreshold : 0.5f,
                 activeProfile != null ? activeProfile.nmsThreshold : 0.45f,
-                labels);
+                labels,
+                ResolveModelInputSize(activeProfile));
             VisionParsedOutput parsed = outputParser.Parse(rawOutput, context);
             return parsed.ToFrameResult(frame.frameIndex, frame.timestamp, frame.sourceSize);
         }
@@ -70,6 +71,16 @@ namespace UniversalTracker.Core
                 lines[i] = lines[i].Trim();
 
             return lines;
+        }
+
+        private static Vector2Int ResolveModelInputSize(VisionModelProfile profile)
+        {
+            if (profile == null)
+                return new Vector2Int(640, 640);
+
+            int width = profile.input.width > 0 ? profile.input.width : 640;
+            int height = profile.input.height > 0 ? profile.input.height : 640;
+            return new Vector2Int(width, height);
         }
     }
 
