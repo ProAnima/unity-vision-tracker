@@ -84,6 +84,7 @@ VisionFrameResult
 - `VisionPipeline` orchestration for source/runtime/result flow.
 - `VisionHealthStatus` lifecycle state and runtime health events.
 - Parser registry diagnostics for profile/output compatibility.
+- Setup Wizard for creating a profile-driven tracker object in the current scene.
 - IOU and SORT tracking implementations.
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
 - Thin runtime manager facade over `VisionPipeline`.
@@ -99,7 +100,6 @@ VisionFrameResult
 - Production-grade preprocess and coordinate mapping.
 - Human/object/pose tracking with lifecycle events.
 - Skeleton smoothing and rig/animation bridges.
-- Editor setup wizard.
 - Model validator and output-shape inspector.
 - Benchmark/debug overlay.
 - Optional AR Foundation and XR passthrough frame sources.

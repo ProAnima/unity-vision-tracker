@@ -89,7 +89,7 @@ Existing large files should be split when touched for substantive production wor
 Current baseline:
 
 ```text
-EditMode: 92 tests, 92 passed, 0 failed
+EditMode: 96 tests, 96 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 
@@ -132,6 +132,7 @@ Test coverage expectations:
 - New tracking behavior requires sequence tests.
 - New UI overlay geometry requires pure geometry tests.
 - New performance budget policy requires EditMode tests for budget status and violation semantics.
+- New editor setup tools require EditMode tests for scene object creation/update behavior.
 - Device/camera behavior should have manual or PlayMode test notes until automated device tests exist.
 
 ## Debug Visualization Rules
