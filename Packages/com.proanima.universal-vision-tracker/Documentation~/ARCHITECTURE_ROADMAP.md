@@ -41,14 +41,15 @@ Configuration is profile-first:
 - Prototype Unity Inference smoke MonoBehaviours have been removed from runtime code.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
 - UI Toolkit dashboard receiver and overlay renderer have PlayMode smoke coverage for runtime visual tree creation and detection/pose/mask element rendering.
+- Runtime and editor code now live in an embedded UPM package layout under `Packages/com.proanima.universal-vision-tracker`.
 
 ## Next Production Steps
 
-1. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
-2. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
-3. Add performance/allocation budgets for parser, overlay, and tracking paths.
-4. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
-5. Add scene lifecycle smoke tests for `UniversalTrackerManager` startup, stop, failure, and recovery paths.
+1. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
+2. Add performance/allocation budgets for parser, overlay, and tracking paths.
+3. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
+4. Add scene lifecycle smoke tests for `UniversalTrackerManager` startup, stop, failure, and recovery paths.
+5. Add package samples for minimal profile-driven pipeline and UI Toolkit dashboard overlay.
 
 ## Extension Rules
 

@@ -1,6 +1,6 @@
 # Testing
 
-This project uses Unity Test Framework EditMode tests for production-core code that can be validated without cameras, devices, or Play Mode.
+This project uses Unity Test Framework EditMode tests for production-core code and PlayMode smoke tests for scene-facing UI/runtime behavior.
 
 ## EditMode Tests
 
@@ -20,6 +20,7 @@ Current coverage starts with:
 - Parser contracts and YOLO detection golden row fixtures.
 - Parser registry and raw-output runtime flow through `UnityInferenceRuntimeAdapter`.
 - Unity Inference raw output provider construction and missing-asset failure behavior.
+- UI Toolkit dashboard receiver and overlay renderer PlayMode smoke behavior.
 
 Run from PowerShell:
 
@@ -45,7 +46,20 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 72 tests, 72 passed, 0 failed
+EditMode: 87 tests, 87 passed, 0 failed
+PlayMode: 2 tests, 2 passed, 0 failed
+```
+
+Run PlayMode smoke tests from PowerShell:
+
+```powershell
+& 'D:\Unity\6000.3.15f1\Editor\Unity.exe' `
+  -batchmode `
+  -projectPath 'D:\Projects\ProAnimaStudio\pas-UCT' `
+  -runTests `
+  -testPlatform PlayMode `
+  -testResults 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\playmode-test-results.xml' `
+  -logFile 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\playmode-test.log'
 ```
 
 ## GitHub Actions

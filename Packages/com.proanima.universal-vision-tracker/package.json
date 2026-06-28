@@ -1,0 +1,25 @@
+{
+  "name": "com.proanima.universal-vision-tracker",
+  "version": "0.1.0-preview.1",
+  "displayName": "ProAnima Universal Vision Tracker",
+  "description": "Unity-first computer vision runtime for frame sources, runtime adapters, output parsers, tracking, and debug visualization.",
+  "unity": "6000.0",
+  "keywords": [
+    "computer-vision",
+    "tracking",
+    "pose",
+    "detection",
+    "unity-inference",
+    "yolo"
+  ],
+  "category": "AI",
+  "dependencies": {
+    "com.unity.ai.inference": "2.6.1",
+    "com.unity.ugui": "2.0.0"
+  },
+  "author": {
+    "name": "ProAnima",
+    "url": "https://github.com/ProAnima"
+  },
+  "license": "MIT"
+}

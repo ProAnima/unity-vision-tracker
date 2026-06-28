@@ -9,6 +9,15 @@
       },
       "hash": "53e1baac3cde90c46934f82ee1d61802d2bd6651"
     },
+    "com.proanima.universal-vision-tracker": {
+      "version": "file:com.proanima.universal-vision-tracker",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.ai.inference": "2.6.1",
+        "com.unity.ugui": "2.0.0"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "13.0.4",
       "depth": 0,

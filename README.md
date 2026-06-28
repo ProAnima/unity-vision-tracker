@@ -87,6 +87,7 @@ VisionFrameResult
 - IOU and SORT tracking implementations.
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers.
 - Thin runtime manager facade over `VisionPipeline`.
+- Embedded UPM package layout: `com.proanima.universal-vision-tracker`.
 - Architecture roadmap for a production SDK evolution.
 
 ## Target Capabilities
@@ -100,10 +101,9 @@ VisionFrameResult
 - Editor setup wizard.
 - Model validator and output-shape inspector.
 - Benchmark/debug overlay.
-- UPM package layout: `com.proanima.universal-vision-tracker`.
 - Optional AR Foundation and XR passthrough frame sources.
 
-See the full roadmap: [ARCHITECTURE_ROADMAP.md](Assets/Scripts/UniversalTracker/ARCHITECTURE_ROADMAP.md).
+See the full roadmap: [ARCHITECTURE_ROADMAP.md](Packages/com.proanima.universal-vision-tracker/Documentation~/ARCHITECTURE_ROADMAP.md).
 
 Technology research and future-proofing notes: [TECHNOLOGY_RESEARCH.md](Documentation/TECHNOLOGY_RESEARCH.md).
 
@@ -113,11 +113,16 @@ Technology research and future-proofing notes: [TECHNOLOGY_RESEARCH.md](Document
 Assets/
   Models/                         Runtime ONNX models and model config assets
   Scenes/                         Demo scene
-  Scripts/UniversalTracker/       Current prototype runtime
   Settings/                       Unity render pipeline settings
 Documentation/
   media/                          README and repository visual assets
-Packages/                         Unity package manifest
+Packages/
+  com.proanima.universal-vision-tracker/
+    Runtime/                       Production runtime package code
+    Editor/                        Editor tooling
+    Documentation~/                Package architecture docs
+    Samples~/                      Importable package samples
+  manifest.json                    Unity project package manifest
 ProjectSettings/                  Unity project settings
 ```
 

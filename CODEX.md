@@ -160,7 +160,7 @@ When changing architecture, update at least one of:
 
 - `README.md` for user-facing capabilities and setup.
 - `TESTING.md` for test counts, commands, or coverage matrix.
-- `Assets/Scripts/UniversalTracker/ARCHITECTURE_ROADMAP.md` for architecture increments.
+- `Packages/com.proanima.universal-vision-tracker/Documentation~/ARCHITECTURE_ROADMAP.md` for architecture increments.
 - `Documentation/TECHNOLOGY_RESEARCH.md` for research-level decisions.
 
 Architecture log entries should include:
@@ -189,4 +189,5 @@ A production increment is done only when:
 4. Expand production `IVisionFrameSource` coverage for camera, texture, video, AR, and XR sources.
 5. Add parser/output schema fixtures.
 6. Add PlayMode smoke tests for UI Toolkit dashboard.
-7. Prepare UPM package layout.
+7. Add optional package modules for AR/XR, MediaPipe, native plugin, and remote runtimes.
+8. Add performance and allocation budgets for parsers, overlay rendering, and tracking.
