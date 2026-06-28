@@ -33,6 +33,7 @@ Configuration is profile-first:
 - Runtime lifecycle is exposed through `VisionHealthStatus` and started/stopped/degraded/failed/recovered events.
 - Model profile validation reports parser selection, missing parser ids, unsupported profile/parser combinations, and output semantic warnings before runtime startup.
 - UI Toolkit dashboard construction is split into a builder/theme helper so the receiver focuses on binding runtime state to UI updates.
+- `UniversalTrackerManager` delegates frame-source creation, profile resolution, output receiver routing, tracking, health event dispatch, and profile-validation logging to focused runtime services.
 - Prototype Unity Inference smoke MonoBehaviours have been removed from runtime code.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
 
@@ -40,7 +41,7 @@ Configuration is profile-first:
 
 1. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
 2. Add golden fixtures for pose and segmentation parsers.
-3. Split `UniversalTrackerManager` into source/runtime/output/tracking coordinator services.
+3. Add focused EditMode tests for manager service helpers.
 4. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
 5. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
 6. Add performance/allocation budgets for parser, overlay, and tracking paths.

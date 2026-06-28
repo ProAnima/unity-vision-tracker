@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Video;
 using UniversalTracker.Core;
@@ -53,26 +52,26 @@ namespace UniversalTracker
         public bool IsRunning { get; private set; }
         public VisionFrameResult LastVisionResult { get; private set; }
         public VisionModelProfile ActiveModelProfile { get; private set; }
-        public VisionHealthStatus HealthStatus { get; private set; } =
-            VisionHealthStatus.Create(VisionHealthState.NotInitialized, VisionHealthState.NotInitialized, VisionHealthEvent.None, "Tracker is not initialized.");
-        public VisionHealthState HealthState => HealthStatus?.state ?? VisionHealthState.NotInitialized;
-        public VisionError LastError => HealthStatus?.lastError;
+        public VisionHealthStatus HealthStatus => healthHub.Status;
+        public VisionHealthState HealthState => healthHub.State;
+        public VisionError LastError => healthHub.LastError;
         public float CurrentFPS { get; private set; }
         public int ConsecutiveErrors { get; private set; }
 
         public event Action<VisionFrameResult> OnVisionFrameResult;
-        public event Action<VisionHealthStatus> OnVisionHealthChanged;
-        public event Action<VisionHealthStatus> OnVisionStarted;
-        public event Action<VisionHealthStatus> OnVisionStopped;
-        public event Action<VisionHealthStatus> OnVisionDegraded;
-        public event Action<VisionHealthStatus> OnVisionFailed;
-        public event Action<VisionHealthStatus> OnVisionRecovered;
+        public event Action<VisionHealthStatus> OnVisionHealthChanged { add => healthHub.Changed += value; remove => healthHub.Changed -= value; }
+        public event Action<VisionHealthStatus> OnVisionStarted { add => healthHub.Started += value; remove => healthHub.Started -= value; }
+        public event Action<VisionHealthStatus> OnVisionStopped { add => healthHub.Stopped += value; remove => healthHub.Stopped -= value; }
+        public event Action<VisionHealthStatus> OnVisionDegraded { add => healthHub.Degraded += value; remove => healthHub.Degraded -= value; }
+        public event Action<VisionHealthStatus> OnVisionFailed { add => healthHub.Failed += value; remove => healthHub.Failed -= value; }
+        public event Action<VisionHealthStatus> OnVisionRecovered { add => healthHub.Recovered += value; remove => healthHub.Recovered -= value; }
 
-        private readonly List<IOutputReceiver> outputReceivers = new List<IOutputReceiver>();
+        private readonly VisionHealthEventHub healthHub = new VisionHealthEventHub();
+        private readonly VisionOutputReceiverHub outputHub = new VisionOutputReceiverHub();
+        private readonly VisionTrackingStage trackingStage = new VisionTrackingStage();
         private VisionPipeline visionPipeline;
         private IVisionFrameSource frameSource;
         private VisionAdapterRegistry adapterRegistry;
-        private ITracker tracker;
         private float frameInterval;
         private float lastFrameTime;
         private int totalFramesProcessed;
@@ -113,8 +112,8 @@ namespace UniversalTracker
             try
             {
                 EmitHealth(VisionHealthStatus.Create(VisionHealthState.Initializing, HealthState, VisionHealthEvent.None, "Tracker is initializing."));
-                InitializeOutputs();
-                InitializeTracking();
+                outputHub.Initialize(gameObject, this, CreateOutputSettings());
+                trackingStage.Configure(useTracking, trackerType, trackingIoUThreshold, maxMissedFrames);
                 if (!InitializePipeline())
                 {
                     CleanupOnError();
@@ -156,21 +155,15 @@ namespace UniversalTracker
 
             IsRunning = false;
             DisposePipeline();
-
-            foreach (IOutputReceiver receiver in outputReceivers)
-            {
-                try { receiver?.Release(); } catch { }
-            }
-
-            outputReceivers.Clear();
-            tracker = null;
+            outputHub.Release();
+            trackingStage.Reset();
             if (emitStopped)
                 EmitHealth(VisionHealthStatus.Create(VisionHealthState.Stopped, HealthState, VisionHealthEvent.Stopped, "Tracker stopped."));
         }
 
         public void SwitchModel(int index)
         {
-            VisionModelProfile[] profiles = GetActiveModelProfiles();
+            VisionModelProfile[] profiles = VisionModelProfileResolver.GetProfiles(pipelineProfile, modelProfiles);
             if (profiles == null || index < 0 || index >= profiles.Length)
             {
                 Debug.LogError($"[TrackerManager] Invalid model index: {index}");
@@ -187,12 +180,12 @@ namespace UniversalTracker
 
         public TrackedObject[] GetTrackedObjects()
         {
-            return tracker != null ? tracker.GetAllTrackedObjects() : Array.Empty<TrackedObject>();
+            return trackingStage.TrackedObjects;
         }
 
         private bool InitializePipeline()
         {
-            ActiveModelProfile = ResolveActiveModelProfile();
+            ActiveModelProfile = VisionModelProfileResolver.Resolve(pipelineProfile, modelProfiles, ref activeModelIndex);
             if (ActiveModelProfile == null)
             {
                 Debug.LogError("[TrackerManager] VisionModelProfile is required.");
@@ -200,11 +193,11 @@ namespace UniversalTracker
             }
 
             VisionProfileValidationReport validation = VisionProfileValidator.ValidateModelProfile(ActiveModelProfile);
-            LogProfileValidation(ActiveModelProfile, validation);
+            VisionProfileValidationLogger.Log("TrackerManager", ActiveModelProfile, validation);
             if (!validation.IsValid)
                 return false;
 
-            frameSource = CreateFrameSource();
+            frameSource = VisionFrameSourceFactory.Create(CreateFrameSourceRequest());
             if (frameSource == null)
             {
                 Debug.LogError("[TrackerManager] IVisionFrameSource is required.");
@@ -233,109 +226,33 @@ namespace UniversalTracker
             return true;
         }
 
-        private IVisionFrameSource CreateFrameSource()
+        private VisionFrameSourceRequest CreateFrameSourceRequest()
         {
-            if (customInputProvider is IVisionFrameSource customSource)
-                return customSource;
-
-            return inputType switch
-            {
-                InputProviderType.Texture => sourceRenderTexture != null
-                    ? new RenderTextureFrameSource(sourceRenderTexture)
-                    : new TextureFrameSource(sourceTexture),
-                InputProviderType.RenderTexture => new RenderTextureFrameSource(sourceRenderTexture),
-                InputProviderType.Camera => new UnityCameraFrameSource(
-                    sourceCamera != null ? sourceCamera : Camera.main,
-                    ResolveCameraTargetTexture(),
-                    cameraTargetTexture == null),
-                InputProviderType.Video => sourceVideoPlayer != null
-                    ? new VideoFrameSource(sourceVideoPlayer)
-                    : CreateVideoFrameSourceFromComponent(),
-                InputProviderType.WebCam => new WebCamFrameSource(),
-                _ => null
-            };
+            return new VisionFrameSourceRequest(
+                inputType,
+                customInputProvider,
+                sourceTexture,
+                sourceRenderTexture,
+                sourceCamera,
+                cameraTargetTexture,
+                sourceVideoPlayer,
+                () => GetComponent<VideoPlayer>(),
+                texture => cameraTargetTexture = texture);
         }
 
-        private RenderTexture ResolveCameraTargetTexture()
+        private VisionOutputReceiverSettings CreateOutputSettings()
         {
-            if (cameraTargetTexture != null)
-                return cameraTargetTexture;
-
-            cameraTargetTexture = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
-            return cameraTargetTexture;
-        }
-
-        private VideoFrameSource CreateVideoFrameSourceFromComponent()
-        {
-            VideoPlayer player = GetComponent<VideoPlayer>();
-            return player != null ? new VideoFrameSource(player) : null;
-        }
-
-        private VisionModelProfile ResolveActiveModelProfile()
-        {
-            VisionModelProfile[] profiles = GetActiveModelProfiles();
-            if (profiles == null || profiles.Length == 0)
-                return null;
-
-            if (activeModelIndex < 0 || activeModelIndex >= profiles.Length)
-                activeModelIndex = 0;
-
-            return profiles[activeModelIndex];
-        }
-
-        private VisionModelProfile[] GetActiveModelProfiles()
-        {
-            if (pipelineProfile != null && pipelineProfile.HasModels)
-                return pipelineProfile.models;
-
-            return modelProfiles;
-        }
-
-        private void InitializeOutputs()
-        {
-            outputReceivers.Clear();
-            AddReceiver(manualEventReceiver, useEventOutput, () => gameObject.AddComponent<EventOutputReceiver>());
-            AddReceiver(manualUIReceiver, useUIVisualization, () => gameObject.AddComponent<UIVisualizationReceiver>());
-            AddReceiver(manualToolkitDashboardReceiver, useToolkitDashboard, CreateToolkitDashboardReceiver);
-            AddReceiver(manualSceneReceiver, useSceneVisualization, () => gameObject.AddComponent<SceneVisualizationReceiver>());
-            AddReceiver(manualDebugReceiver, useDebugOutput, () => gameObject.AddComponent<DebugOutputReceiver>());
-        }
-
-        private VisionToolkitDashboardReceiver CreateToolkitDashboardReceiver()
-        {
-            var receiver = gameObject.AddComponent<VisionToolkitDashboardReceiver>();
-            receiver.trackerManager = this;
-            return receiver;
-        }
-
-        private void AddReceiver<T>(T manualReceiver, bool createIfMissing, Func<T> factory)
-            where T : MonoBehaviour, IOutputReceiver
-        {
-            T receiver = manualReceiver;
-            if (receiver == null && createIfMissing)
-                receiver = factory();
-
-            if (receiver == null)
-                return;
-
-            receiver.Initialize();
-            outputReceivers.Add(receiver);
-        }
-
-        private void InitializeTracking()
-        {
-            if (!useTracking)
-            {
-                tracker = null;
-                return;
-            }
-
-            tracker = trackerType switch
-            {
-                TrackerType.IOU => new IOUTracker(trackingIoUThreshold, maxMissedFrames),
-                TrackerType.SORT => new SORTTracker(trackingIoUThreshold, maxMissedFrames),
-                _ => null
-            };
+            return new VisionOutputReceiverSettings(
+                manualEventReceiver,
+                manualUIReceiver,
+                manualToolkitDashboardReceiver,
+                manualSceneReceiver,
+                manualDebugReceiver,
+                useEventOutput,
+                useUIVisualization,
+                useToolkitDashboard,
+                useSceneVisualization,
+                useDebugOutput);
         }
 
         private void ProcessPipelineFrame()
@@ -357,39 +274,10 @@ namespace UniversalTracker
 
         private void HandlePipelineFrameProcessed(VisionFrameResult result)
         {
-            ApplyTracking(result);
+            trackingStage.Apply(result, Time.deltaTime);
             LastVisionResult = result;
             OnVisionFrameResult?.Invoke(result);
-
-            foreach (IOutputReceiver receiver in outputReceivers)
-            {
-                if (receiver == null || !receiver.IsEnabled)
-                    continue;
-
-                try
-                {
-                    receiver.ReceiveVisionResult(result);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[TrackerManager] Output receiver failed: {e.Message}");
-                }
-            }
-        }
-
-        private void ApplyTracking(VisionFrameResult result)
-        {
-            if (result == null || tracker == null || result.detections == null || result.detections.Length == 0)
-                return;
-
-            TrackedObject[] trackedObjects = tracker.Update(result.detections, Time.deltaTime);
-            var trackedDetections = new VisionDetection[trackedObjects.Length];
-            for (int i = 0; i < trackedObjects.Length; i++)
-                trackedDetections[i] = trackedObjects[i].currentDetection;
-
-            result.detections = trackedDetections;
-            result.stats.trackingMs = 0f;
-            result.stats.totalMs = result.stats.preprocessMs + result.stats.inferenceMs + result.stats.postprocessMs + result.stats.trackingMs;
+            outputHub.Dispatch(result);
         }
 
         private void HandlePipelineError(VisionError error)
@@ -488,48 +376,7 @@ namespace UniversalTracker
 
         private void EmitHealth(VisionHealthStatus status)
         {
-            if (status == null)
-                return;
-
-            HealthStatus = status;
-            OnVisionHealthChanged?.Invoke(status);
-
-            switch (status.eventType)
-            {
-                case VisionHealthEvent.Started:
-                    OnVisionStarted?.Invoke(status);
-                    break;
-                case VisionHealthEvent.Stopped:
-                    OnVisionStopped?.Invoke(status);
-                    break;
-                case VisionHealthEvent.Degraded:
-                    OnVisionDegraded?.Invoke(status);
-                    break;
-                case VisionHealthEvent.Failed:
-                    OnVisionFailed?.Invoke(status);
-                    break;
-                case VisionHealthEvent.Recovered:
-                    OnVisionRecovered?.Invoke(status);
-                    break;
-            }
-        }
-
-        private void LogProfileValidation(VisionModelProfile profile, VisionProfileValidationReport report)
-        {
-            if (report == null || report.Messages.Count == 0)
-                return;
-
-            string profileName = profile != null ? profile.name : "null";
-            foreach (VisionValidationMessage message in report.Messages)
-            {
-                string log = $"[TrackerManager] Profile validation '{profileName}': {message.code} - {message.message}";
-                if (message.severity == VisionValidationSeverity.Error)
-                    Debug.LogError(log);
-                else if (message.severity == VisionValidationSeverity.Warning)
-                    Debug.LogWarning(log);
-                else
-                    Debug.Log(log);
-            }
+            healthHub.Emit(status);
         }
     }
 
@@ -549,5 +396,4 @@ namespace UniversalTracker
         IOU,
         SORT
     }
-
 }
