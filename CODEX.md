@@ -89,7 +89,7 @@ Existing large files should be split when touched for substantive production wor
 Current baseline:
 
 ```text
-EditMode: 80 tests, 80 passed, 0 failed
+EditMode: 84 tests, 84 passed, 0 failed
 ```
 
 Run EditMode tests after code changes:

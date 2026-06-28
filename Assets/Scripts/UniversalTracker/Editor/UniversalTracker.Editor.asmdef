@@ -2,7 +2,8 @@
   "name": "UniversalTracker.Editor",
   "rootNamespace": "UniversalTracker.Editor",
   "references": [
-    "UniversalTracker.Runtime"
+    "UniversalTracker.Runtime",
+    "Unity.InferenceEngine"
   ],
   "includePlatforms": [
     "Editor"

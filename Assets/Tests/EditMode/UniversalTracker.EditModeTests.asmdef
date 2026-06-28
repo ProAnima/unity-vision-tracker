@@ -3,6 +3,7 @@
   "rootNamespace": "UniversalTracker.Tests",
   "references": [
     "UniversalTracker.Runtime",
+    "UniversalTracker.Editor",
     "Unity.InferenceEngine"
   ],
   "includePlatforms": [

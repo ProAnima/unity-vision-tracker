@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -11,23 +10,19 @@ namespace UniversalTracker.Editor
         [MenuItem("Assets/Create/ProAnima Vision/YOLO Detection Model Profile", priority = 10)]
         public static void CreateYoloDetectionProfile()
         {
-            var profile = ScriptableObject.CreateInstance<VisionModelProfile>();
-            profile.profileId = $"yolo-detection-{Guid.NewGuid():N}";
-            profile.displayName = "YOLO Detection";
-            profile.family = VisionModelFamily.YOLO;
-            profile.primaryTask = VisionTaskType.Detection;
-            profile.capabilities = VisionModelCapability.Detection;
-            profile.runtimeKind = VisionRuntimeKind.UnityInferenceEngine;
-            profile.sourceFormat = VisionModelSourceFormat.UnityModelAsset;
-            profile.input = VisionInputSchema.ImageSquare(640);
-            profile.output = CreateYoloDetectionOutputSchema();
-            profile.parserId = "yolo.detection.rows";
-            profile.confidenceThreshold = 0.5f;
-            profile.nmsThreshold = 0.45f;
-            profile.modelLicense = "TODO: add model license";
-            profile.modelSourceUrl = "TODO: add model source URL";
+            CreateModelProfile(VisionModelProfileTemplate.YoloDetection);
+        }
 
-            CreateAsset(profile, "YoloDetectionProfile.asset");
+        [MenuItem("Assets/Create/ProAnima Vision/YOLO Pose 2D Model Profile", priority = 11)]
+        public static void CreateYoloPoseProfile()
+        {
+            CreateModelProfile(VisionModelProfileTemplate.YoloPose2D);
+        }
+
+        [MenuItem("Assets/Create/ProAnima Vision/YOLO Segmentation Model Profile", priority = 12)]
+        public static void CreateYoloSegmentationProfile()
+        {
+            CreateModelProfile(VisionModelProfileTemplate.YoloSegmentation);
         }
 
         [MenuItem("Assets/Create/ProAnima Vision/Pipeline Profile From Selected Models", true)]
@@ -36,35 +31,19 @@ namespace UniversalTracker.Editor
             return GetSelectedModelProfiles().Count > 0;
         }
 
-        [MenuItem("Assets/Create/ProAnima Vision/Pipeline Profile From Selected Models", priority = 11)]
+        [MenuItem("Assets/Create/ProAnima Vision/Pipeline Profile From Selected Models", priority = 20)]
         public static void CreatePipelineFromSelection()
         {
             List<VisionModelProfile> models = GetSelectedModelProfiles();
-            var profile = ScriptableObject.CreateInstance<VisionPipelineProfile>();
-            profile.models = models.ToArray();
-            profile.defaultModelIndex = 0;
-            profile.targetFps = 30;
-            profile.enableTracking = true;
-            profile.enableDebugOverlay = true;
-            profile.maxConsecutiveRecoverableErrors = 10;
-
+            VisionPipelineProfile profile = VisionModelProfileTemplateFactory.CreatePipelineProfile(models.ToArray());
             CreateAsset(profile, "VisionPipelineProfile.asset");
         }
 
-        private static VisionOutputSchema CreateYoloDetectionOutputSchema()
+        public static void CreateModelProfile(VisionModelProfileTemplate template)
         {
-            return new VisionOutputSchema
-            {
-                tensors = new[]
-                {
-                    new VisionTensorSchema
-                    {
-                        name = "output0",
-                        shape = new[] { 1, 84, 8400 },
-                        semantic = "detection.rows"
-                    }
-                }
-            };
+            VisionModelProfileTemplateSettings settings = VisionModelProfileTemplateSettings.Defaults(template);
+            VisionModelProfile profile = VisionModelProfileTemplateFactory.Create(template, settings);
+            CreateAsset(profile, VisionModelProfileTemplateFactory.DefaultAssetName(template));
         }
 
         private static List<VisionModelProfile> GetSelectedModelProfiles()
@@ -79,7 +58,7 @@ namespace UniversalTracker.Editor
             return profiles;
         }
 
-        private static void CreateAsset(ScriptableObject asset, string defaultName)
+        public static void CreateAsset(ScriptableObject asset, string defaultName)
         {
             string folder = ResolveSelectedFolder();
             string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{defaultName}");
