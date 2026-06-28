@@ -1,0 +1,22 @@
+{
+  "name": "com.proanima.universal-vision-tracker.xr",
+  "version": "0.1.0-preview.1",
+  "displayName": "ProAnima Vision XR Module",
+  "description": "Optional XR passthrough frame-source module for ProAnima Universal Vision Tracker.",
+  "unity": "6000.0",
+  "keywords": [
+    "computer-vision",
+    "xr",
+    "passthrough",
+    "tracking"
+  ],
+  "category": "AI",
+  "dependencies": {
+    "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+  },
+  "author": {
+    "name": "ProAnima",
+    "url": "https://github.com/ProAnima"
+  },
+  "license": "MIT"
+}

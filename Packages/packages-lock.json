@@ -18,6 +18,46 @@
         "com.unity.ugui": "2.0.0"
       }
     },
+    "com.proanima.universal-vision-tracker.ar-foundation": {
+      "version": "file:com.proanima.universal-vision-tracker.ar-foundation",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+      }
+    },
+    "com.proanima.universal-vision-tracker.mediapipe": {
+      "version": "file:com.proanima.universal-vision-tracker.mediapipe",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+      }
+    },
+    "com.proanima.universal-vision-tracker.native": {
+      "version": "file:com.proanima.universal-vision-tracker.native",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+      }
+    },
+    "com.proanima.universal-vision-tracker.remote": {
+      "version": "file:com.proanima.universal-vision-tracker.remote",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+      }
+    },
+    "com.proanima.universal-vision-tracker.xr": {
+      "version": "file:com.proanima.universal-vision-tracker.xr",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "13.0.4",
       "depth": 0,

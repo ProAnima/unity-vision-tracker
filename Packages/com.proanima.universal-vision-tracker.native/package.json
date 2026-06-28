@@ -1,0 +1,22 @@
+{
+  "name": "com.proanima.universal-vision-tracker.native",
+  "version": "0.1.0-preview.1",
+  "displayName": "ProAnima Vision Native Runtime Module",
+  "description": "Optional native plugin runtime adapter module for ProAnima Universal Vision Tracker.",
+  "unity": "6000.0",
+  "keywords": [
+    "computer-vision",
+    "native",
+    "plugin",
+    "runtime"
+  ],
+  "category": "AI",
+  "dependencies": {
+    "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+  },
+  "author": {
+    "name": "ProAnima",
+    "url": "https://github.com/ProAnima"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "com.proanima.universal-vision-tracker.remote",
+  "version": "0.1.0-preview.1",
+  "displayName": "ProAnima Vision Remote Runtime Module",
+  "description": "Optional remote inference runtime adapter module for ProAnima Universal Vision Tracker.",
+  "unity": "6000.0",
+  "keywords": [
+    "computer-vision",
+    "remote",
+    "runtime",
+    "inference"
+  ],
+  "category": "AI",
+  "dependencies": {
+    "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+  },
+  "author": {
+    "name": "ProAnima",
+    "url": "https://github.com/ProAnima"
+  },
+  "license": "MIT"
+}

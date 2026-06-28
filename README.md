@@ -90,6 +90,7 @@ VisionFrameResult
 - Thin runtime manager facade over `VisionPipeline`.
 - Embedded UPM package layout: `com.proanima.universal-vision-tracker`.
 - Importable Minimal Pipeline and Dashboard Overlay samples.
+- Optional module package skeletons for AR Foundation, XR passthrough, MediaPipe, native runtimes, and remote runtimes.
 - Profile-driven performance/allocation budgets for parser, overlay, tracking, and pipeline stages.
 - Architecture roadmap for a production SDK evolution.
 

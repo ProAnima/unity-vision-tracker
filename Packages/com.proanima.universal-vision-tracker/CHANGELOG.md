@@ -8,3 +8,4 @@
 - Included editor profile validator, profile wizard, and profile asset creation tooling in the package editor assembly.
 - Added Setup Wizard scene bootstrap tooling for profile-driven tracker objects.
 - Added importable Minimal Pipeline and Dashboard Overlay samples.
+- Added optional module descriptor contract for vendor-isolated extension packages.

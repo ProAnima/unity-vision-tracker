@@ -1,0 +1,22 @@
+{
+  "name": "com.proanima.universal-vision-tracker.ar-foundation",
+  "version": "0.1.0-preview.1",
+  "displayName": "ProAnima Vision AR Foundation Module",
+  "description": "Optional AR Foundation frame-source module for ProAnima Universal Vision Tracker.",
+  "unity": "6000.0",
+  "keywords": [
+    "computer-vision",
+    "ar-foundation",
+    "camera",
+    "tracking"
+  ],
+  "category": "AI",
+  "dependencies": {
+    "com.proanima.universal-vision-tracker": "0.1.0-preview.1"
+  },
+  "author": {
+    "name": "ProAnima",
+    "url": "https://github.com/ProAnima"
+  },
+  "license": "MIT"
+}

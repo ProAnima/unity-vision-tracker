@@ -1,0 +1,16 @@
+{
+  "name": "ProAnimaVision.Remote",
+  "rootNamespace": "ProAnimaVision.Remote",
+  "references": [
+    "UniversalTracker.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

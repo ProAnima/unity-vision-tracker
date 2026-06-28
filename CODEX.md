@@ -89,7 +89,7 @@ Existing large files should be split when touched for substantive production wor
 Current baseline:
 
 ```text
-EditMode: 99 tests, 99 passed, 0 failed
+EditMode: 103 tests, 103 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 
@@ -133,6 +133,7 @@ Test coverage expectations:
 - New UI overlay geometry requires pure geometry tests.
 - New performance budget policy requires EditMode tests for budget status and violation semantics.
 - New editor setup tools require EditMode tests for scene object creation/update behavior.
+- New optional modules require tests that core remains independent from module/vendor dependencies.
 - Device/camera behavior should have manual or PlayMode test notes until automated device tests exist.
 
 ## Debug Visualization Rules
@@ -191,5 +192,5 @@ A production increment is done only when:
 4. Expand production `IVisionFrameSource` coverage for camera, texture, video, AR, and XR sources.
 5. Add parser/output schema fixtures.
 6. Add PlayMode smoke tests for UI Toolkit dashboard.
-7. Add optional package modules for AR/XR, MediaPipe, native plugin, and remote runtimes.
-8. Add package samples for minimal pipeline, dashboard overlay, and model profiles.
+7. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
+8. Add model-profile samples for YOLO detection, pose, and segmentation.
