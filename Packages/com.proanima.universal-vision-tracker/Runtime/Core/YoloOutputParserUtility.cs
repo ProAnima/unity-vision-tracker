@@ -4,23 +4,42 @@ namespace UniversalTracker.Core
 {
     internal static class YoloOutputParserUtility
     {
-        public static bool TryResolveRows(VisionRawTensor tensor, out int rowCount, out int stride)
+        public static bool TryResolveRows(VisionRawTensor tensor, out YoloTensorRows rows)
         {
-            rowCount = 0;
-            stride = 0;
+            rows = default;
+
+            if (tensor.shape == null)
+                return false;
 
             if (tensor.shape.Length == 2)
             {
-                rowCount = tensor.shape[0];
-                stride = tensor.shape[1];
+                rows = new YoloTensorRows(tensor, tensor.shape[0], tensor.shape[1], false);
             }
             else if (tensor.shape.Length == 3 && tensor.shape[0] == 1)
             {
-                rowCount = tensor.shape[1];
-                stride = tensor.shape[2];
+                int first = tensor.shape[1];
+                int second = tensor.shape[2];
+                bool channelFirst = IsKnownYoloStride(first) || (first >= 6 && first < second);
+                rows = channelFirst
+                    ? new YoloTensorRows(tensor, second, first, true)
+                    : new YoloTensorRows(tensor, first, second, false);
             }
 
-            return rowCount > 0 && stride >= 6 && rowCount * stride <= tensor.ElementCount;
+            return rows.IsValid;
+        }
+
+        public static bool TryResolveRows(VisionRawTensor tensor, out int rowCount, out int stride)
+        {
+            if (TryResolveRows(tensor, out YoloTensorRows rows))
+            {
+                rowCount = rows.rowCount;
+                stride = rows.stride;
+                return true;
+            }
+
+            rowCount = 0;
+            stride = 0;
+            return false;
         }
 
         public static Rect CenterToRect(float centerX, float centerY, float width, float height)
@@ -30,6 +49,48 @@ namespace UniversalTracker.Core
             float xMax = Mathf.Clamp01(centerX + width * 0.5f);
             float yMax = Mathf.Clamp01(centerY + height * 0.5f);
             return Rect.MinMaxRect(Mathf.Min(xMin, xMax), Mathf.Min(yMin, yMax), Mathf.Max(xMin, xMax), Mathf.Max(yMin, yMax));
+        }
+
+        public static Rect CenterToNormalizedRect(
+            YoloTensorRows rows,
+            int row,
+            VisionOutputParserContext context)
+        {
+            Rect rect = CenterToRect(
+                NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x),
+                NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
+                NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
+                NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
+
+            return context.coordinateTransform.Apply(rect);
+        }
+
+        public static Vector2 ReadNormalizedPoint(
+            YoloTensorRows rows,
+            int row,
+            int xColumn,
+            int yColumn,
+            VisionOutputParserContext context)
+        {
+            var point = new Vector2(
+                NormalizeCoordinate(rows.Get(row, xColumn), context.modelInputSize.x),
+                NormalizeCoordinate(rows.Get(row, yColumn), context.modelInputSize.y));
+
+            return context.coordinateTransform.Apply(point);
+        }
+
+        public static float NormalizeCoordinate(float value, int modelAxis)
+        {
+            if (value >= 0f && value <= 1f)
+                return value;
+
+            int divisor = modelAxis > 0 ? modelAxis : 640;
+            return Mathf.Clamp01(value / divisor);
+        }
+
+        public static bool HasObjectness(int stride)
+        {
+            return stride == 85 || stride == 117 || stride == 57 || stride <= 10;
         }
 
         public static Rect NormalizedToSourceRect(Rect normalized, Vector2Int sourceSize)
@@ -96,6 +157,44 @@ namespace UniversalTracker.Core
                 sourceCenter = NormalizedToSourcePoint(normalizedRect.center, sourceSize),
                 trackState = VisionTrackState.None
             };
+        }
+
+        private static bool IsKnownYoloStride(int stride)
+        {
+            return stride == 56 || stride == 57 || stride == 84 || stride == 85 || stride == 116 || stride == 117;
+        }
+    }
+
+    internal readonly struct YoloTensorRows
+    {
+        private readonly VisionRawTensor tensor;
+        private readonly bool channelFirst;
+
+        public readonly int rowCount;
+        public readonly int stride;
+        public string LayoutLabel => channelFirst
+            ? $"channels-first rows={rowCount} stride={stride}"
+            : $"rows={rowCount} stride={stride}";
+
+        public YoloTensorRows(VisionRawTensor tensor, int rowCount, int stride, bool channelFirst)
+        {
+            this.tensor = tensor;
+            this.rowCount = rowCount;
+            this.stride = stride;
+            this.channelFirst = channelFirst;
+        }
+
+        public bool IsValid => rowCount > 0 && stride >= 6 && rowCount * stride <= tensor.ElementCount;
+
+        public float Get(int row, int column)
+        {
+            if (tensor.data == null || row < 0 || row >= rowCount || column < 0 || column >= stride)
+                return 0f;
+
+            int index = channelFirst
+                ? column * rowCount + row
+                : row * stride + column;
+            return index >= 0 && index < tensor.data.Length ? tensor.data[index] : 0f;
         }
     }
 }

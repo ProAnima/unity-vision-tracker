@@ -24,23 +24,18 @@ namespace UniversalTracker.Core
                 return VisionParsedOutput.Empty;
 
             VisionRawTensor tensor = rawOutput.tensors[0];
-            if (!YoloOutputParserUtility.TryResolveRows(tensor, out int rowCount, out int stride) || stride < 5 + KeypointCount * 3)
+            if (!YoloOutputParserUtility.TryResolveRows(tensor, out YoloTensorRows rows) || rows.stride < 5 + KeypointCount * 3)
                 return VisionParsedOutput.Empty;
 
             var detections = new List<VisionDetection>();
             var poses = new List<VisionPose>();
-            for (int row = 0; row < rowCount; row++)
+            for (int row = 0; row < rows.rowCount; row++)
             {
-                int offset = row * stride;
-                float confidence = Mathf.Clamp01(tensor.data[offset + 4]);
+                float confidence = Mathf.Clamp01(rows.Get(row, 4));
                 if (confidence < context.confidenceThreshold)
                     continue;
 
-                Rect normalized = YoloOutputParserUtility.CenterToRect(
-                    tensor.data[offset],
-                    tensor.data[offset + 1],
-                    tensor.data[offset + 2],
-                    tensor.data[offset + 3]);
+                Rect normalized = YoloOutputParserUtility.CenterToNormalizedRect(rows, row, context);
 
                 VisionDetection detection = YoloOutputParserUtility.CreateDetection(
                     0,
@@ -56,7 +51,7 @@ namespace UniversalTracker.Core
                     confidence = confidence,
                     normalizedRect = normalized,
                     sourceRect = detection.sourceRect,
-                    keypoints = ParseKeypoints(tensor.data, offset + 5, context.sourceSize),
+                    keypoints = ParseKeypoints(rows, row, context),
                     skeleton = CocoSkeleton,
                     trackState = VisionTrackState.None
                 });
@@ -66,7 +61,15 @@ namespace UniversalTracker.Core
             {
                 detections = detections.ToArray(),
                 poses = poses.ToArray(),
-                stats = VisionPerformanceStats.FromStages(0f, rawOutput.inferenceMs, 0f, 0f)
+                stats = VisionPerformanceStats.FromStages(0f, rawOutput.inferenceMs, 0f, 0f),
+                diagnostics = new VisionFrameDiagnostics
+                {
+                    parserId = ParserId,
+                    modelOutput = $"{tensor.name} [{FormatShape(tensor.shape)}], {rows.LayoutLabel}",
+                    candidateCount = detections.Count,
+                    acceptedCount = detections.Count,
+                    maxConfidence = ResolveMaxConfidence(poses)
+                }
             };
         }
 
@@ -77,26 +80,43 @@ namespace UniversalTracker.Core
                 : "person";
         }
 
-        private static VisionKeypoint[] ParseKeypoints(float[] data, int offset, Vector2Int sourceSize)
+        private static VisionKeypoint[] ParseKeypoints(YoloTensorRows rows, int row, VisionOutputParserContext context)
         {
             var keypoints = new VisionKeypoint[KeypointCount];
             for (int i = 0; i < KeypointCount; i++)
             {
-                int keypointOffset = offset + i * 3;
-                var normalized = new Vector2(Mathf.Clamp01(data[keypointOffset]), Mathf.Clamp01(data[keypointOffset + 1]));
-                float confidence = Mathf.Clamp01(data[keypointOffset + 2]);
+                int keypointOffset = 5 + i * 3;
+                Vector2 normalized = YoloOutputParserUtility.ReadNormalizedPoint(rows, row, keypointOffset, keypointOffset + 1, context);
+                float confidence = Mathf.Clamp01(rows.Get(row, keypointOffset + 2));
                 keypoints[i] = new VisionKeypoint
                 {
                     index = i,
                     name = CocoKeypointNames[i],
                     normalizedPosition = normalized,
-                    sourcePosition = YoloOutputParserUtility.NormalizedToSourcePoint(normalized, sourceSize),
+                    sourcePosition = YoloOutputParserUtility.NormalizedToSourcePoint(normalized, context.sourceSize),
                     confidence = confidence,
                     isVisible = confidence > 0.01f
                 };
             }
 
             return keypoints;
+        }
+
+        private static float ResolveMaxConfidence(List<VisionPose> poses)
+        {
+            float max = 0f;
+            for (int i = 0; i < poses.Count; i++)
+                max = Mathf.Max(max, poses[i].confidence);
+
+            return max;
+        }
+
+        private static string FormatShape(int[] shape)
+        {
+            if (shape == null || shape.Length == 0)
+                return "-";
+
+            return string.Join("x", shape);
         }
 
         private static readonly string[] CocoKeypointNames =

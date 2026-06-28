@@ -80,6 +80,15 @@ namespace UniversalTracker.Core
                 Mathf.Clamp01(y + height));
         }
 
+        public Vector2 Apply(Vector2 normalizedPoint)
+        {
+            float x = flipX ? 1f - normalizedPoint.x : normalizedPoint.x;
+            float y = flipY ? 1f - normalizedPoint.y : normalizedPoint.y;
+            ApplyPointAxisScale(ref x, scaleX);
+            ApplyPointAxisScale(ref y, scaleY);
+            return new Vector2(Mathf.Clamp01(x + offsetX), Mathf.Clamp01(y + offsetY));
+        }
+
         private void ApplyAxisScale(ref float position, ref float size, float scale)
         {
             if (scale <= 0f || Mathf.Approximately(scale, 1f))
@@ -91,6 +100,14 @@ namespace UniversalTracker.Core
                 size *= scale;
 
             position = scaledCenter - size * 0.5f;
+        }
+
+        private static void ApplyPointAxisScale(ref float position, float scale)
+        {
+            if (scale <= 0f || Mathf.Approximately(scale, 1f))
+                return;
+
+            position = 0.5f + (position - 0.5f) * scale;
         }
     }
 
