@@ -33,6 +33,8 @@ Open Unity Package Manager, select `ProAnima Universal Vision Tracker`, then imp
 - `YOLO Model Profiles` for detection, pose, and segmentation profile templates.
 - `Experimental Scene` for a polished runnable dashboard scene with synthetic detections, pose, and masks.
 
+You can also use `Control Center > Import Sample`; it attempts to import the Experimental Scene automatically and falls back to Package Manager instructions if Unity does not expose the sample import API.
+
 The YOLO sample profiles are intentionally runtime-asset-free. They document parser ids, tensor schemas, labels, thresholds, and governance fields so you can add your own model asset safely.
 
 ## Create A Model Profile

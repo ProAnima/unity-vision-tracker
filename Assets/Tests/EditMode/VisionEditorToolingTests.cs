@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
@@ -55,6 +57,31 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void PackageManifest_ExposesExperimentalSceneSampleForControlCenterImport()
+        {
+            Type sampleType = FindType("UnityEditor.PackageManager.UI.Sample");
+            Assert.That(sampleType, Is.Not.Null);
+
+            UnityEditor.PackageManager.PackageInfo packageInfo =
+                UnityEditor.PackageManager.PackageInfo.FindForAssetPath(
+                    "Packages/com.proanima.universal-vision-tracker/package.json");
+            Assert.That(packageInfo, Is.Not.Null);
+
+            MethodInfo findByPackage = sampleType.GetMethod(
+                "FindByPackage",
+                BindingFlags.Public | BindingFlags.Static,
+                null,
+                new[] { typeof(string), typeof(string) },
+                null);
+            Assert.That(findByPackage, Is.Not.Null);
+
+            var samples = findByPackage.Invoke(
+                null,
+                new object[] { packageInfo.name, packageInfo.version }) as IEnumerable;
+            Assert.That(ContainsSample(sampleType, samples, "Experimental Scene"), Is.True);
+        }
+
+        [Test]
         public void PipelineProfileTemplate_CanBeCreatedWithoutSelectedModels()
         {
             VisionPipelineProfile profile = VisionModelProfileTemplateFactory.CreatePipelineProfile(null);
@@ -64,6 +91,34 @@ namespace UniversalTracker.Tests
             Assert.That(profile.targetFps, Is.EqualTo(30));
 
             UnityEngine.Object.DestroyImmediate(profile);
+        }
+
+        private static Type FindType(string fullName)
+        {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                Type type = assembly.GetType(fullName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
+        }
+
+        private static bool ContainsSample(Type sampleType, IEnumerable samples, string displayName)
+        {
+            if (samples == null)
+                return false;
+
+            PropertyInfo displayNameProperty = sampleType.GetProperty("displayName");
+            foreach (object sample in samples)
+            {
+                string sampleName = displayNameProperty?.GetValue(sample) as string;
+                if (string.Equals(sampleName, displayName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

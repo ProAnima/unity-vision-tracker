@@ -6,7 +6,7 @@ It opens with a polished UI Toolkit dashboard and a synthetic `VisionFrameResult
 
 ## Run
 
-1. Import `Experimental Scene` from Package Manager.
+1. Open `Tools/ProAnima Vision/Control Center` and click `Import Sample`, or import `Experimental Scene` from Package Manager.
 2. Open `ProAnimaVisionExperimentalScene.unity`.
 3. Press Play.
 

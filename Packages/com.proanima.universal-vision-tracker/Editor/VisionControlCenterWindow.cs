@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Reflection;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -15,6 +17,12 @@ namespace UniversalTracker.Editor
             "Packages/com.proanima.universal-vision-tracker/Documentation~/ARCHITECTURE_ROADMAP.md";
         private const string SamplesPath =
             "Packages/com.proanima.universal-vision-tracker/Samples~";
+        private const string PackageJsonPath =
+            "Packages/com.proanima.universal-vision-tracker/package.json";
+        private const string PackageName =
+            "com.proanima.universal-vision-tracker";
+        private const string ExperimentalSceneSampleName =
+            "Experimental Scene";
 
         [MenuItem("Tools/ProAnima Vision/Control Center", priority = -100)]
         public static void Open()
@@ -194,10 +202,15 @@ namespace UniversalTracker.Editor
 
         private static void OpenExperimentalScene()
         {
+            OpenExperimentalScene(null);
+        }
+
+        private static void OpenExperimentalScene(string preferredPath)
+        {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
-            string path = FindExperimentalScenePath();
+            string path = string.IsNullOrWhiteSpace(preferredPath) ? FindExperimentalScenePath() : preferredPath;
             if (!string.IsNullOrWhiteSpace(path))
             {
                 EditorSceneManager.OpenScene(path);
@@ -212,15 +225,159 @@ namespace UniversalTracker.Editor
 
         private static void ImportExperimentalScene()
         {
+            if (TryImportExperimentalSceneSample(out string importedScenePath, out string importError))
+            {
+                bool openScene = EditorUtility.DisplayDialog(
+                    "Experimental Scene Imported",
+                    "Experimental Scene was imported into Assets/Samples. Open it now?",
+                    "Open Scene",
+                    "Later");
+
+                if (openScene)
+                    OpenExperimentalScene(importedScenePath);
+                return;
+            }
+
             bool packageManagerOpened = TryOpenPackageManager();
             string message = packageManagerOpened
                 ? "In Package Manager, select ProAnima Universal Vision Tracker, open Samples, and import Experimental Scene."
                 : "Open Window > Package Management > Package Manager, select ProAnima Universal Vision Tracker, open Samples, and import Experimental Scene.";
 
+            if (!string.IsNullOrWhiteSpace(importError))
+                message += $"\n\nAutomatic import was not available: {importError}";
+
             EditorUtility.DisplayDialog(
                 "Import Experimental Scene",
                 message,
                 "OK");
+        }
+
+        private static bool TryImportExperimentalSceneSample(out string importedScenePath, out string error)
+        {
+            importedScenePath = null;
+            error = null;
+
+            Type sampleType = FindType("UnityEditor.PackageManager.UI.Sample");
+            if (sampleType == null)
+            {
+                error = "Unity Package Manager sample API was not found.";
+                return false;
+            }
+
+            UnityEditor.PackageManager.PackageInfo packageInfo =
+                UnityEditor.PackageManager.PackageInfo.FindForAssetPath(PackageJsonPath);
+            string packageVersion = packageInfo != null ? packageInfo.version : null;
+            if (string.IsNullOrWhiteSpace(packageVersion))
+            {
+                error = "Package version could not be resolved.";
+                return false;
+            }
+
+            MethodInfo findByPackage = sampleType.GetMethod(
+                "FindByPackage",
+                BindingFlags.Public | BindingFlags.Static,
+                null,
+                new[] { typeof(string), typeof(string) },
+                null);
+            if (findByPackage == null)
+            {
+                error = "Sample.FindByPackage API was not found.";
+                return false;
+            }
+
+            IEnumerable samples;
+            try
+            {
+                samples = findByPackage.Invoke(null, new object[] { PackageName, packageVersion }) as IEnumerable;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                return false;
+            }
+
+            object sample = FindSampleByDisplayName(sampleType, samples, ExperimentalSceneSampleName);
+            if (sample == null)
+            {
+                error = "Experimental Scene sample was not found in the package manifest.";
+                return false;
+            }
+
+            if (!TryImportSample(sampleType, sample, out error))
+                return false;
+
+            AssetDatabase.Refresh();
+            importedScenePath = FindExperimentalScenePath();
+            if (!string.IsNullOrWhiteSpace(importedScenePath))
+                return true;
+
+            error = "Sample import completed, but the scene was not found under Assets/Samples.";
+            return false;
+        }
+
+        private static Type FindType(string fullName)
+        {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                Type type = assembly.GetType(fullName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
+        }
+
+        private static object FindSampleByDisplayName(Type sampleType, IEnumerable samples, string displayName)
+        {
+            if (samples == null)
+                return null;
+
+            PropertyInfo displayNameProperty = sampleType.GetProperty("displayName");
+            foreach (object sample in samples)
+            {
+                string sampleName = displayNameProperty?.GetValue(sample) as string;
+                if (string.Equals(sampleName, displayName, StringComparison.OrdinalIgnoreCase))
+                    return sample;
+            }
+
+            return null;
+        }
+
+        private static bool TryImportSample(Type sampleType, object sample, out string error)
+        {
+            error = null;
+            Type optionsType = sampleType.GetNestedType("ImportOptions", BindingFlags.Public);
+            MethodInfo import = optionsType == null
+                ? sampleType.GetMethod("Import", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null)
+                : sampleType.GetMethod("Import", BindingFlags.Public | BindingFlags.Instance, null, new[] { optionsType }, null);
+            if (import == null)
+            {
+                error = "Sample.Import API was not found.";
+                return false;
+            }
+
+            try
+            {
+                object[] args = optionsType == null ? null : new[] { ResolveImportOptions(optionsType) };
+                object result = import.Invoke(sample, args);
+                return result is not bool imported || imported;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                return false;
+            }
+        }
+
+        private static object ResolveImportOptions(Type optionsType)
+        {
+            foreach (string name in Enum.GetNames(optionsType))
+            {
+                if (name.IndexOf("Override", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return Enum.Parse(optionsType, name);
+            }
+
+            return Enum.ToObject(optionsType, 0);
         }
 
         private static bool TryOpenPackageManager()
