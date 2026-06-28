@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UniversalTracker.Core;
@@ -46,27 +45,13 @@ namespace UniversalTracker.OutputReceivers
         private Image previewImage;
         private VisualElement overlay;
         private VisualElement contentGuide;
-        private VisualElement maskLayer;
-        private VisualElement detectionLayer;
-        private VisualElement boneLayer;
-        private VisualElement keypointLayer;
-        private VisualElement labelLayer;
-        private VisualElement list;
         private Label overlayMetricsLabel;
-        private Label statusLabel;
-        private Label frameLabel;
-        private Label fpsLabel;
-        private Label inferenceLabel;
-        private Label detectionCountLabel;
-        private Label poseCountLabel;
-        private Label errorLabel;
-        private Button startButton;
-        private Button stopButton;
         private bool isSubscribed;
         private Texture lastTexture;
 
+        private VisionToolkitDashboardStatsBinder statsBinder;
+        private readonly VisionToolkitDashboardResultListBinder resultListBinder = new VisionToolkitDashboardResultListBinder();
         private readonly VisionDashboardOverlayState overlayState = new VisionDashboardOverlayState();
-        private readonly List<Label> rowPool = new List<Label>();
 
         private void Awake()
         {
@@ -93,6 +78,7 @@ namespace UniversalTracker.OutputReceivers
 
         public void Initialize()
         {
+            EnsureBinders();
             document = document != null ? document : GetComponent<UIDocument>();
             if (document == null)
             {
@@ -118,15 +104,15 @@ namespace UniversalTracker.OutputReceivers
             EnsureBuilt();
             lastTexture = sourceTexture ?? lastTexture;
             UpdatePreview(lastTexture);
-            UpdateStats(result);
+            statsBinder.UpdateStats(result);
             UpdateOverlay(result);
-            UpdateRows(result);
+            resultListBinder.UpdateRows(result, CreateResultListSettings());
         }
 
         public void Clear()
         {
             VisionToolkitDashboardOverlayRenderer.Clear(overlayState);
-            SetRowsActive(0);
+            resultListBinder.Clear();
 
             if (previewImage != null)
                 previewImage.image = null;
@@ -140,6 +126,7 @@ namespace UniversalTracker.OutputReceivers
 
         private void Subscribe()
         {
+            EnsureBinders();
             if (!subscribeToManagerEvent || isSubscribed)
                 return;
 
@@ -152,7 +139,7 @@ namespace UniversalTracker.OutputReceivers
             trackerManager.OnVisionFrameResult += ReceiveVisionResult;
             trackerManager.OnVisionHealthChanged += HandleHealthChanged;
             isSubscribed = true;
-            UpdateHealthStatus(trackerManager.HealthStatus);
+            statsBinder.UpdateHealth(trackerManager.HealthStatus);
         }
 
         private void Unsubscribe()
@@ -173,6 +160,7 @@ namespace UniversalTracker.OutputReceivers
 
         private void BuildInterface()
         {
+            EnsureBinders();
             VisionToolkitDashboardView view = VisionToolkitDashboardViewBuilder.Build(
                 document,
                 isReceiverEnabled,
@@ -187,27 +175,24 @@ namespace UniversalTracker.OutputReceivers
             previewImage = view.previewImage;
             overlay = view.overlay;
             contentGuide = view.contentGuide;
-            maskLayer = view.maskLayer;
-            detectionLayer = view.detectionLayer;
-            boneLayer = view.boneLayer;
-            keypointLayer = view.keypointLayer;
-            labelLayer = view.labelLayer;
-            overlayState.maskLayer = maskLayer;
-            overlayState.detectionLayer = detectionLayer;
-            overlayState.boneLayer = boneLayer;
-            overlayState.keypointLayer = keypointLayer;
-            overlayState.labelLayer = labelLayer;
-            list = view.list;
+            overlayState.maskLayer = view.maskLayer;
+            overlayState.detectionLayer = view.detectionLayer;
+            overlayState.boneLayer = view.boneLayer;
+            overlayState.keypointLayer = view.keypointLayer;
+            overlayState.labelLayer = view.labelLayer;
             overlayMetricsLabel = view.overlayMetricsLabel;
-            statusLabel = view.statusLabel;
-            frameLabel = view.frameLabel;
-            fpsLabel = view.fpsLabel;
-            inferenceLabel = view.inferenceLabel;
-            detectionCountLabel = view.detectionCountLabel;
-            poseCountLabel = view.poseCountLabel;
-            errorLabel = view.errorLabel;
-            startButton = view.startButton;
-            stopButton = view.stopButton;
+            statsBinder.Bind(view);
+            resultListBinder.Bind(view.list);
+        }
+
+        private void EnsureBinders()
+        {
+            statsBinder ??= new VisionToolkitDashboardStatsBinder(() => trackerManager);
+        }
+
+        private void HandleHealthChanged(VisionHealthStatus status)
+        {
+            statsBinder.UpdateHealth(status);
         }
 
         private void UpdatePreview(Texture sourceTexture)
@@ -217,36 +202,6 @@ namespace UniversalTracker.OutputReceivers
 
             previewImage.style.display = showPreview && sourceTexture != null ? DisplayStyle.Flex : DisplayStyle.None;
             previewImage.image = sourceTexture;
-        }
-
-        private void UpdateStats(VisionFrameResult result)
-        {
-            UpdateHealthStatus(trackerManager != null ? trackerManager.HealthStatus : null);
-
-            frameLabel.text = result.frameIndex.ToString();
-            fpsLabel.text = trackerManager != null ? trackerManager.CurrentFPS.ToString("F1") : "-";
-            inferenceLabel.text = result.stats.inferenceMs > 0f ? $"{result.stats.inferenceMs:F1} ms" : "-";
-            detectionCountLabel.text = (result.detections?.Length ?? 0).ToString();
-            poseCountLabel.text = (result.poses?.Length ?? 0).ToString();
-            errorLabel.text = trackerManager != null ? trackerManager.ConsecutiveErrors.ToString() : "0";
-        }
-
-        private void HandleHealthChanged(VisionHealthStatus status)
-        {
-            UpdateHealthStatus(status);
-        }
-
-        private void UpdateHealthStatus(VisionHealthStatus status)
-        {
-            if (statusLabel == null)
-                return;
-
-            VisionHealthState state = status?.state ?? VisionHealthState.NotInitialized;
-            statusLabel.text = state.ToString();
-            VisionDashboardTheme.SetPillColor(statusLabel, VisionDashboardTheme.HealthColor(state));
-
-            if (errorLabel != null)
-                errorLabel.text = trackerManager != null ? trackerManager.ConsecutiveErrors.ToString() : "0";
         }
 
         private void UpdateOverlay(VisionFrameResult result)
@@ -305,56 +260,6 @@ namespace UniversalTracker.OutputReceivers
                 $"fit {contentRect.width:F0}x{contentRect.height:F0} | d:{detections} p:{poses} m:{masks}";
         }
 
-        private void UpdateRows(VisionFrameResult result)
-        {
-            int used = 0;
-            if (showDetections && result.detections != null)
-            {
-                for (int i = 0; i < result.detections.Length && used < maxRows; i++)
-                {
-                    VisionDetection detection = result.detections[i];
-                    string name = string.IsNullOrWhiteSpace(detection.label) ? $"Class {detection.classId}" : detection.label;
-                    string track = detection.IsTracked ? $" T{detection.trackId}" : string.Empty;
-                    UpdateRow(GetRow(used), $"{name}{track}", detection.confidence, VisionDashboardTheme.Accent);
-                    used++;
-                }
-            }
-
-            if (showPoses && result.poses != null)
-            {
-                for (int i = 0; i < result.poses.Length && used < maxRows; i++)
-                {
-                    VisionPose pose = result.poses[i];
-                    string name = pose.personId >= 0 ? $"Pose T{pose.personId}" : "Pose";
-                    UpdateRow(GetRow(used), $"{name} · {pose.VisibleKeypointCount} pts", pose.confidence, VisionDashboardTheme.PoseColor);
-                    used++;
-                }
-            }
-
-            if (showMasks && result.masks != null)
-            {
-                for (int i = 0; i < result.masks.Length && used < maxRows; i++)
-                {
-                    VisionMask mask = result.masks[i];
-                    string name = string.IsNullOrWhiteSpace(mask.label) ? $"Mask {mask.classId}" : mask.label;
-                    string track = mask.trackId >= 0 ? $" T{mask.trackId}" : string.Empty;
-                    UpdateRow(GetRow(used), $"{name}{track}", mask.confidence, VisionDashboardTheme.Warning);
-                    used++;
-                }
-            }
-
-            if (used == 0)
-            {
-                Label empty = GetRow(0);
-                empty.text = "No active results";
-                empty.style.color = VisionDashboardTheme.MutedText;
-                empty.style.backgroundColor = VisionDashboardTheme.PanelSoft;
-                used = 1;
-            }
-
-            SetRowsActive(used);
-        }
-
         private Vector2 ResolveSourceSize(VisionFrameResult result)
         {
             if (result.sourceSize.x > 0 && result.sourceSize.y > 0)
@@ -366,30 +271,9 @@ namespace UniversalTracker.OutputReceivers
             return new Vector2(1f, 1f);
         }
 
-        private Label GetRow(int index)
+        private VisionDashboardResultListSettings CreateResultListSettings()
         {
-            while (rowPool.Count <= index)
-            {
-                Label row = VisionToolkitDashboardViewBuilder.CreateResultRow(list);
-                rowPool.Add(row);
-            }
-
-            rowPool[index].style.display = DisplayStyle.Flex;
-            return rowPool[index];
+            return new VisionDashboardResultListSettings(showDetections, showPoses, showMasks, maxRows);
         }
-
-        private void UpdateRow(Label row, string label, float confidence, Color color)
-        {
-            row.text = $"{label}  {(confidence * 100f):F0}%";
-            row.style.color = VisionDashboardTheme.Text;
-            row.style.backgroundColor = new Color(color.r, color.g, color.b, 0.14f);
-        }
-
-        private void SetRowsActive(int activeCount)
-        {
-            for (int i = 0; i < rowPool.Count; i++)
-                rowPool[i].style.display = i < activeCount ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-
     }
 }

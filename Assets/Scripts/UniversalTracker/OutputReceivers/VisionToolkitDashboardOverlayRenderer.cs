@@ -26,7 +26,7 @@ namespace UniversalTracker.OutputReceivers
         {
             while (pool.Count <= index)
             {
-                Label label = VisionToolkitDashboardViewBuilder.CreateOverlayLabel();
+                Label label = VisionToolkitDashboardPrimitives.CreateOverlayLabel();
                 parent.Add(label);
                 pool.Add(label);
             }
@@ -123,7 +123,7 @@ namespace UniversalTracker.OutputReceivers
                 VisualElement element = VisionDashboardElementPool.GetElement(
                     state.masks,
                     state.maskLayer,
-                    VisionToolkitDashboardViewBuilder.CreateMaskOverlay,
+                    VisionToolkitDashboardPrimitives.CreateMaskOverlay,
                     used);
                 UpdateMask(element, used++, result.masks[i], sourceSize, viewportSize, stroke, maskAlpha);
             }
@@ -148,7 +148,7 @@ namespace UniversalTracker.OutputReceivers
                 VisualElement box = VisionDashboardElementPool.GetElement(
                     state.detections,
                     state.detectionLayer,
-                    VisionToolkitDashboardViewBuilder.CreateDetectionBox,
+                    VisionToolkitDashboardPrimitives.CreateDetectionBox,
                     used);
                 Label label = VisionDashboardElementPool.GetLabel(state.labels, state.labelLayer, used);
                 UpdateDetectionBox(box, label, used++, result.detections[i], sourceSize, viewportSize, stroke);
@@ -237,7 +237,7 @@ namespace UniversalTracker.OutputReceivers
                     VisualElement boneElement = VisionDashboardElementPool.GetElement(
                         state.bones,
                         state.boneLayer,
-                        VisionToolkitDashboardViewBuilder.CreateBone,
+                        VisionToolkitDashboardPrimitives.CreateBone,
                         bonesUsed);
                     UpdateBone(boneElement, bonesUsed++, fromPoint, toPoint, from.confidence, to.confidence, stroke);
                 }
@@ -252,7 +252,7 @@ namespace UniversalTracker.OutputReceivers
                 VisualElement keypoint = VisionDashboardElementPool.GetElement(
                     state.keypoints,
                     state.keypointLayer,
-                    VisionToolkitDashboardViewBuilder.CreateKeypoint,
+                    VisionToolkitDashboardPrimitives.CreateKeypoint,
                     keypointsUsed);
                 UpdateKeypoint(keypoint, point, pose.keypoints[i], stroke);
                 keypointsUsed++;

@@ -33,6 +33,7 @@ Configuration is profile-first:
 - Runtime lifecycle is exposed through `VisionHealthStatus` and started/stopped/degraded/failed/recovered events.
 - Model profile validation reports parser selection, missing parser ids, unsupported profile/parser combinations, and output semantic warnings before runtime startup.
 - UI Toolkit dashboard construction is split into a builder/theme helper so the receiver focuses on binding runtime state to UI updates.
+- UI Toolkit dashboard state binding is split into focused stats and result-list binders with EditMode coverage.
 - `UniversalTrackerManager` delegates frame-source creation, profile resolution, output receiver routing, tracking, health event dispatch, and profile-validation logging to focused runtime services.
 - Prototype Unity Inference smoke MonoBehaviours have been removed from runtime code.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
