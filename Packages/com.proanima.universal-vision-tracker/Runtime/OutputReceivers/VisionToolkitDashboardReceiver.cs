@@ -24,6 +24,10 @@ namespace UniversalTracker.OutputReceivers
         public bool showMasks = true;
         public bool showStats = true;
         public bool showOverlayMetrics = true;
+        public ScaleMode previewScaleMode = ScaleMode.ScaleToFit;
+        public int previewRotationDegrees;
+        public bool mirrorPreviewX;
+        public bool mirrorPreviewY;
         [Range(0.05f, 1f)] public float keypointConfidenceThreshold = 0.35f;
         [Range(0.05f, 0.8f)] public float maskAlpha = 0.28f;
         [Range(1, 20)] public int maxRows = 8;
@@ -202,6 +206,9 @@ namespace UniversalTracker.OutputReceivers
 
             previewImage.style.display = showPreview && sourceTexture != null ? DisplayStyle.Flex : DisplayStyle.None;
             previewImage.image = sourceTexture;
+            previewImage.scaleMode = previewScaleMode;
+            previewImage.transform.rotation = Quaternion.Euler(0f, 0f, previewRotationDegrees);
+            previewImage.transform.scale = new Vector3(mirrorPreviewX ? -1f : 1f, mirrorPreviewY ? -1f : 1f, 1f);
         }
 
         private void UpdateOverlay(VisionFrameResult result)

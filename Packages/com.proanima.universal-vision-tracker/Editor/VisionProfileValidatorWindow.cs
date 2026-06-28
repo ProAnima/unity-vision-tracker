@@ -57,17 +57,14 @@ namespace UniversalTracker.Editor
 
         private void DrawHeader()
         {
-            EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("ProAnima Vision Profile Validator", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                "Validate model and pipeline profile contracts before runtime startup. Runtime assets can be optional for template/profile authoring.",
-                MessageType.Info);
+            VisionEditorGui.DrawHeader(
+                "ProAnima Vision Profile Validator",
+                "Validate model and pipeline profile contracts before runtime startup.");
         }
 
         private void DrawTargets()
         {
-            EditorGUILayout.Space(6f);
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section("Targets"))
             {
                 modelProfile = (VisionModelProfile)EditorGUILayout.ObjectField("Model Profile", modelProfile, typeof(VisionModelProfile), false);
                 pipelineProfile = (VisionPipelineProfile)EditorGUILayout.ObjectField("Pipeline Profile", pipelineProfile, typeof(VisionPipelineProfile), false);
@@ -82,7 +79,7 @@ namespace UniversalTracker.Editor
                 if (GUILayout.Button("Use Selection"))
                     PullFromSelection();
 
-                if (GUILayout.Button("Validate"))
+                if (VisionEditorGui.PrimaryButton("Validate"))
                     Validate();
 
                 if (GUILayout.Button("Clear"))

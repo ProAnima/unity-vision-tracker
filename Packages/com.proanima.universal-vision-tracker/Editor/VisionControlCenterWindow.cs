@@ -110,6 +110,14 @@ namespace UniversalTracker.Editor
             grid.style.flexGrow = 1f;
 
             grid.Add(CreateCard(
+                "0. Presets",
+                "Choose a supported starting point and let the tool create profiles and scene wiring.",
+                ("WebCam Preview", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.WebCamPreview)),
+                ("YOLO Detection + WebCam", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.YoloDetectionWebCam)),
+                ("YOLO Pose + WebCam", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.YoloPoseWebCam)),
+                ("YOLO Segmentation + WebCam", () => VisionQuickStartPresetUtility.Apply(VisionQuickStartPreset.YoloSegmentationWebCam))));
+
+            grid.Add(CreateCard(
                 "1. Preview",
                 "Import the package sample once, then open the polished dashboard scene.",
                 ("Import Sample", ImportExperimentalScene),
@@ -224,6 +232,11 @@ namespace UniversalTracker.Editor
         }
 
         private static void ImportExperimentalScene()
+        {
+            ImportAndOpenExperimentalScene();
+        }
+
+        internal static void ImportAndOpenExperimentalScene()
         {
             if (TryImportExperimentalSceneSample(out string importedScenePath, out string importError))
             {

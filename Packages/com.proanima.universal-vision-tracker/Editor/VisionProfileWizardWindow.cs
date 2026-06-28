@@ -45,16 +45,14 @@ namespace UniversalTracker.Editor
 
         private void DrawHeader()
         {
-            EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("ProAnima Vision Profile Wizard", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                "Create model profiles with consistent schemas, capabilities, thresholds, and parser metadata. Detection templates are runtime-ready once a ModelAsset is assigned.",
-                MessageType.Info);
+            VisionEditorGui.DrawHeader(
+                "ProAnima Vision Profile Wizard",
+                "Create model profiles with consistent schemas, capabilities, thresholds, and parser metadata.");
         }
 
         private void DrawTemplate()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section("Template"))
             {
                 EditorGUI.BeginChangeCheck();
                 template = (VisionModelProfileTemplate)EditorGUILayout.EnumPopup("Template", template);
@@ -68,7 +66,7 @@ namespace UniversalTracker.Editor
 
         private void DrawRuntime()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section("Runtime"))
             {
                 modelAsset = (ModelAsset)EditorGUILayout.ObjectField("Model Asset", modelAsset, typeof(ModelAsset), false);
                 labels = (TextAsset)EditorGUILayout.ObjectField("Labels", labels, typeof(TextAsset), false);
@@ -81,7 +79,7 @@ namespace UniversalTracker.Editor
 
         private void DrawGovernance()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section("Governance"))
             {
                 modelLicense = EditorGUILayout.TextField("Model License", modelLicense);
                 modelSourceUrl = EditorGUILayout.TextField("Source URL", modelSourceUrl);
@@ -95,7 +93,7 @@ namespace UniversalTracker.Editor
                 if (GUILayout.Button("Preview Validation"))
                     PreviewValidation();
 
-                if (GUILayout.Button("Create Profile"))
+                if (VisionEditorGui.PrimaryButton("Create Profile"))
                     CreateProfile();
             }
         }

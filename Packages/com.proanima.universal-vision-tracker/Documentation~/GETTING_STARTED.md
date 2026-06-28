@@ -31,7 +31,7 @@ Open Unity Package Manager, select `ProAnima Universal Vision Tracker`, then imp
 - `Minimal Pipeline` for a compact manager bootstrap.
 - `Dashboard Overlay` for UI Toolkit overlay preview without a camera or model.
 - `YOLO Model Profiles` for detection, pose, and segmentation profile templates.
-- `Experimental Scene` for a polished runnable dashboard scene with synthetic detections, pose, and masks.
+- `Experimental Scene` for a polished runnable WebCam dashboard scene with fit, rotation, and mirror controls.
 
 You can also use `Control Center > Import Sample`; it attempts to import the Experimental Scene automatically and falls back to Package Manager instructions if Unity does not expose the sample import API.
 

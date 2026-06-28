@@ -46,16 +46,14 @@ namespace UniversalTracker.Editor
 
         private void DrawHeader()
         {
-            EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("ProAnima Vision Profile Compatibility", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                "Inspect runtime, parser, capability, input, and output-schema compatibility before putting a profile into a scene.",
-                MessageType.Info);
+            VisionEditorGui.DrawHeader(
+                "ProAnima Vision Profile Compatibility",
+                "Inspect runtime, parser, capability, input, and output-schema compatibility before scene setup.");
         }
 
         private void DrawTargets()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section("Targets"))
             {
                 modelProfile = (VisionModelProfile)EditorGUILayout.ObjectField("Model Profile", modelProfile, typeof(VisionModelProfile), false);
                 pipelineProfile = (VisionPipelineProfile)EditorGUILayout.ObjectField("Pipeline Profile", pipelineProfile, typeof(VisionPipelineProfile), false);
@@ -73,7 +71,7 @@ namespace UniversalTracker.Editor
                     Refresh();
                 }
 
-                if (GUILayout.Button("Refresh"))
+                if (VisionEditorGui.PrimaryButton("Refresh"))
                     Refresh();
             }
         }
@@ -108,9 +106,8 @@ namespace UniversalTracker.Editor
 
         private static void DrawSummary(VisionProfileCompatibilitySummary summary, int index)
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section($"{index + 1}. {summary.title}"))
             {
-                EditorGUILayout.LabelField($"{index + 1}. {summary.title}", EditorStyles.boldLabel);
                 EditorGUILayout.HelpBox(summary.validationSummary, summary.IsCompatible ? MessageType.Info : MessageType.Error);
                 DrawRow("Model", summary.model);
                 DrawRow("Runtime", summary.runtime);

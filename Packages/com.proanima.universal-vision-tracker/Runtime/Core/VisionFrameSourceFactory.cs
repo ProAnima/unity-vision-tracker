@@ -13,6 +13,10 @@ namespace UniversalTracker.Core
         public readonly Camera sourceCamera;
         public readonly RenderTexture cameraTargetTexture;
         public readonly VideoPlayer sourceVideoPlayer;
+        public readonly string webCamDeviceName;
+        public readonly int webCamRequestedWidth;
+        public readonly int webCamRequestedHeight;
+        public readonly int webCamRequestedFps;
         public readonly Func<VideoPlayer> componentVideoPlayerProvider;
         public readonly Action<RenderTexture> cameraTargetTextureCreated;
 
@@ -24,6 +28,10 @@ namespace UniversalTracker.Core
             Camera sourceCamera,
             RenderTexture cameraTargetTexture,
             VideoPlayer sourceVideoPlayer,
+            string webCamDeviceName,
+            int webCamRequestedWidth,
+            int webCamRequestedHeight,
+            int webCamRequestedFps,
             Func<VideoPlayer> componentVideoPlayerProvider,
             Action<RenderTexture> cameraTargetTextureCreated)
         {
@@ -34,6 +42,10 @@ namespace UniversalTracker.Core
             this.sourceCamera = sourceCamera;
             this.cameraTargetTexture = cameraTargetTexture;
             this.sourceVideoPlayer = sourceVideoPlayer;
+            this.webCamDeviceName = webCamDeviceName;
+            this.webCamRequestedWidth = webCamRequestedWidth;
+            this.webCamRequestedHeight = webCamRequestedHeight;
+            this.webCamRequestedFps = webCamRequestedFps;
             this.componentVideoPlayerProvider = componentVideoPlayerProvider;
             this.cameraTargetTextureCreated = cameraTargetTextureCreated;
         }
@@ -52,9 +64,18 @@ namespace UniversalTracker.Core
                 InputProviderType.RenderTexture => new RenderTextureFrameSource(request.sourceRenderTexture),
                 InputProviderType.Camera => CreateCameraSource(request),
                 InputProviderType.Video => CreateVideoSource(request),
-                InputProviderType.WebCam => new WebCamFrameSource(),
+                InputProviderType.WebCam => CreateWebCamSource(request),
                 _ => null
             };
+        }
+
+        private static IVisionFrameSource CreateWebCamSource(VisionFrameSourceRequest request)
+        {
+            return new WebCamFrameSource(
+                request.webCamDeviceName,
+                Mathf.Max(16, request.webCamRequestedWidth),
+                Mathf.Max(16, request.webCamRequestedHeight),
+                Mathf.Max(1, request.webCamRequestedFps));
         }
 
         private static IVisionFrameSource CreateTextureSource(VisionFrameSourceRequest request)

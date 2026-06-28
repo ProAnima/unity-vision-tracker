@@ -23,6 +23,12 @@ namespace UniversalTracker
         public RenderTexture cameraTargetTexture;
         public VideoPlayer sourceVideoPlayer;
 
+        [Header("WebCam")]
+        public string webCamDeviceName;
+        [Min(16)] public int webCamRequestedWidth = 1280;
+        [Min(16)] public int webCamRequestedHeight = 720;
+        [Range(1, 120)] public int webCamRequestedFps = 30;
+
         [Header("Models")]
         public VisionPipelineProfile pipelineProfile;
         public VisionModelProfile[] modelProfiles;
@@ -236,6 +242,10 @@ namespace UniversalTracker
                 sourceCamera,
                 cameraTargetTexture,
                 sourceVideoPlayer,
+                webCamDeviceName,
+                webCamRequestedWidth,
+                webCamRequestedHeight,
+                webCamRequestedFps,
                 () => GetComponent<VideoPlayer>(),
                 texture => cameraTargetTexture = texture);
         }

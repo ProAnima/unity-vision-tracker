@@ -79,6 +79,10 @@ namespace UniversalTracker.Tests
                 null,
                 null,
                 null,
+                1280,
+                720,
+                30,
+                null,
                 null);
 
             IVisionFrameSource source = VisionFrameSourceFactory.Create(request);

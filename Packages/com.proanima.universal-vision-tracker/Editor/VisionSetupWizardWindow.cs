@@ -36,18 +36,15 @@ namespace UniversalTracker.Editor
 
         private void DrawHeader()
         {
-            EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("ProAnima Vision Setup Wizard", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                "Create or update a profile-driven tracker object in the current scene. Use this for quick setup, samples, and production scene bootstrapping.",
-                MessageType.Info);
+            VisionEditorGui.DrawHeader(
+                "ProAnima Vision Setup Wizard",
+                "Create or update a profile-driven tracker object in the current scene.");
         }
 
         private void DrawProfiles()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section("Profiles"))
             {
-                EditorGUILayout.LabelField("Profiles", EditorStyles.boldLabel);
                 pipelineProfile = (VisionPipelineProfile)EditorGUILayout.ObjectField("Pipeline Profile", pipelineProfile, typeof(VisionPipelineProfile), false);
                 using (new EditorGUI.DisabledScope(pipelineProfile != null))
                     modelProfile = (VisionModelProfile)EditorGUILayout.ObjectField("Model Profile", modelProfile, typeof(VisionModelProfile), false);
@@ -61,9 +58,8 @@ namespace UniversalTracker.Editor
 
         private void DrawSceneOptions()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (VisionEditorGui.Section("Scene Object"))
             {
-                EditorGUILayout.LabelField("Scene Object", EditorStyles.boldLabel);
                 objectName = EditorGUILayout.TextField("Object Name", objectName);
                 source = (VisionSceneSetupSource)EditorGUILayout.EnumPopup("Frame Source", source);
                 targetFps = EditorGUILayout.IntSlider("Target FPS", targetFps, 1, 120);
@@ -82,7 +78,7 @@ namespace UniversalTracker.Editor
 
             using (new EditorGUI.DisabledScope(!canCreate))
             {
-                if (GUILayout.Button("Create Or Update Scene Tracker", GUILayout.Height(34f)))
+                if (VisionEditorGui.PrimaryButton("Create Or Update Scene Tracker"))
                     CreateOrUpdate();
             }
         }
