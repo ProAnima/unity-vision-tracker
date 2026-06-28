@@ -40,15 +40,15 @@ Configuration is profile-first:
 - YOLO pose and segmentation profiles resolve to production parser contracts and have EditMode fixture coverage.
 - Prototype Unity Inference smoke MonoBehaviours have been removed from runtime code.
 - Prototype model wrappers, direct model factories, result bridges, and old input-provider contracts have been removed from runtime code.
+- UI Toolkit dashboard receiver and overlay renderer have PlayMode smoke coverage for runtime visual tree creation and detection/pose/mask element rendering.
 
 ## Next Production Steps
 
-1. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
-2. Add golden fixtures for pose and segmentation parsers.
-3. Add PlayMode smoke tests for the UI Toolkit overlay and manager lifecycle.
-4. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
-5. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
-6. Add performance/allocation budgets for parser, overlay, and tracking paths.
+1. Move runtime code toward UPM layout: `Runtime/`, `Editor/`, `Samples~/`, `Documentation~/`.
+2. Add optional modules for AR Foundation, XR passthrough, MediaPipe, native plugin runtimes, and remote runtimes.
+3. Add performance/allocation budgets for parser, overlay, and tracking paths.
+4. Add screenshot-level PlayMode checks for dashboard layout across common viewport sizes.
+5. Add scene lifecycle smoke tests for `UniversalTrackerManager` startup, stop, failure, and recovery paths.
 
 ## Extension Rules
 

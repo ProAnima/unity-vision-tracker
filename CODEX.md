@@ -90,6 +90,7 @@ Current baseline:
 
 ```text
 EditMode: 87 tests, 87 passed, 0 failed
+PlayMode: 2 tests, 2 passed, 0 failed
 ```
 
 Run EditMode tests after code changes:
@@ -102,6 +103,18 @@ Run EditMode tests after code changes:
   -testPlatform EditMode `
   -testResults 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\EditModeResults.xml' `
   -logFile 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\EditModeTests.log'
+```
+
+Run PlayMode smoke tests after UI Toolkit, lifecycle, or scene-facing runtime changes:
+
+```powershell
+& 'D:\Unity\6000.3.15f1\Editor\Unity.exe' `
+  -batchmode `
+  -projectPath 'D:\Projects\ProAnimaStudio\pas-UCT' `
+  -runTests `
+  -testPlatform PlayMode `
+  -testResults 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\PlayModeResults.xml' `
+  -logFile 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\PlayModeTests.log'
 ```
 
 Important runner note:
