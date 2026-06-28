@@ -33,6 +33,7 @@ namespace UniversalTracker.Editor
             root.style.paddingBottom = 18;
 
             root.Add(CreateHeader());
+            root.Add(CreateWorkflow());
             root.Add(CreateGrid());
             root.Add(CreateFooter());
         }
@@ -48,12 +49,44 @@ namespace UniversalTracker.Editor
             title.style.color = new Color(0.92f, 0.96f, 0.98f);
             header.Add(title);
 
-            var subtitle = new Label("Create profiles, configure scenes, validate compatibility, and open samples from one place.");
+            var subtitle = new Label("One place to import the sample, create profiles, configure a scene, and validate runtime readiness.");
             subtitle.style.fontSize = 12;
             subtitle.style.color = new Color(0.62f, 0.72f, 0.76f);
             subtitle.style.marginTop = 4;
             header.Add(subtitle);
             return header;
+        }
+
+        private static VisualElement CreateWorkflow()
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.flexWrap = Wrap.Wrap;
+            row.style.marginBottom = 14;
+            row.Add(CreateStep("1", "Preview"));
+            row.Add(CreateStep("2", "Profiles"));
+            row.Add(CreateStep("3", "Setup"));
+            row.Add(CreateStep("4", "Validate"));
+            return row;
+        }
+
+        private static Label CreateStep(string number, string text)
+        {
+            var step = new Label($"{number}. {text}");
+            step.style.marginRight = 8;
+            step.style.marginBottom = 6;
+            step.style.paddingLeft = 9;
+            step.style.paddingRight = 9;
+            step.style.paddingTop = 5;
+            step.style.paddingBottom = 5;
+            step.style.borderTopLeftRadius = 6;
+            step.style.borderTopRightRadius = 6;
+            step.style.borderBottomLeftRadius = 6;
+            step.style.borderBottomRightRadius = 6;
+            step.style.backgroundColor = new Color(0.1f, 0.14f, 0.16f, 1f);
+            step.style.color = new Color(0.78f, 0.88f, 0.88f, 1f);
+            step.style.unityFontStyleAndWeight = FontStyle.Bold;
+            return step;
         }
 
         private static VisualElement CreateGrid()
@@ -64,39 +97,39 @@ namespace UniversalTracker.Editor
             grid.style.flexGrow = 1f;
 
             grid.Add(CreateCard(
-                "Start",
+                "1. Preview",
                 "Open the polished dashboard scene after importing it from Package Manager.",
+                ("Import Experimental Scene", ImportExperimentalScene),
                 ("Open Experimental Scene", OpenExperimentalScene),
-                ("Open Setup Wizard", VisionSetupWizardWindow.Open),
                 ("Open Samples Folder", () => EditorUtility.RevealInFinder(SamplesPath))));
 
             grid.Add(CreateCard(
-                "Profiles",
+                "2. Profiles",
                 "Create model and pipeline profiles for runtime use.",
                 ("Model Profile Wizard", VisionProfileWizardWindow.Open),
-                ("YOLO Detection Profile", VisionProfileAssetCreator.CreateYoloDetectionProfile),
-                ("Pipeline Profile", VisionProfileAssetCreator.CreatePipelineProfile)));
+                ("Pipeline Profile", VisionProfileAssetCreator.CreatePipelineProfile),
+                ("YOLO Detection Profile", VisionProfileAssetCreator.CreateYoloDetectionProfile)));
 
             grid.Add(CreateCard(
-                "Validate",
-                "Check profile readiness before entering Play Mode.",
+                "3. Setup",
+                "Create or update the tracker object and dashboard wiring.",
+                ("Open Setup Wizard", VisionSetupWizardWindow.Open),
                 ("Compatibility Inspector", VisionProfileCompatibilityWindow.Open),
-                ("Profile Validator", VisionProfileValidatorWindow.Open),
-                ("Refresh Project", AssetDatabase.Refresh)));
+                ("Profile Validator", VisionProfileValidatorWindow.Open)));
 
             grid.Add(CreateCard(
-                "Docs",
-                "Open the short setup guide and architecture notes.",
+                "4. Validate",
+                "Check readiness and open the shortest reference docs.",
+                ("Profile Validator", VisionProfileValidatorWindow.Open),
                 ("Getting Started", () => OpenAsset(GettingStartedPath)),
-                ("Architecture Roadmap", () => OpenAsset(RoadmapPath)),
-                ("Package Manifest", () => OpenAsset("Packages/com.proanima.universal-vision-tracker/package.json"))));
+                ("Architecture Roadmap", () => OpenAsset(RoadmapPath))));
 
             return grid;
         }
 
         private static VisualElement CreateFooter()
         {
-            var footer = new Label("Recommended flow: Import Experimental Scene -> Model Profile -> Pipeline Profile -> Setup Wizard -> Compatibility Inspector.");
+            var footer = new Label("Recommended flow: import sample, create profiles, setup scene, validate, press Play.");
             footer.style.marginTop = 12;
             footer.style.color = new Color(0.54f, 0.64f, 0.68f);
             footer.style.fontSize = 11;
@@ -108,6 +141,7 @@ namespace UniversalTracker.Editor
             var card = new VisualElement();
             card.style.width = Length.Percent(50);
             card.style.minWidth = 300;
+            card.style.maxWidth = Length.Percent(100);
             card.style.paddingRight = 8;
             card.style.paddingBottom = 8;
 
@@ -178,6 +212,15 @@ namespace UniversalTracker.Editor
             EditorUtility.DisplayDialog(
                 "Experimental Scene",
                 "Import the Experimental Scene sample from Package Manager, then open it from Control Center.",
+                "OK");
+        }
+
+        private static void ImportExperimentalScene()
+        {
+            EditorApplication.ExecuteMenuItem("Window/Package Manager");
+            EditorUtility.DisplayDialog(
+                "Experimental Scene",
+                "In Package Manager, select ProAnima Universal Vision Tracker and import the Experimental Scene sample.",
                 "OK");
         }
 

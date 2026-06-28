@@ -19,6 +19,16 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void ControlCenterWindow_KeepsSampleImportActionAvailable()
+        {
+            MethodInfo import = typeof(VisionControlCenterWindow).GetMethod(
+                "ImportExperimentalScene",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.That(import, Is.Not.Null);
+        }
+
+        [Test]
         public void PipelineProfileTemplate_CanBeCreatedWithoutSelectedModels()
         {
             VisionPipelineProfile profile = VisionModelProfileTemplateFactory.CreatePipelineProfile(null);

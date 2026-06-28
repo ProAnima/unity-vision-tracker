@@ -47,7 +47,9 @@ namespace UniversalTracker.OutputReceivers
 
             var side = CreatePanel(320, 0);
             side.style.marginRight = 14;
-            side.style.flexShrink = 0f;
+            side.style.marginBottom = 14;
+            side.style.flexShrink = 1f;
+            side.style.maxWidth = Length.Percent(100);
             view.root.Add(side);
 
             AddHeader(side, view);
@@ -63,6 +65,7 @@ namespace UniversalTracker.OutputReceivers
             root.Clear();
             root.style.flexGrow = 1f;
             root.style.flexDirection = FlexDirection.Row;
+            root.style.flexWrap = Wrap.Wrap;
             root.style.paddingLeft = 18;
             root.style.paddingRight = 18;
             root.style.paddingTop = 18;
@@ -75,7 +78,8 @@ namespace UniversalTracker.OutputReceivers
         {
             view.previewStage = new VisualElement { name = "VisionPreviewStage" };
             view.previewStage.style.flexGrow = 1f;
-            view.previewStage.style.minWidth = 320;
+            view.previewStage.style.minWidth = 280;
+            view.previewStage.style.minHeight = 260;
             view.previewStage.style.backgroundColor = new Color(0.02f, 0.026f, 0.032f, 1f);
             view.previewStage.style.borderTopLeftRadius = 8;
             view.previewStage.style.borderTopRightRadius = 8;
