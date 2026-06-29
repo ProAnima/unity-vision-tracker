@@ -34,6 +34,45 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void FrameResult_CanCarryGpuOutputHandlesWithoutCpuMaskTexture()
+        {
+            var result = VisionFrameResult.Empty(2, 0, new Vector2Int(640, 480));
+            var maskTexture = new RenderTexture(32, 24, 0, RenderTextureFormat.ARGB32);
+
+            result.gpuOutputs = new VisionGpuOutputHandles
+            {
+                maskTexture = maskTexture,
+                maskSize = new Vector2Int(32, 24),
+                keypointCount = 17
+            };
+
+            Assert.That(result.gpuOutputs.HasMaskTexture, Is.True);
+            Assert.That(result.gpuOutputs.HasAny, Is.True);
+            Assert.That(result.gpuOutputs.maskSize, Is.EqualTo(new Vector2Int(32, 24)));
+            Assert.That(result.masks, Is.Empty);
+
+            maskTexture.Release();
+            Object.DestroyImmediate(maskTexture);
+        }
+
+        [Test]
+        public void ParsedOutput_ToFrameResult_PreservesGpuOutputHandles()
+        {
+            var parsed = new VisionParsedOutput
+            {
+                gpuOutputs = new VisionGpuOutputHandles
+                {
+                    keypointCount = 17
+                }
+            };
+
+            VisionFrameResult frame = parsed.ToFrameResult(3, 1d, new Vector2Int(320, 240));
+
+            Assert.That(frame.gpuOutputs, Is.SameAs(parsed.gpuOutputs));
+            Assert.That(frame.gpuOutputs.keypointCount, Is.EqualTo(17));
+        }
+
+        [Test]
         public void PoseVisibleKeypointCount_CountsOnlyVisiblePoints()
         {
             var pose = new VisionPose
@@ -70,4 +109,3 @@ namespace UniversalTracker.Tests
         }
     }
 }
-

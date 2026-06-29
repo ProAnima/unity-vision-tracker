@@ -56,6 +56,7 @@ Configuration is profile-first:
 - YOLO profile templates now default to GPU runtime backends, and YOLO segmentation parsing rejects rows without an active reconstructed mask contour so debug overlays do not draw boxes for empty segments.
 - Dashboard runtime controls now have stable UI Toolkit ids, tooltips, and PlayMode coverage for visualization, threshold, and FPS wiring.
 - The default adapter registry intentionally resolves only implemented YOLO/Unity Inference profiles; optional MediaPipe, SAM, native, remote, AR, and XR packages remain extension skeletons until real adapters are added.
+- `VisionFrameResult` now exposes optional GPU output handles so future BodyPix/SAM/pose adapters can provide mask `RenderTexture` and keypoint `GraphicsBuffer` data without forcing CPU readback.
 
 ## Next Production Steps
 

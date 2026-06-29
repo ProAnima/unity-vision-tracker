@@ -30,6 +30,7 @@ Current coverage starts with:
 - Dashboard runtime context binding for source, model, runtime, and last error status.
 - Dashboard runtime controls for visualization toggles, model thresholds, and target FPS wiring.
 - Adapter registry behavior for implemented and unimplemented model families.
+- GPU output handle propagation for future mask/keypoint render paths without mandatory CPU readback.
 - Editor tooling entry points for Control Center and pipeline profile creation.
 
 Run from PowerShell:
@@ -56,7 +57,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 135 tests, 135 passed, 0 failed
+EditMode: 137 tests, 137 passed, 0 failed
 PlayMode: 3 tests, 3 passed, 0 failed
 ```
 

@@ -89,6 +89,7 @@ VisionFrameResult
 - Setup Wizard for creating a profile-driven tracker object in the current scene.
 - IOU and SORT tracking implementations.
 - Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers with detection labels, confidence-aware colors, smoothed pose bones, segmentation mask-contour overlays, and live runtime controls for visualization, thresholds, and FPS.
+- Optional GPU-side output handles for high-performance mask and landmark overlays without mandatory CPU readback.
 - Thin runtime manager facade over `VisionPipeline`.
 - Embedded UPM package layout: `com.proanima.universal-vision-tracker`.
 - Importable Minimal Pipeline, Dashboard Overlay, YOLO Model Profiles, and Experimental Scene samples.
@@ -209,6 +210,7 @@ Current bridge contracts:
 - `VisionProfileValidator` checks profile identity, task/capability consistency, runtime asset requirements, schemas, thresholds, and model governance metadata.
 - `YoloModelAdapter` and `UnityInferenceRuntimeAdapter` are the production Unity Inference bridge.
 - `UniversalTrackerManager` runs profile-based setups through `VisionPipeline`.
+- `VisionFrameResult.gpuOutputs` can carry adapter-owned `RenderTexture`/`GraphicsBuffer` handles for BodyPix/SAM/pose-style GPU overlays while keeping normalized CPU-safe results available.
 
 Current default runtime support is YOLO through Unity Inference Engine. MediaPipe, SAM, native, remote, AR, and XR packages are optional module skeletons and extension points until their real adapters are implemented.
 
@@ -261,7 +263,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 135 tests, 135 passed, 0 failed
+EditMode: 137 tests, 137 passed, 0 failed
 PlayMode: 3 tests, 3 passed, 0 failed
 ```
 

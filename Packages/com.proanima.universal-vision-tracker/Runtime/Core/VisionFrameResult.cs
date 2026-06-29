@@ -18,6 +18,7 @@ namespace UniversalTracker.Core
         public VisionClassification[] classifications = Array.Empty<VisionClassification>();
         public VisionPerformanceStats stats;
         public VisionFrameDiagnostics diagnostics;
+        public VisionGpuOutputHandles gpuOutputs = VisionGpuOutputHandles.Empty;
 
         [NonSerialized]
         public Texture sourceTexture;
@@ -37,6 +38,29 @@ namespace UniversalTracker.Core
                 timestamp = timestamp,
                 sourceSize = sourceSize
             };
+    }
+
+    /// <summary>
+    /// Optional GPU-side output handles for adapters that can render masks or landmarks without CPU readback.
+    /// </summary>
+    [Serializable]
+    public sealed class VisionGpuOutputHandles
+    {
+        [NonSerialized]
+        public RenderTexture maskTexture;
+
+        [NonSerialized]
+        public GraphicsBuffer keypointBuffer;
+
+        public Vector2Int maskSize;
+        public int keypointCount;
+        public bool ownsResources;
+
+        public bool HasMaskTexture => maskTexture != null;
+        public bool HasKeypointBuffer => keypointBuffer != null && keypointCount > 0;
+        public bool HasAny => HasMaskTexture || HasKeypointBuffer;
+
+        public static VisionGpuOutputHandles Empty => new VisionGpuOutputHandles();
     }
 
     [Serializable]

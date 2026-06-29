@@ -60,6 +60,7 @@ namespace UniversalTracker.Core
         public VisionClassification[] classifications = Array.Empty<VisionClassification>();
         public VisionPerformanceStats stats;
         public VisionFrameDiagnostics diagnostics;
+        public VisionGpuOutputHandles gpuOutputs = VisionGpuOutputHandles.Empty;
 
         public int TotalResultCount =>
             (detections?.Length ?? 0) +
@@ -81,7 +82,8 @@ namespace UniversalTracker.Core
                 masks = masks ?? Array.Empty<VisionMask>(),
                 classifications = classifications ?? Array.Empty<VisionClassification>(),
                 stats = stats,
-                diagnostics = diagnostics
+                diagnostics = diagnostics,
+                gpuOutputs = gpuOutputs ?? VisionGpuOutputHandles.Empty
             };
         }
     }

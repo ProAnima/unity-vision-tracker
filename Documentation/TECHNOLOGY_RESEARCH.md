@@ -376,6 +376,51 @@ Validator checks:
 
 This should become one of the central user-facing editor tools.
 
+## 14. BodyPixSentis Lessons: GPU-First Debug Outputs
+
+Reviewed reference:
+
+- [keijiro/BodyPixSentis](https://github.com/keijiro/BodyPixSentis), commit `6fb4954439f48d11660e7097d74688f4fbc3fec4`.
+
+BodyPixSentis is valuable as a performance reference because it keeps the primary output path on the GPU:
+
+- inference uses `BackendType.GPUCompute`;
+- model input uses an explicit `TextureTransform` with NHWC layout and top-left coordinate origin;
+- segmentation output is rendered directly from a tensor into a `RenderTexture`;
+- keypoint postprocess runs in a compute shader and writes a `GraphicsBuffer`;
+- CPU keypoint readback exists as a convenience cache, not as the required render path;
+- mask visualization is shader-based with smooth thresholding instead of CPU mask polygon reconstruction;
+- model variants expose clear quality/performance knobs through width multiplier and stride.
+
+Production implication for this project:
+
+```text
+canonical CPU-safe results:
+    VisionDetection / VisionPose / VisionMask / VisionClassification
+
+optional GPU debug outputs:
+    RenderTexture maskTexture
+    GraphicsBuffer keypointBuffer
+    future depth/embedding buffers
+```
+
+The canonical `VisionFrameResult` remains the public integration contract, but adapters may attach GPU output handles for high-performance overlays. UI/debug receivers should prefer GPU handles when available, and fall back to CPU/normalized geometry when not.
+
+Do not copy BodyPixSentis implementation details directly into the core package. Instead, use the pattern:
+
+- fused model/profile metadata for preprocessing and postprocessing;
+- optional GPU output handles in result objects;
+- shader/compute visualization modules behind adapters;
+- CPU readback only for API consumers, tests, logging, or export.
+
+Near-term code direction:
+
+1. Add GPU output handles to `VisionFrameResult`.
+2. Add shader-based mask overlay path for models that produce mask `RenderTexture`.
+3. Add optional keypoint `GraphicsBuffer` rendering path for pose/landmark adapters.
+4. Add model-profile fields for output stride/resolution and GPU-output policy.
+5. Keep UI Toolkit overlay behavior equivalent when GPU handles are absent.
+
 ## Recommended Next Code Increments
 
 1. Add `VisionModelCapability`.
