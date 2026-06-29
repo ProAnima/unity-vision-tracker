@@ -17,7 +17,7 @@ Current coverage starts with:
 - Parser selection diagnostics for explicit parser ids, unsupported profile combinations, and missing parser coverage.
 - Production `IVisionFrameSource` implementations for texture, render texture, Unity camera, and video contract behavior.
 - `UnityInferenceRuntimeAdapter` and `YoloModelAdapter` runtime creation, processing, and disposal behavior through fakes.
-- Parser contracts and YOLO golden row fixtures for YOLO11-style raw-grid outputs, YOLO26 end-to-end detection/pose/segmentation rows, COCO label fallback, and segmentation contour reconstruction.
+- Parser contracts and YOLO golden row fixtures for YOLO11-style raw-grid outputs, YOLO26 end-to-end detection/pose/segmentation rows, COCO label fallback, segmentation contour reconstruction, and empty-mask rejection.
 - Parser registry and raw-output runtime flow through `UnityInferenceRuntimeAdapter`.
 - Unity Inference raw output provider construction and missing-asset failure behavior.
 - UI Toolkit dashboard receiver and overlay renderer PlayMode smoke behavior.
@@ -54,7 +54,7 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 133 tests, 133 passed, 0 failed
+EditMode: 134 tests, 134 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

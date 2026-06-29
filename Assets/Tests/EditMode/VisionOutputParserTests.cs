@@ -270,7 +270,7 @@ namespace UniversalTracker.Tests
                             0.15f, 0.15f, 0.10f, 0.10f, 0.20f, 0.70f, 0.05f, 0.30f
                         },
                         new[] { 2, 8 }),
-                    new VisionRawTensor("proto", new float[8], new[] { 1, 2, 2, 2 })
+                    new VisionRawTensor("proto", CreateActivePrototype(2, 2, 2), new[] { 1, 2, 2, 2 })
                 }
             };
             var context = new VisionOutputParserContext(new Vector2Int(1000, 500), 0.25f, 0.5f, new[] { "person" });
@@ -294,12 +294,13 @@ namespace UniversalTracker.Tests
             data[2] = 128f;
             data[3] = 128f;
             data[4] = 0.72f;
+            data[84] = 1f;
             var raw = new VisionRawModelOutput
             {
                 tensors = new[]
                 {
                     new VisionRawTensor("seg", data, new[] { 1, 116, 1 }),
-                    new VisionRawTensor("proto", new float[32 * 160 * 160], new[] { 1, 32, 160, 160 })
+                    new VisionRawTensor("proto", CreateActivePrototype(32, 160, 160), new[] { 1, 32, 160, 160 })
                 }
             };
             var context = new VisionOutputParserContext(
@@ -350,17 +351,48 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
-        public void YoloSegmentationParser_ParsesYolo26EndToEndSegmentationOutput()
+        public void YoloSegmentationParser_FiltersRowsWithoutActiveMaskContour()
         {
             var parser = new YoloSegmentationOutputParser();
             float[] data = new float[300 * 38];
             WriteYolo26Row(data, 38, 0, 100f, 50f, 300f, 250f, 0.82f, 0);
+            data[6] = 1f;
             var raw = new VisionRawModelOutput
             {
                 tensors = new[]
                 {
                     new VisionRawTensor("seg", data, new[] { 1, 300, 38 }),
-                    new VisionRawTensor("proto", new float[32 * 160 * 160], new[] { 1, 32, 160, 160 })
+                    new VisionRawTensor("proto", new float[32 * 16 * 16], new[] { 1, 32, 16, 16 })
+                }
+            };
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640));
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Is.Empty);
+            Assert.That(parsed.masks, Is.Empty);
+            Assert.That(parsed.diagnostics.candidateCount, Is.EqualTo(0));
+            Assert.That(parsed.diagnostics.maxConfidence, Is.EqualTo(0.82f).Within(0.0001f));
+        }
+
+        [Test]
+        public void YoloSegmentationParser_ParsesYolo26EndToEndSegmentationOutput()
+        {
+            var parser = new YoloSegmentationOutputParser();
+            float[] data = new float[300 * 38];
+            WriteYolo26Row(data, 38, 0, 100f, 50f, 300f, 250f, 0.82f, 0);
+            data[6] = 1f;
+            var raw = new VisionRawModelOutput
+            {
+                tensors = new[]
+                {
+                    new VisionRawTensor("seg", data, new[] { 1, 300, 38 }),
+                    new VisionRawTensor("proto", CreateActivePrototype(32, 160, 160), new[] { 1, 32, 160, 160 })
                 }
             };
             var context = new VisionOutputParserContext(
@@ -494,6 +526,14 @@ namespace UniversalTracker.Tests
             }
 
             return row;
+        }
+
+        private static float[] CreateActivePrototype(int channels, int height, int width)
+        {
+            var prototype = new float[channels * height * width];
+            for (int i = 0; i < height * width; i++)
+                prototype[i] = 1f;
+            return prototype;
         }
 
         private static void WriteChannelFirstBox(

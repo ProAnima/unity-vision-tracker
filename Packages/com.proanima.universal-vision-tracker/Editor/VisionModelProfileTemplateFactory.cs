@@ -56,9 +56,9 @@ namespace UniversalTracker.Editor
                 DefaultDisplayName(template),
                 null,
                 null,
-                BackendType.CPU,
+                BackendType.GPUCompute,
                 640,
-                0.25f,
+                DefaultConfidenceThreshold(template),
                 0.45f,
                 "Add model license before production",
                 "Add model source URL before production");
@@ -81,6 +81,16 @@ namespace UniversalTracker.Editor
                 VisionModelProfileTemplate.YoloPose2D => "YOLO Pose 2D",
                 VisionModelProfileTemplate.YoloSegmentation => "YOLO Segmentation",
                 _ => "YOLO Detection"
+            };
+        }
+
+        private static float DefaultConfidenceThreshold(VisionModelProfileTemplate template)
+        {
+            return template switch
+            {
+                VisionModelProfileTemplate.YoloSegmentation => 0.65f,
+                VisionModelProfileTemplate.YoloPose2D => 0.35f,
+                _ => 0.35f
             };
         }
     }

@@ -114,7 +114,7 @@ If startup fails:
 - Confirm parser id matches the output schema.
 - Confirm texture or camera source reports a non-zero size.
 - Check that labels count matches the expected classes.
-- Keep CPU for first-run validation. Try `GPUCompute` or `GPUPixel` only after the CPU path is healthy on the target device.
+- YOLO presets use `GPUCompute` by default. On platforms where compute is unavailable or unstable, switch the profile backend to `GPUPixel`; keep `CPU` only for diagnostics and compatibility checks.
 
 If overlay geometry looks wrong:
 

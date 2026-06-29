@@ -21,7 +21,8 @@ namespace UniversalTracker.Tests
             Assert.That(profile.primaryTask, Is.EqualTo(VisionTaskType.Detection));
             Assert.That(profile.capabilities, Is.EqualTo(VisionModelCapability.Detection));
             Assert.That(profile.parserId, Is.EqualTo("yolo.detection.rows"));
-            Assert.That(profile.backend, Is.EqualTo(BackendType.CPU));
+            Assert.That(profile.backend, Is.EqualTo(BackendType.GPUCompute));
+            Assert.That(profile.confidenceThreshold, Is.EqualTo(0.35f).Within(0.0001f));
             Assert.That(profile.outputTransform.flipY, Is.False);
             Assert.That(profile.output.TensorCount, Is.EqualTo(1));
             Assert.That(report.IsValid, Is.True);
@@ -40,6 +41,8 @@ namespace UniversalTracker.Tests
             Assert.That(profile.Supports(VisionModelCapability.Pose2D), Is.True);
             Assert.That(profile.Supports(VisionModelCapability.HumanDetection), Is.True);
             Assert.That(profile.parserId, Is.EqualTo("yolo.pose2d.rows"));
+            Assert.That(profile.backend, Is.EqualTo(BackendType.GPUCompute));
+            Assert.That(profile.confidenceThreshold, Is.EqualTo(0.35f).Within(0.0001f));
             Assert.That(profile.output.TensorCount, Is.EqualTo(1));
             Assert.That(profile.output.tensors[0].semantic, Is.EqualTo("pose.rows"));
 
@@ -56,6 +59,8 @@ namespace UniversalTracker.Tests
             Assert.That(profile.primaryTask, Is.EqualTo(VisionTaskType.Segmentation));
             Assert.That(profile.Supports(VisionModelCapability.Segmentation), Is.True);
             Assert.That(profile.parserId, Is.EqualTo("yolo.segmentation.rows"));
+            Assert.That(profile.backend, Is.EqualTo(BackendType.GPUCompute));
+            Assert.That(profile.confidenceThreshold, Is.EqualTo(0.65f).Within(0.0001f));
             Assert.That(profile.output.TensorCount, Is.EqualTo(2));
             Assert.That(profile.output.tensors[1].semantic, Is.EqualTo("segmentation.prototype"));
 

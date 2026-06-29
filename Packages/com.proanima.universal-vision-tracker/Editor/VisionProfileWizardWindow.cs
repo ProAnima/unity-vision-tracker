@@ -12,7 +12,7 @@ namespace UniversalTracker.Editor
         private string displayName;
         private ModelAsset modelAsset;
         private TextAsset labels;
-        private BackendType backend = BackendType.CPU;
+        private BackendType backend = BackendType.GPUCompute;
         private int inputSize = 640;
         private float confidenceThreshold = 0.5f;
         private float nmsThreshold = 0.45f;

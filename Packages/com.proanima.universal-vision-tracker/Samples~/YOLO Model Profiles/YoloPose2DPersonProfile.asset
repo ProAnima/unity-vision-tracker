@@ -46,7 +46,7 @@ MonoBehaviour:
     scaleSize: 0
   parserId: yolo.pose2d.rows
   labels: {fileID: 4900000, guid: e5d36ed56e964f1fb3eb3889fd19e002, type: 3}
-  confidenceThreshold: 0.25
+  confidenceThreshold: 0.35
   nmsThreshold: 0.45
   modelLicense: Replace with the model license before production
   modelSourceUrl: Replace with the model source URL before production

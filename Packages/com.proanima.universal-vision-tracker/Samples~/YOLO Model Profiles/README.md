@@ -8,6 +8,8 @@ This sample contains production-oriented `VisionModelProfile` templates for comm
 
 These profiles are templates, not runnable model packages. They intentionally leave `modelAsset` empty so the package does not distribute large weights or inherit third-party model licenses.
 
+The templates default to `GPUCompute`. Detection and pose start at `0.35` confidence, while segmentation starts at `0.65` to avoid noisy mask boxes on live webcam feeds. Tune thresholds from the dashboard or profile inspector for your camera and model.
+
 ## Use
 
 1. Import this sample from Package Manager.

@@ -46,7 +46,7 @@ MonoBehaviour:
     scaleSize: 0
   parserId: yolo.detection.rows
   labels: {fileID: 4900000, guid: d14222d3df7145e4ab1a2a3c8d5f2001, type: 3}
-  confidenceThreshold: 0.25
+  confidenceThreshold: 0.35
   nmsThreshold: 0.45
   modelLicense: Replace with the model license before production
   modelSourceUrl: Replace with the model source URL before production

@@ -51,6 +51,16 @@ namespace UniversalTracker.Core
                     : ReadRawCenterRect(rows, row, context);
                 Rect normalized = context.coordinateTransform.Apply(rawNormalized);
                 int maskOffset = isEndToEnd ? 6 : classOffset + classScoreCount;
+                Vector2[] contourSegments = BuildContourSegments(
+                    rows,
+                    row,
+                    prototypeTensor,
+                    maskOffset,
+                    maskCoefficientCount,
+                    rawNormalized,
+                    context.coordinateTransform);
+                if (contourSegments.Length == 0)
+                    continue;
 
                 string label = YoloOutputParserUtility.ResolveLabel(classId, context.labels);
                 VisionDetection detection = YoloOutputParserUtility.CreateDetection(classId, label, confidence, normalized, context.sourceSize);
@@ -64,7 +74,7 @@ namespace UniversalTracker.Core
                         confidence = confidence,
                         normalizedRect = normalized,
                         sourceRect = detection.sourceRect,
-                        normalizedContourSegments = BuildContourSegments(rows, row, prototypeTensor, maskOffset, maskCoefficientCount, rawNormalized, context.coordinateTransform),
+                        normalizedContourSegments = contourSegments,
                         texture = null
                     }));
             }
