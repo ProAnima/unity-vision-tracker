@@ -40,6 +40,7 @@ namespace UniversalTracker.OutputReceivers
         public Slider confidenceSlider;
         public Slider nmsSlider;
         public Slider keypointSlider;
+        public Slider poseSmoothingSlider;
         public Slider maskAlphaSlider;
         public Slider targetFpsSlider;
     }
@@ -232,6 +233,7 @@ namespace UniversalTracker.OutputReceivers
             view.confidenceSlider = AddSlider(settings, "Confidence", 0.01f, 0.99f, 0.25f);
             view.nmsSlider = AddSlider(settings, "NMS", 0.01f, 0.99f, 0.45f);
             view.keypointSlider = AddSlider(settings, "Keypoints", 0.05f, 1f, 0.35f);
+            view.poseSmoothingSlider = AddSlider(settings, "Pose smooth", 0f, 0.95f, 0.55f);
             view.maskAlphaSlider = AddSlider(settings, "Mask alpha", 0.02f, 0.8f, 0.28f);
             view.targetFpsSlider = AddSlider(settings, "FPS", 1f, 60f, 30f);
         }

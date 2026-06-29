@@ -31,6 +31,7 @@ namespace UniversalTracker.OutputReceivers
         public bool mirrorPreviewX;
         public bool mirrorPreviewY;
         [Range(0.05f, 1f)] public float keypointConfidenceThreshold = 0.35f;
+        [Range(0f, 0.95f)] public float poseSmoothing = 0.55f;
         [Range(0.05f, 0.8f)] public float maskAlpha = 0.28f;
         [Range(1, 20)] public int maxRows = 8;
 
@@ -261,7 +262,8 @@ namespace UniversalTracker.OutputReceivers
                 showDetections,
                 showPoses,
                 maskAlpha,
-                keypointConfidenceThreshold);
+                keypointConfidenceThreshold,
+                poseSmoothing);
         }
 
         private void UpdateContentGuide(Rect contentRect)
@@ -320,6 +322,7 @@ namespace UniversalTracker.OutputReceivers
             BindToggle(view.posesToggle, showPoses, value => showPoses = value);
             BindToggle(view.masksToggle, showMasks, value => showMasks = value);
             BindSlider(view.keypointSlider, keypointConfidenceThreshold, value => keypointConfidenceThreshold = value);
+            BindSlider(view.poseSmoothingSlider, poseSmoothing, value => poseSmoothing = value);
             BindSlider(view.maskAlphaSlider, maskAlpha, value => maskAlpha = value);
             BindSlider(view.targetFpsSlider, ResolveTargetFps(), value => trackerManager?.SetTargetFps(Mathf.RoundToInt(value)));
             BindSlider(view.confidenceSlider, ResolveConfidenceThreshold(), value => ApplyModelThresholds(value, ResolveNmsThreshold()));

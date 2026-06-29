@@ -61,6 +61,7 @@ namespace UniversalTracker.OutputReceivers
         public readonly List<VisualElement> keypoints = new List<VisualElement>();
         public readonly List<VisualElement> bones = new List<VisualElement>();
         public readonly List<VisualElement> maskContourSegments = new List<VisualElement>();
+        public readonly Dictionary<int, Vector2> smoothedKeypoints = new Dictionary<int, Vector2>();
     }
 
     internal static class VisionToolkitDashboardOverlayRenderer
@@ -73,6 +74,7 @@ namespace UniversalTracker.OutputReceivers
             VisionDashboardElementPool.SetPoolActive(state.keypoints, 0);
             VisionDashboardElementPool.SetPoolActive(state.bones, 0);
             VisionDashboardElementPool.SetPoolActive(state.maskContourSegments, 0);
+            state.smoothedKeypoints.Clear();
         }
 
         public static void Render(
@@ -85,7 +87,8 @@ namespace UniversalTracker.OutputReceivers
             bool showDetections,
             bool showPoses,
             float maskAlpha,
-            float keypointConfidenceThreshold)
+            float keypointConfidenceThreshold,
+            float poseSmoothing)
         {
             int detectionsUsed = RenderDetections(result, state, sourceSize, viewportSize, stroke, showDetections);
             int masksUsed = RenderMasks(
@@ -106,6 +109,7 @@ namespace UniversalTracker.OutputReceivers
                 stroke,
                 showPoses,
                 keypointConfidenceThreshold,
+                poseSmoothing,
                 out int keypointsUsed,
                 out int bonesUsed);
 
@@ -192,6 +196,7 @@ namespace UniversalTracker.OutputReceivers
             float stroke,
             bool showPoses,
             float keypointConfidenceThreshold,
+            float poseSmoothing,
             out int keypointsUsed,
             out int bonesUsed)
         {
@@ -201,7 +206,7 @@ namespace UniversalTracker.OutputReceivers
                 return;
 
             for (int i = 0; i < result.poses.Length; i++)
-                UpdatePose(result.poses[i], state, sourceSize, viewportSize, stroke, keypointConfidenceThreshold, ref keypointsUsed, ref bonesUsed);
+                UpdatePose(result.poses[i], i, state, sourceSize, viewportSize, stroke, keypointConfidenceThreshold, poseSmoothing, ref keypointsUsed, ref bonesUsed);
         }
 
         private static void UpdateDetectionBox(VisualElement box, Label label, int index, VisionDetection detection, Vector2 sourceSize, Vector2 viewportSize, float stroke)
@@ -221,7 +226,9 @@ namespace UniversalTracker.OutputReceivers
             label.text = $"{name} {(detection.confidence * 100f):F0}%{id}";
 
             int stableId = detection.IsTracked ? detection.trackId : detection.classId + index * 31;
-            Color color = VisionDashboardGeometry.StableColor(stableId);
+            Color color = IsHumanDetection(detection)
+                ? VisionDashboardGeometry.ConfidenceColor(detection.confidence)
+                : VisionDashboardGeometry.StableColor(stableId);
             VisionDashboardTheme.SetBorderColor(box, color);
             box.style.backgroundColor = new Color(color.r, color.g, color.b, 0.06f);
 
@@ -237,11 +244,13 @@ namespace UniversalTracker.OutputReceivers
 
         private static void UpdatePose(
             VisionPose pose,
+            int poseIndex,
             VisionDashboardOverlayState state,
             Vector2 sourceSize,
             Vector2 viewportSize,
             float stroke,
             float keypointConfidenceThreshold,
+            float poseSmoothing,
             ref int keypointsUsed,
             ref int bonesUsed)
         {
@@ -259,8 +268,8 @@ namespace UniversalTracker.OutputReceivers
                         continue;
                     }
 
-                    Vector2 fromPoint = VisionDashboardGeometry.NormalizedToViewportPoint(from.normalizedPosition, sourceSize, viewportSize);
-                    Vector2 toPoint = VisionDashboardGeometry.NormalizedToViewportPoint(to.normalizedPosition, sourceSize, viewportSize);
+                    Vector2 fromPoint = ResolvePosePoint(pose, poseIndex, from, state, sourceSize, viewportSize, poseSmoothing);
+                    Vector2 toPoint = ResolvePosePoint(pose, poseIndex, to, state, sourceSize, viewportSize, poseSmoothing);
                     VisualElement boneElement = VisionDashboardElementPool.GetElement(
                         state.bones,
                         state.boneLayer,
@@ -275,7 +284,7 @@ namespace UniversalTracker.OutputReceivers
                 if (!IsVisibleKeypoint(pose.keypoints[i], keypointConfidenceThreshold))
                     continue;
 
-                Vector2 point = VisionDashboardGeometry.NormalizedToViewportPoint(pose.keypoints[i].normalizedPosition, sourceSize, viewportSize);
+                Vector2 point = ResolvePosePoint(pose, poseIndex, pose.keypoints[i], state, sourceSize, viewportSize, poseSmoothing);
                 VisualElement keypoint = VisionDashboardElementPool.GetElement(
                     state.keypoints,
                     state.keypointLayer,
@@ -295,7 +304,7 @@ namespace UniversalTracker.OutputReceivers
             bone.style.width = Mathf.Max(1f, line.length);
             bone.style.height = Mathf.Max(2f, stroke);
             bone.style.rotate = new Rotate(new Angle(line.angleDegrees, AngleUnit.Degree));
-            Color color = index % 2 == 0 ? VisionDashboardTheme.PoseColor : VisionDashboardTheme.Accent;
+            Color color = VisionDashboardGeometry.ConfidenceColor(confidence);
             bone.style.backgroundColor = new Color(color.r, color.g, color.b, Mathf.Lerp(0.38f, 0.95f, confidence));
         }
 
@@ -306,8 +315,35 @@ namespace UniversalTracker.OutputReceivers
             keypoint.style.top = point.y - radius;
             keypoint.style.width = radius * 2f;
             keypoint.style.height = radius * 2f;
-            keypoint.style.backgroundColor = data.confidence >= 0.5f ? VisionDashboardTheme.PoseColor : VisionDashboardTheme.Warning;
+            keypoint.style.backgroundColor = VisionDashboardGeometry.ConfidenceColor(data.confidence);
             VisionDashboardTheme.SetBorderColor(keypoint, new Color(0f, 0f, 0f, 0.8f));
+        }
+
+        private static Vector2 ResolvePosePoint(
+            VisionPose pose,
+            int poseIndex,
+            VisionKeypoint keypoint,
+            VisionDashboardOverlayState state,
+            Vector2 sourceSize,
+            Vector2 viewportSize,
+            float poseSmoothing)
+        {
+            Vector2 current = VisionDashboardGeometry.NormalizedToViewportPoint(keypoint.normalizedPosition, sourceSize, viewportSize);
+            float smoothing = Mathf.Clamp01(poseSmoothing);
+            if (smoothing <= 0f)
+                return current;
+
+            int id = pose.personId >= 0 ? pose.personId : poseIndex;
+            int key = id * 1000 + keypoint.index;
+            if (!state.smoothedKeypoints.TryGetValue(key, out Vector2 previous))
+            {
+                state.smoothedKeypoints[key] = current;
+                return current;
+            }
+
+            Vector2 smoothed = Vector2.Lerp(current, previous, smoothing);
+            state.smoothedKeypoints[key] = smoothed;
+            return smoothed;
         }
 
         private static void UpdateMask(
@@ -379,6 +415,13 @@ namespace UniversalTracker.OutputReceivers
         private static bool IsVisibleKeypoint(VisionKeypoint keypoint, float threshold)
         {
             return keypoint.isVisible && keypoint.confidence >= threshold;
+        }
+
+        private static bool IsHumanDetection(VisionDetection detection)
+        {
+            return detection.classId == 0 ||
+                   string.Equals(detection.label, "person", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(detection.label, "human", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

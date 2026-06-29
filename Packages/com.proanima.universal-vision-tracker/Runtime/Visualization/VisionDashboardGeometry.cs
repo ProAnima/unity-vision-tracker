@@ -93,6 +93,18 @@ namespace UniversalTracker.Visualization
             float hue = (id * 0.61803398875f) % 1f;
             return Color.HSVToRGB(hue, Mathf.Clamp01(saturation), Mathf.Clamp01(value));
         }
+
+        public static Color ConfidenceColor(float confidence)
+        {
+            confidence = Mathf.Clamp01(confidence);
+            if (confidence >= 0.7f)
+                return new Color(0.22f, 0.92f, 0.46f, 1f);
+
+            if (confidence >= 0.4f)
+                return new Color(0.96f, 0.86f, 0.18f, 1f);
+
+            return new Color(1f, 0.26f, 0.24f, 1f);
+        }
     }
 
     public readonly struct BoneLine

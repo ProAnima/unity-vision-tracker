@@ -62,7 +62,8 @@ namespace UniversalTracker.Tests
                 true,
                 true,
                 0.25f,
-                0.1f);
+                0.1f,
+                0.55f);
 
             yield return null;
 

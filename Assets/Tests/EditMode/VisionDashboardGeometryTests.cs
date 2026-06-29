@@ -107,5 +107,18 @@ namespace UniversalTracker.Tests
             Assert.That(first.g, Is.EqualTo(second.g).Within(0.0001f));
             Assert.That(first.b, Is.EqualTo(second.b).Within(0.0001f));
         }
+
+        [Test]
+        public void ConfidenceColor_UsesGreenYellowRedBands()
+        {
+            Color low = VisionDashboardGeometry.ConfidenceColor(0.25f);
+            Color mid = VisionDashboardGeometry.ConfidenceColor(0.55f);
+            Color high = VisionDashboardGeometry.ConfidenceColor(0.9f);
+
+            Assert.That(low.r, Is.GreaterThan(low.g));
+            Assert.That(mid.r, Is.GreaterThan(0.8f));
+            Assert.That(mid.g, Is.GreaterThan(0.7f));
+            Assert.That(high.g, Is.GreaterThan(high.r));
+        }
     }
 }
