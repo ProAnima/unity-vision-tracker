@@ -6,6 +6,9 @@ namespace UniversalTracker.Core
 {
     public sealed class YoloSegmentationOutputParser : IVisionOutputParser
     {
+        private const int MaxContourPoints = 48;
+        private const float MaskThreshold = 0.5f;
+
         public string ParserId => "yolo.segmentation.rows";
         public VisionModelCapability Capabilities => VisionModelCapability.Detection | VisionModelCapability.Segmentation;
 
@@ -43,9 +46,11 @@ namespace UniversalTracker.Core
                 if (confidence < context.confidenceThreshold)
                     continue;
 
-                Rect normalized = isEndToEnd
-                    ? YoloOutputParserUtility.CornersToNormalizedRect(rows, row, context)
-                    : YoloOutputParserUtility.CenterToNormalizedRect(rows, row, context);
+                Rect rawNormalized = isEndToEnd
+                    ? ReadRawCornerRect(rows, row, context)
+                    : ReadRawCenterRect(rows, row, context);
+                Rect normalized = context.coordinateTransform.Apply(rawNormalized);
+                int maskOffset = isEndToEnd ? 6 : classOffset + classScoreCount;
 
                 string label = YoloOutputParserUtility.ResolveLabel(classId, context.labels);
                 VisionDetection detection = YoloOutputParserUtility.CreateDetection(classId, label, confidence, normalized, context.sourceSize);
@@ -59,6 +64,7 @@ namespace UniversalTracker.Core
                         confidence = confidence,
                         normalizedRect = normalized,
                         sourceRect = detection.sourceRect,
+                        normalizedContour = BuildContour(rows, row, prototypeTensor, maskOffset, maskCoefficientCount, rawNormalized, context.coordinateTransform),
                         texture = null
                     }));
             }
@@ -100,6 +106,28 @@ namespace UniversalTracker.Core
             return classId;
         }
 
+        private static Rect ReadRawCenterRect(YoloTensorRows rows, int row, VisionOutputParserContext context)
+        {
+            return YoloOutputParserUtility.CenterToRect(
+                YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x),
+                YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y),
+                YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
+                YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
+        }
+
+        private static Rect ReadRawCornerRect(YoloTensorRows rows, int row, VisionOutputParserContext context)
+        {
+            float x1 = YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 0), context.modelInputSize.x);
+            float y1 = YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 1), context.modelInputSize.y);
+            float x2 = YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x);
+            float y2 = YoloOutputParserUtility.NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y);
+            return Rect.MinMaxRect(
+                Mathf.Clamp01(Mathf.Min(x1, x2)),
+                Mathf.Clamp01(Mathf.Min(y1, y2)),
+                Mathf.Clamp01(Mathf.Max(x1, x2)),
+                Mathf.Clamp01(Mathf.Max(y1, y2)));
+        }
+
         private static int FindBestClass(YoloTensorRows rows, int row, int offset, int count, out float score)
         {
             int bestIndex = 0;
@@ -127,6 +155,158 @@ namespace UniversalTracker.Core
                 return prototypeTensor.shape[0];
 
             return 0;
+        }
+
+        private static Vector2[] BuildContour(
+            YoloTensorRows rows,
+            int row,
+            VisionRawTensor prototypeTensor,
+            int coefficientOffset,
+            int coefficientCount,
+            Rect rawNormalizedRect,
+            VisionOutputCoordinateTransform transform)
+        {
+            if (coefficientCount <= 0 || !TryResolvePrototypeShape(prototypeTensor, out int channels, out int height, out int width))
+                return Array.Empty<Vector2>();
+
+            int xMin = Mathf.Clamp(Mathf.FloorToInt(rawNormalizedRect.xMin * width), 0, width - 1);
+            int yMin = Mathf.Clamp(Mathf.FloorToInt(rawNormalizedRect.yMin * height), 0, height - 1);
+            int xMax = Mathf.Clamp(Mathf.CeilToInt(rawNormalizedRect.xMax * width), xMin + 1, width);
+            int yMax = Mathf.Clamp(Mathf.CeilToInt(rawNormalizedRect.yMax * height), yMin + 1, height);
+            var edgePoints = new List<Vector2>();
+
+            for (int y = yMin; y < yMax; y++)
+            {
+                for (int x = xMin; x < xMax; x++)
+                {
+                    if (!IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y))
+                        continue;
+
+                    bool isEdge =
+                        x == xMin || y == yMin || x == xMax - 1 || y == yMax - 1 ||
+                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x - 1, y) ||
+                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x + 1, y) ||
+                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y - 1) ||
+                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y + 1);
+
+                    if (isEdge)
+                        edgePoints.Add(new Vector2((x + 0.5f) / width, (y + 0.5f) / height));
+                }
+            }
+
+            if (edgePoints.Count < 3)
+                return Array.Empty<Vector2>();
+
+            return SimplifyContour(BuildConvexHull(edgePoints), transform);
+        }
+
+        private static bool TryResolvePrototypeShape(VisionRawTensor tensor, out int channels, out int height, out int width)
+        {
+            channels = 0;
+            height = 0;
+            width = 0;
+            if (!tensor.IsValid)
+                return false;
+
+            if (tensor.shape.Length == 4 && tensor.shape[0] == 1)
+            {
+                channels = tensor.shape[1];
+                height = tensor.shape[2];
+                width = tensor.shape[3];
+            }
+            else if (tensor.shape.Length == 3)
+            {
+                channels = tensor.shape[0];
+                height = tensor.shape[1];
+                width = tensor.shape[2];
+            }
+
+            return channels > 0 && width > 1 && height > 1 && channels * width * height <= tensor.ElementCount;
+        }
+
+        private static bool IsMaskActive(
+            YoloTensorRows rows,
+            int row,
+            VisionRawTensor prototypeTensor,
+            int coefficientOffset,
+            int coefficientCount,
+            int channels,
+            int height,
+            int width,
+            int x,
+            int y)
+        {
+            if (x < 0 || x >= width || y < 0 || y >= height)
+                return false;
+
+            float value = 0f;
+            int count = Mathf.Min(coefficientCount, channels);
+            for (int c = 0; c < count; c++)
+                value += rows.Get(row, coefficientOffset + c) * prototypeTensor.data[(c * height + y) * width + x];
+
+            return Sigmoid(value) > MaskThreshold;
+        }
+
+        private static float Sigmoid(float value)
+        {
+            return 1f / (1f + Mathf.Exp(-value));
+        }
+
+        private static List<Vector2> BuildConvexHull(List<Vector2> points)
+        {
+            points.Sort((a, b) =>
+            {
+                int x = a.x.CompareTo(b.x);
+                return x != 0 ? x : a.y.CompareTo(b.y);
+            });
+
+            var hull = new List<Vector2>();
+            for (int i = 0; i < points.Count; i++)
+                AddHullPoint(hull, points[i]);
+
+            int lowerCount = hull.Count;
+            for (int i = points.Count - 2; i >= 0; i--)
+                AddHullPoint(hull, points[i], lowerCount);
+
+            if (hull.Count > 1)
+                hull.RemoveAt(hull.Count - 1);
+
+            return hull;
+        }
+
+        private static void AddHullPoint(List<Vector2> hull, Vector2 point, int minCount = 0)
+        {
+            while (hull.Count > minCount + 1 && Cross(hull[hull.Count - 2], hull[hull.Count - 1], point) <= 0f)
+                hull.RemoveAt(hull.Count - 1);
+
+            hull.Add(point);
+        }
+
+        private static float Cross(Vector2 origin, Vector2 a, Vector2 b)
+        {
+            return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+        }
+
+        private static Vector2[] SimplifyContour(List<Vector2> contour, VisionOutputCoordinateTransform transform)
+        {
+            if (contour.Count <= MaxContourPoints)
+                return TransformContour(contour, transform);
+
+            var simplified = new List<Vector2>(MaxContourPoints);
+            float step = contour.Count / (float)MaxContourPoints;
+            for (int i = 0; i < MaxContourPoints; i++)
+                simplified.Add(contour[Mathf.Min(contour.Count - 1, Mathf.FloorToInt(i * step))]);
+
+            return TransformContour(simplified, transform);
+        }
+
+        private static Vector2[] TransformContour(List<Vector2> contour, VisionOutputCoordinateTransform transform)
+        {
+            var transformed = new Vector2[contour.Count];
+            for (int i = 0; i < contour.Count; i++)
+                transformed[i] = transform.Apply(contour[i]);
+
+            return transformed;
         }
 
         private static void ApplyNms(List<SegmentationCandidate> candidates, float threshold, out VisionDetection[] detections, out VisionMask[] masks)

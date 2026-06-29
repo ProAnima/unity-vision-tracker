@@ -45,7 +45,7 @@ MonoBehaviour:
       semantic: segmentation.prototype
   outputTransform:
     flipX: 0
-    flipY: 1
+    flipY: 0
     scaleX: 1
     scaleY: 1
     offsetX: 0

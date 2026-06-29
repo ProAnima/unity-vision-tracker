@@ -298,6 +298,38 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void YoloSegmentationParser_ReconstructsContourFromPrototype()
+        {
+            var parser = new YoloSegmentationOutputParser();
+            float[] data = new float[300 * 38];
+            WriteYolo26Row(data, 38, 0, 100f, 50f, 300f, 250f, 0.82f, 0);
+            data[6] = 1f;
+            float[] prototype = new float[32 * 16 * 16];
+            for (int i = 0; i < 16 * 16; i++)
+                prototype[i] = 1f;
+            var raw = new VisionRawModelOutput
+            {
+                tensors = new[]
+                {
+                    new VisionRawTensor("seg", data, new[] { 1, 300, 38 }),
+                    new VisionRawTensor("proto", prototype, new[] { 1, 32, 16, 16 })
+                }
+            };
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640));
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.masks, Has.Length.EqualTo(1));
+            Assert.That(parsed.masks[0].HasContour, Is.True);
+            Assert.That(parsed.masks[0].normalizedContour.Length, Is.GreaterThanOrEqualTo(4));
+        }
+
+        [Test]
         public void YoloSegmentationParser_ParsesYolo26EndToEndSegmentationOutput()
         {
             var parser = new YoloSegmentationOutputParser();

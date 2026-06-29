@@ -67,12 +67,14 @@ namespace UniversalTracker.Tests
             yield return null;
 
             Assert.That(state.detections.Count, Is.EqualTo(1));
-            Assert.That(state.labels.Count, Is.EqualTo(1));
+            Assert.That(state.labels.Count, Is.EqualTo(2));
             Assert.That(state.masks.Count, Is.EqualTo(1));
+            Assert.That(state.maskContourSegments.Count, Is.EqualTo(4));
             Assert.That(state.keypoints.Count, Is.GreaterThan(0));
             Assert.That(state.bones.Count, Is.GreaterThan(0));
             Assert.That(state.detectionLayer.childCount, Is.EqualTo(1));
-            Assert.That(state.labelLayer.childCount, Is.EqualTo(1));
+            Assert.That(state.labelLayer.childCount, Is.EqualTo(2));
+            Assert.That(state.labels[1].text, Does.Contain("person mask"));
 
             Object.Destroy(maskTexture);
         }
@@ -105,7 +107,14 @@ namespace UniversalTracker.Tests
                         label = "person",
                         confidence = 0.88f,
                         texture = maskTexture,
-                        normalizedRect = new Rect(0.25f, 0.25f, 0.5f, 0.5f)
+                        normalizedRect = new Rect(0.25f, 0.25f, 0.5f, 0.5f),
+                        normalizedContour = new[]
+                        {
+                            new Vector2(0.25f, 0.25f),
+                            new Vector2(0.75f, 0.25f),
+                            new Vector2(0.75f, 0.75f),
+                            new Vector2(0.25f, 0.75f)
+                        }
                     }
                 },
                 poses = new[]

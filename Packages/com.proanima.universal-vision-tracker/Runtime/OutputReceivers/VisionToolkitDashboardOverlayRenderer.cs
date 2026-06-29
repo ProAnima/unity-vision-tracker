@@ -60,6 +60,7 @@ namespace UniversalTracker.OutputReceivers
         public readonly List<Label> labels = new List<Label>();
         public readonly List<VisualElement> keypoints = new List<VisualElement>();
         public readonly List<VisualElement> bones = new List<VisualElement>();
+        public readonly List<VisualElement> maskContourSegments = new List<VisualElement>();
     }
 
     internal static class VisionToolkitDashboardOverlayRenderer
@@ -71,6 +72,7 @@ namespace UniversalTracker.OutputReceivers
             VisionDashboardElementPool.SetLabelsActive(state.labels, 0);
             VisionDashboardElementPool.SetPoolActive(state.keypoints, 0);
             VisionDashboardElementPool.SetPoolActive(state.bones, 0);
+            VisionDashboardElementPool.SetPoolActive(state.maskContourSegments, 0);
         }
 
         public static void Render(
@@ -85,8 +87,17 @@ namespace UniversalTracker.OutputReceivers
             float maskAlpha,
             float keypointConfidenceThreshold)
         {
-            int masksUsed = RenderMasks(result, state, sourceSize, viewportSize, stroke, showMasks, maskAlpha);
             int detectionsUsed = RenderDetections(result, state, sourceSize, viewportSize, stroke, showDetections);
+            int masksUsed = RenderMasks(
+                result,
+                state,
+                sourceSize,
+                viewportSize,
+                stroke,
+                showMasks,
+                maskAlpha,
+                detectionsUsed,
+                out int maskContourSegmentsUsed);
             RenderPoses(
                 result,
                 state,
@@ -100,9 +111,10 @@ namespace UniversalTracker.OutputReceivers
 
             VisionDashboardElementPool.SetPoolActive(state.masks, masksUsed);
             VisionDashboardElementPool.SetPoolActive(state.detections, detectionsUsed);
-            VisionDashboardElementPool.SetLabelsActive(state.labels, detectionsUsed);
+            VisionDashboardElementPool.SetLabelsActive(state.labels, detectionsUsed + masksUsed);
             VisionDashboardElementPool.SetPoolActive(state.keypoints, keypointsUsed);
             VisionDashboardElementPool.SetPoolActive(state.bones, bonesUsed);
+            VisionDashboardElementPool.SetPoolActive(state.maskContourSegments, maskContourSegmentsUsed);
         }
 
         private static int RenderMasks(
@@ -112,23 +124,35 @@ namespace UniversalTracker.OutputReceivers
             Vector2 viewportSize,
             float stroke,
             bool showMasks,
-            float maskAlpha)
+            float maskAlpha,
+            int labelOffset,
+            out int contourSegmentsUsed)
         {
             int used = 0;
+            contourSegmentsUsed = 0;
             if (!showMasks || result.masks == null)
                 return used;
 
             for (int i = 0; i < result.masks.Length; i++)
             {
-                if (result.masks[i].texture == null)
-                    continue;
-
                 VisualElement element = VisionDashboardElementPool.GetElement(
                     state.masks,
                     state.maskLayer,
                     VisionToolkitDashboardPrimitives.CreateMaskOverlay,
                     used);
-                UpdateMask(element, used++, result.masks[i], sourceSize, viewportSize, stroke, maskAlpha);
+                Label label = VisionDashboardElementPool.GetLabel(state.labels, state.labelLayer, labelOffset + used);
+                UpdateMask(
+                    element,
+                    label,
+                    used,
+                    result.masks[i],
+                    state,
+                    sourceSize,
+                    viewportSize,
+                    stroke,
+                    maskAlpha,
+                    ref contourSegmentsUsed);
+                used++;
             }
 
             return used;
@@ -286,7 +310,17 @@ namespace UniversalTracker.OutputReceivers
             VisionDashboardTheme.SetBorderColor(keypoint, new Color(0f, 0f, 0f, 0.8f));
         }
 
-        private static void UpdateMask(VisualElement element, int index, VisionMask mask, Vector2 sourceSize, Vector2 viewportSize, float stroke, float maskAlpha)
+        private static void UpdateMask(
+            VisualElement element,
+            Label label,
+            int index,
+            VisionMask mask,
+            VisionDashboardOverlayState state,
+            Vector2 sourceSize,
+            Vector2 viewportSize,
+            float stroke,
+            float maskAlpha,
+            ref int contourSegmentsUsed)
         {
             Rect rect = VisionDashboardGeometry.NormalizedToViewportRect(mask.normalizedRect, sourceSize, viewportSize);
             element.style.left = rect.x;
@@ -301,7 +335,9 @@ namespace UniversalTracker.OutputReceivers
             int stableId = mask.trackId >= 0 ? mask.trackId : mask.classId + index * 37;
             Color color = VisionDashboardGeometry.StableColor(stableId, 0.68f, 0.88f);
             VisionDashboardTheme.SetBorderColor(element, new Color(color.r, color.g, color.b, 0.95f));
-            element.style.backgroundColor = new Color(color.r, color.g, color.b, maskAlpha);
+            element.style.backgroundColor = mask.texture != null
+                ? new Color(color.r, color.g, color.b, Mathf.Clamp01(maskAlpha * 0.35f))
+                : new Color(color.r, color.g, color.b, 0.02f);
 
             var image = element.Q<Image>();
             if (image != null)
@@ -310,6 +346,59 @@ namespace UniversalTracker.OutputReceivers
                 image.tintColor = new Color(1f, 1f, 1f, mask.texture != null ? Mathf.Clamp01(maskAlpha + 0.12f) : 0f);
                 image.style.display = mask.texture != null ? DisplayStyle.Flex : DisplayStyle.None;
             }
+
+            string name = string.IsNullOrWhiteSpace(mask.label) ? $"#{mask.classId}" : mask.label;
+            string id = mask.trackId >= 0 ? $" T{mask.trackId}" : string.Empty;
+            label.text = $"{name} mask {(mask.confidence * 100f):F0}%{id}";
+            Vector2 labelSize = new Vector2(Mathf.Clamp(label.text.Length * 7.2f + 18f, 92f, 280f), 24f);
+            Vector2 labelPosition = VisionDashboardGeometry.ClampLabelPosition(
+                new Rect(rect.x, rect.yMax + labelSize.y + 6f, rect.width, rect.height),
+                labelSize,
+                viewportSize);
+            label.style.left = labelPosition.x;
+            label.style.top = labelPosition.y;
+            label.style.width = labelSize.x;
+            label.style.height = labelSize.y;
+            label.style.backgroundColor = new Color(color.r, color.g, color.b, 0.88f);
+            label.style.color = Color.black;
+
+            if (mask.HasContour)
+                UpdateMaskContour(mask, state, sourceSize, viewportSize, stroke, color, ref contourSegmentsUsed);
+        }
+
+        private static void UpdateMaskContour(
+            VisionMask mask,
+            VisionDashboardOverlayState state,
+            Vector2 sourceSize,
+            Vector2 viewportSize,
+            float stroke,
+            Color color,
+            ref int contourSegmentsUsed)
+        {
+            for (int i = 0; i < mask.normalizedContour.Length; i++)
+            {
+                Vector2 from = VisionDashboardGeometry.NormalizedToViewportPoint(mask.normalizedContour[i], sourceSize, viewportSize);
+                Vector2 to = VisionDashboardGeometry.NormalizedToViewportPoint(mask.normalizedContour[(i + 1) % mask.normalizedContour.Length], sourceSize, viewportSize);
+                VisualElement segment = VisionDashboardElementPool.GetElement(
+                    state.maskContourSegments,
+                    state.maskLayer,
+                    VisionToolkitDashboardPrimitives.CreateBone,
+                    contourSegmentsUsed);
+
+                UpdateContourSegment(segment, from, to, color, stroke);
+                contourSegmentsUsed++;
+            }
+        }
+
+        private static void UpdateContourSegment(VisualElement segment, Vector2 from, Vector2 to, Color color, float stroke)
+        {
+            BoneLine line = VisionDashboardGeometry.CalculateBoneLine(from, to);
+            segment.style.left = line.center.x - line.length * 0.5f;
+            segment.style.top = line.center.y - stroke * 0.5f;
+            segment.style.width = Mathf.Max(1f, line.length);
+            segment.style.height = Mathf.Max(2f, stroke * 1.35f);
+            segment.style.rotate = new Rotate(new Angle(line.angleDegrees, AngleUnit.Degree));
+            segment.style.backgroundColor = new Color(color.r, color.g, color.b, 0.96f);
         }
 
         private static bool TryGetVisibleKeypoint(VisionPose pose, int index, float threshold, out VisionKeypoint keypoint)

@@ -22,6 +22,7 @@ namespace UniversalTracker.Tests
             Assert.That(profile.capabilities, Is.EqualTo(VisionModelCapability.Detection));
             Assert.That(profile.parserId, Is.EqualTo("yolo.detection.rows"));
             Assert.That(profile.backend, Is.EqualTo(BackendType.CPU));
+            Assert.That(profile.outputTransform.flipY, Is.False);
             Assert.That(profile.output.TensorCount, Is.EqualTo(1));
             Assert.That(report.IsValid, Is.True);
 
