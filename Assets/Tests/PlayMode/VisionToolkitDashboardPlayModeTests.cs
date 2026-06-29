@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
+using UniversalTracker;
 using UniversalTracker.Core;
 using UniversalTracker.OutputReceivers;
 
@@ -35,6 +36,55 @@ namespace UniversalTracker.Tests
             Assert.That(document.rootVisualElement.childCount, Is.GreaterThan(0));
 
             Object.Destroy(texture);
+            Object.Destroy(document.panelSettings);
+            Object.Destroy(go);
+        }
+
+        [UnityTest]
+        public IEnumerator DashboardReceiver_BindsRuntimeControlsToManagerAndProfile()
+        {
+            var go = new GameObject("VisionDashboardControlsPlayModeTest");
+            var document = go.AddComponent<UIDocument>();
+            LogAssert.Expect(LogType.Warning, "No Theme Style Sheet set to PanelSettings , UI will not render properly");
+            document.panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+            var manager = go.AddComponent<UniversalTrackerManager>();
+            manager.autoStart = false;
+            manager.pipelineProfile = ScriptableObject.CreateInstance<VisionPipelineProfile>();
+            var model = ScriptableObject.CreateInstance<VisionModelProfile>();
+            model.confidenceThreshold = 0.35f;
+            model.nmsThreshold = 0.45f;
+            manager.pipelineProfile.models = new[] { model };
+            var receiver = go.AddComponent<VisionToolkitDashboardReceiver>();
+            receiver.trackerManager = manager;
+            receiver.autoFindManager = false;
+            receiver.subscribeToManagerEvent = false;
+
+            yield return null;
+
+            Toggle overlay = document.rootVisualElement.Q<Toggle>("VisionToggleOverlay");
+            Slider confidence = document.rootVisualElement.Q<Slider>("VisionConfidenceSlider");
+            Slider nms = document.rootVisualElement.Q<Slider>("VisionNmsSlider");
+            Slider fps = document.rootVisualElement.Q<Slider>("VisionTargetFpsSlider");
+
+            Assert.That(overlay, Is.Not.Null);
+            Assert.That(confidence, Is.Not.Null);
+            Assert.That(nms, Is.Not.Null);
+            Assert.That(fps, Is.Not.Null);
+
+            overlay.value = false;
+            confidence.value = 0.72f;
+            nms.value = 0.31f;
+            fps.value = 24f;
+
+            yield return null;
+
+            Assert.That(receiver.showVisualization, Is.False);
+            Assert.That(model.confidenceThreshold, Is.EqualTo(0.72f).Within(0.0001f));
+            Assert.That(model.nmsThreshold, Is.EqualTo(0.31f).Within(0.0001f));
+            Assert.That(manager.targetFPS, Is.EqualTo(24));
+
+            Object.DestroyImmediate(model);
+            Object.DestroyImmediate(manager.pipelineProfile);
             Object.Destroy(document.panelSettings);
             Object.Destroy(go);
         }

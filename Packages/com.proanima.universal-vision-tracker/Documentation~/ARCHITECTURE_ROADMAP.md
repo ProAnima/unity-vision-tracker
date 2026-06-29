@@ -54,6 +54,8 @@ Configuration is profile-first:
 - `Control Center > Compatibility Inspector` summarizes runtime, parser, capability, input, and output-schema readiness for model and pipeline profiles.
 - UI Toolkit dashboard status now includes source, model, runtime, budget, health, consecutive errors, and last error details.
 - YOLO profile templates now default to GPU runtime backends, and YOLO segmentation parsing rejects rows without an active reconstructed mask contour so debug overlays do not draw boxes for empty segments.
+- Dashboard runtime controls now have stable UI Toolkit ids, tooltips, and PlayMode coverage for visualization, threshold, and FPS wiring.
+- The default adapter registry intentionally resolves only implemented YOLO/Unity Inference profiles; optional MediaPipe, SAM, native, remote, AR, and XR packages remain extension skeletons until real adapters are added.
 
 ## Next Production Steps
 

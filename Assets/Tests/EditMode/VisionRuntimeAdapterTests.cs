@@ -92,6 +92,31 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void DefaultAdapterRegistry_OnlyRunsImplementedModelFamilies()
+        {
+            VisionAdapterRegistry registry = VisionAdapterRegistry.CreateDefault();
+            var mediaPipe = ScriptableObject.CreateInstance<VisionModelProfile>();
+            var sam = ScriptableObject.CreateInstance<VisionModelProfile>();
+            mediaPipe.family = VisionModelFamily.MediaPipe;
+            mediaPipe.runtimeKind = VisionRuntimeKind.UnityInferenceEngine;
+            sam.family = VisionModelFamily.SAM;
+            sam.runtimeKind = VisionRuntimeKind.UnityInferenceEngine;
+
+            bool mediaPipeResolved = registry.TryGetAdapter(mediaPipe, out IVisionModelAdapter mediaPipeAdapter);
+            bool samResolved = registry.TryGetAdapter(sam, out IVisionModelAdapter samAdapter);
+
+            Assert.That(registry.Adapters, Has.Count.EqualTo(1));
+            Assert.That(registry.Adapters[0].Family, Is.EqualTo(VisionModelFamily.YOLO));
+            Assert.That(mediaPipeResolved, Is.False);
+            Assert.That(mediaPipeAdapter, Is.Null);
+            Assert.That(samResolved, Is.False);
+            Assert.That(samAdapter, Is.Null);
+
+            Object.DestroyImmediate(mediaPipe);
+            Object.DestroyImmediate(sam);
+        }
+
+        [Test]
         public void VisionAdapterRegistry_TryCreateRuntime_UsesRegisteredAdapter()
         {
             var profile = ScriptableObject.CreateInstance<VisionModelProfile>();

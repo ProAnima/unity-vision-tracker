@@ -210,6 +210,8 @@ Current bridge contracts:
 - `YoloModelAdapter` and `UnityInferenceRuntimeAdapter` are the production Unity Inference bridge.
 - `UniversalTrackerManager` runs profile-based setups through `VisionPipeline`.
 
+Current default runtime support is YOLO through Unity Inference Engine. MediaPipe, SAM, native, remote, AR, and XR packages are optional module skeletons and extension points until their real adapters are implemented.
+
 The design keeps YOLO as one adapter instead of the core identity of the SDK.
 
 ## Production Roadmap
@@ -259,8 +261,8 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 134 tests, 134 passed, 0 failed
-PlayMode: 2 tests, 2 passed, 0 failed
+EditMode: 135 tests, 135 passed, 0 failed
+PlayMode: 3 tests, 3 passed, 0 failed
 ```
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.

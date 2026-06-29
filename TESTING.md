@@ -28,6 +28,8 @@ Current coverage starts with:
 - Profile validation summary and dashboard budget status behavior.
 - Profile compatibility summary behavior for parser, runtime, capability, input, and output schemas.
 - Dashboard runtime context binding for source, model, runtime, and last error status.
+- Dashboard runtime controls for visualization toggles, model thresholds, and target FPS wiring.
+- Adapter registry behavior for implemented and unimplemented model families.
 - Editor tooling entry points for Control Center and pipeline profile creation.
 
 Run from PowerShell:
@@ -54,8 +56,8 @@ C:\Users\<user>\AppData\LocalLow\DefaultCompany\pas-UCT\TestResults.xml
 Expected current baseline:
 
 ```text
-EditMode: 134 tests, 134 passed, 0 failed
-PlayMode: 2 tests, 2 passed, 0 failed
+EditMode: 135 tests, 135 passed, 0 failed
+PlayMode: 3 tests, 3 passed, 0 failed
 ```
 
 Run PlayMode smoke tests from PowerShell:

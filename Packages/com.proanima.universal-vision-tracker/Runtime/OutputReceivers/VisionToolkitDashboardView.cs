@@ -225,17 +225,17 @@ namespace UniversalTracker.OutputReceivers
             toggles.style.marginBottom = 8;
             settings.Add(toggles);
 
-            view.visualizationToggle = AddToggle(toggles, "Overlay", true);
-            view.detectionsToggle = AddToggle(toggles, "Boxes", true);
-            view.posesToggle = AddToggle(toggles, "Pose", true);
-            view.masksToggle = AddToggle(toggles, "Masks", true);
+            view.visualizationToggle = AddToggle(toggles, "Overlay", "VisionToggleOverlay", "Show or hide all debug visualization.", true);
+            view.detectionsToggle = AddToggle(toggles, "Detections", "VisionToggleDetections", "Show detection boxes and labels.", true);
+            view.posesToggle = AddToggle(toggles, "Skeletons", "VisionTogglePoses", "Show pose keypoints and skeleton bones.", true);
+            view.masksToggle = AddToggle(toggles, "Masks", "VisionToggleMasks", "Show segmentation masks and contours.", true);
 
-            view.confidenceSlider = AddSlider(settings, "Confidence", 0.01f, 0.99f, 0.25f);
-            view.nmsSlider = AddSlider(settings, "NMS", 0.01f, 0.99f, 0.45f);
-            view.keypointSlider = AddSlider(settings, "Keypoints", 0.05f, 1f, 0.35f);
-            view.poseSmoothingSlider = AddSlider(settings, "Pose smooth", 0f, 0.95f, 0.55f);
-            view.maskAlphaSlider = AddSlider(settings, "Mask alpha", 0.02f, 0.8f, 0.28f);
-            view.targetFpsSlider = AddSlider(settings, "FPS", 1f, 60f, 30f);
+            view.confidenceSlider = AddSlider(settings, "Confidence", "VisionConfidenceSlider", "Minimum model confidence accepted by the active profile.", 0.01f, 0.99f, 0.25f);
+            view.nmsSlider = AddSlider(settings, "NMS", "VisionNmsSlider", "Overlap threshold for suppressing duplicate boxes.", 0.01f, 0.99f, 0.45f);
+            view.keypointSlider = AddSlider(settings, "Keypoints", "VisionKeypointSlider", "Minimum keypoint confidence for skeleton rendering.", 0.05f, 1f, 0.35f);
+            view.poseSmoothingSlider = AddSlider(settings, "Pose smooth", "VisionPoseSmoothingSlider", "Visual smoothing for pose bones and keypoints.", 0f, 0.95f, 0.55f);
+            view.maskAlphaSlider = AddSlider(settings, "Mask alpha", "VisionMaskAlphaSlider", "Transparency for segmentation mask fills.", 0.02f, 0.8f, 0.28f);
+            view.targetFpsSlider = AddSlider(settings, "FPS", "VisionTargetFpsSlider", "Runtime target frame rate for processing.", 1f, 60f, 30f);
         }
 
         private static void AddStats(VisualElement parent, VisionToolkitDashboardView view)
@@ -341,11 +341,11 @@ namespace UniversalTracker.OutputReceivers
             return button;
         }
 
-        private static Toggle AddToggle(VisualElement parent, string text, bool value)
+        private static Toggle AddToggle(VisualElement parent, string text, string name, string tooltip, bool value)
         {
-            var toggle = new Toggle(text);
+            var toggle = new Toggle(text) { name = name, tooltip = tooltip };
             toggle.value = value;
-            toggle.style.minWidth = 72;
+            toggle.style.minWidth = 92;
             toggle.style.marginRight = 8;
             toggle.style.marginBottom = 6;
             toggle.style.color = VisionDashboardTheme.Text;
@@ -354,21 +354,22 @@ namespace UniversalTracker.OutputReceivers
             return toggle;
         }
 
-        private static Slider AddSlider(VisualElement parent, string label, float min, float max, float value)
+        private static Slider AddSlider(VisualElement parent, string label, string name, string tooltip, float min, float max, float value)
         {
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
             row.style.marginBottom = 6;
+            row.tooltip = tooltip;
             parent.Add(row);
 
             var caption = new Label(label);
             caption.style.color = VisionDashboardTheme.MutedText;
             caption.style.fontSize = 11;
-            caption.style.minWidth = 78;
+            caption.style.minWidth = 84;
             row.Add(caption);
 
-            var slider = new Slider(min, max);
+            var slider = new Slider(min, max) { name = name, tooltip = tooltip };
             slider.value = value;
             slider.showInputField = true;
             slider.style.flexGrow = 1f;
