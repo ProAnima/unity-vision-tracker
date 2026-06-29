@@ -20,6 +20,7 @@ namespace UniversalTracker.OutputReceivers
         [Header("Dashboard")]
         [SerializeField] private bool isReceiverEnabled = true;
         public bool showPreview = true;
+        public bool showVisualization = true;
         public bool showDetections = true;
         public bool showPoses = true;
         public bool showMasks = true;
@@ -202,6 +203,7 @@ namespace UniversalTracker.OutputReceivers
             overlayMetricsLabel = view.overlayMetricsLabel;
             statsBinder.Bind(view);
             resultListBinder.Bind(view.list);
+            BindControls(view);
         }
 
         private void EnsureBinders()
@@ -230,6 +232,14 @@ namespace UniversalTracker.OutputReceivers
         {
             if (overlay == null || previewStage == null)
                 return;
+
+            if (!showVisualization)
+            {
+                VisionToolkitDashboardOverlayRenderer.Clear(overlayState);
+                if (overlayMetricsLabel != null)
+                    overlayMetricsLabel.style.display = DisplayStyle.None;
+                return;
+            }
 
             Vector2 viewportSize = previewStage.layout.size;
             Vector2 sourceSize = ResolveSourceSize(result);
@@ -296,6 +306,71 @@ namespace UniversalTracker.OutputReceivers
         private VisionDashboardResultListSettings CreateResultListSettings()
         {
             return new VisionDashboardResultListSettings(showDetections, showPoses, showMasks, maxRows);
+        }
+
+        private void BindControls(VisionToolkitDashboardView view)
+        {
+            if (view.visualizationToggle != null)
+            {
+                view.visualizationToggle.SetValueWithoutNotify(showVisualization);
+                view.visualizationToggle.RegisterValueChangedCallback(evt => showVisualization = evt.newValue);
+            }
+
+            BindToggle(view.detectionsToggle, showDetections, value => showDetections = value);
+            BindToggle(view.posesToggle, showPoses, value => showPoses = value);
+            BindToggle(view.masksToggle, showMasks, value => showMasks = value);
+            BindSlider(view.keypointSlider, keypointConfidenceThreshold, value => keypointConfidenceThreshold = value);
+            BindSlider(view.maskAlphaSlider, maskAlpha, value => maskAlpha = value);
+            BindSlider(view.targetFpsSlider, ResolveTargetFps(), value => trackerManager?.SetTargetFps(Mathf.RoundToInt(value)));
+            BindSlider(view.confidenceSlider, ResolveConfidenceThreshold(), value => ApplyModelThresholds(value, ResolveNmsThreshold()));
+            BindSlider(view.nmsSlider, ResolveNmsThreshold(), value => ApplyModelThresholds(ResolveConfidenceThreshold(), value));
+        }
+
+        private static void BindToggle(Toggle toggle, bool value, Action<bool> changed)
+        {
+            if (toggle == null)
+                return;
+
+            toggle.SetValueWithoutNotify(value);
+            toggle.RegisterValueChangedCallback(evt => changed(evt.newValue));
+        }
+
+        private static void BindSlider(Slider slider, float value, Action<float> changed)
+        {
+            if (slider == null)
+                return;
+
+            slider.SetValueWithoutNotify(value);
+            slider.RegisterValueChangedCallback(evt => changed(evt.newValue));
+        }
+
+        private int ResolveTargetFps()
+        {
+            return trackerManager != null ? trackerManager.targetFPS : 30;
+        }
+
+        private float ResolveConfidenceThreshold()
+        {
+            return ResolveActiveProfile() != null ? ResolveActiveProfile().confidenceThreshold : 0.25f;
+        }
+
+        private float ResolveNmsThreshold()
+        {
+            return ResolveActiveProfile() != null ? ResolveActiveProfile().nmsThreshold : 0.45f;
+        }
+
+        private VisionModelProfile ResolveActiveProfile()
+        {
+            if (trackerManager == null)
+                return null;
+
+            return trackerManager.ActiveModelProfile ??
+                   VisionModelProfileResolver.Resolve(trackerManager.pipelineProfile, trackerManager.modelProfiles, ref trackerManager.activeModelIndex);
+        }
+
+        private void ApplyModelThresholds(float confidenceThreshold, float nmsThreshold)
+        {
+            trackerManager?.SetModelThresholds(confidenceThreshold, nmsThreshold);
         }
 
         private void StartFromDashboard()

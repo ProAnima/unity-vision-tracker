@@ -458,7 +458,7 @@ namespace UniversalTracker.Core
             if (labels != null && classId >= 0 && classId < labels.Length && !string.IsNullOrWhiteSpace(labels[classId]))
                 return labels[classId];
 
-            return $"class_{classId}";
+            return CocoClassLabels.Resolve(classId);
         }
 
         private static string DescribeFirstTensor(VisionRawModelOutput rawOutput)

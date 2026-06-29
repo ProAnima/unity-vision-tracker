@@ -349,7 +349,7 @@ namespace UniversalTracker.OutputReceivers
 
             string name = string.IsNullOrWhiteSpace(mask.label) ? $"#{mask.classId}" : mask.label;
             string id = mask.trackId >= 0 ? $" T{mask.trackId}" : string.Empty;
-            label.text = $"{name} mask {(mask.confidence * 100f):F0}%{id}";
+            label.text = $"{name} {(mask.confidence * 100f):F0}%{id}";
             Vector2 labelSize = new Vector2(Mathf.Clamp(label.text.Length * 7.2f + 18f, 92f, 280f), 24f);
             Vector2 labelPosition = VisionDashboardGeometry.ClampLabelPosition(
                 new Rect(rect.x, rect.yMax + labelSize.y + 6f, rect.width, rect.height),
@@ -363,42 +363,7 @@ namespace UniversalTracker.OutputReceivers
             label.style.color = Color.black;
 
             if (mask.HasContour)
-                UpdateMaskContour(mask, state, sourceSize, viewportSize, stroke, color, ref contourSegmentsUsed);
-        }
-
-        private static void UpdateMaskContour(
-            VisionMask mask,
-            VisionDashboardOverlayState state,
-            Vector2 sourceSize,
-            Vector2 viewportSize,
-            float stroke,
-            Color color,
-            ref int contourSegmentsUsed)
-        {
-            for (int i = 0; i < mask.normalizedContour.Length; i++)
-            {
-                Vector2 from = VisionDashboardGeometry.NormalizedToViewportPoint(mask.normalizedContour[i], sourceSize, viewportSize);
-                Vector2 to = VisionDashboardGeometry.NormalizedToViewportPoint(mask.normalizedContour[(i + 1) % mask.normalizedContour.Length], sourceSize, viewportSize);
-                VisualElement segment = VisionDashboardElementPool.GetElement(
-                    state.maskContourSegments,
-                    state.maskLayer,
-                    VisionToolkitDashboardPrimitives.CreateBone,
-                    contourSegmentsUsed);
-
-                UpdateContourSegment(segment, from, to, color, stroke);
-                contourSegmentsUsed++;
-            }
-        }
-
-        private static void UpdateContourSegment(VisualElement segment, Vector2 from, Vector2 to, Color color, float stroke)
-        {
-            BoneLine line = VisionDashboardGeometry.CalculateBoneLine(from, to);
-            segment.style.left = line.center.x - line.length * 0.5f;
-            segment.style.top = line.center.y - stroke * 0.5f;
-            segment.style.width = Mathf.Max(1f, line.length);
-            segment.style.height = Mathf.Max(2f, stroke * 1.35f);
-            segment.style.rotate = new Rotate(new Angle(line.angleDegrees, AngleUnit.Degree));
-            segment.style.backgroundColor = new Color(color.r, color.g, color.b, 0.96f);
+                VisionToolkitDashboardMaskContourRenderer.Render(mask, state, sourceSize, viewportSize, stroke, color, ref contourSegmentsUsed);
         }
 
         private static bool TryGetVisibleKeypoint(VisionPose pose, int index, float threshold, out VisionKeypoint keypoint)

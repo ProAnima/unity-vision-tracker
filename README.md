@@ -88,7 +88,7 @@ VisionFrameResult
 - Profile Compatibility Inspector for runtime, parser, capability, input, and output-schema checks.
 - Setup Wizard for creating a profile-driven tracker object in the current scene.
 - IOU and SORT tracking implementations.
-- Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers with detection labels, pose bones, and segmentation contour overlays.
+- Modern UI Toolkit dashboard plus scene, event, UI preview, and debug output receivers with detection labels, pose bones, segmentation mask-contour overlays, and live runtime controls for visualization, thresholds, and FPS.
 - Thin runtime manager facade over `VisionPipeline`.
 - Embedded UPM package layout: `com.proanima.universal-vision-tracker`.
 - Importable Minimal Pipeline, Dashboard Overlay, YOLO Model Profiles, and Experimental Scene samples.
@@ -259,7 +259,7 @@ EditMode tests are available for the production-core API and coordinate mapping 
 Current baseline:
 
 ```text
-EditMode: 131 tests, 131 passed, 0 failed
+EditMode: 132 tests, 132 passed, 0 failed
 PlayMode: 2 tests, 2 passed, 0 failed
 ```
 

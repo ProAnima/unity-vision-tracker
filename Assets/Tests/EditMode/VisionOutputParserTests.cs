@@ -146,6 +146,26 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void YoloDetectionParser_UsesCocoNameFallbackWhenLabelsAreMissing()
+        {
+            var parser = new YoloDetectionOutputParser();
+            float[] data = new float[300 * 6];
+            WriteYolo26Row(data, 6, 0, 100f, 50f, 300f, 250f, 0.82f, 39);
+            VisionRawModelOutput raw = VisionRawModelOutput.Single("output0", data, 1, 300, 6);
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                null,
+                new Vector2Int(640, 640));
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            Assert.That(parsed.detections[0].label, Is.EqualTo("bottle"));
+        }
+
+        [Test]
         public void YoloDetectionParser_AppliesClassAwareNms()
         {
             var parser = new YoloDetectionOutputParser();
@@ -326,7 +346,7 @@ namespace UniversalTracker.Tests
 
             Assert.That(parsed.masks, Has.Length.EqualTo(1));
             Assert.That(parsed.masks[0].HasContour, Is.True);
-            Assert.That(parsed.masks[0].normalizedContour.Length, Is.GreaterThanOrEqualTo(4));
+            Assert.That(parsed.masks[0].normalizedContourSegments.Length, Is.GreaterThanOrEqualTo(8));
         }
 
         [Test]

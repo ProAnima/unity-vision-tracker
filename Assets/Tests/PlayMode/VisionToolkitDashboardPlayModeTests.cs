@@ -74,7 +74,7 @@ namespace UniversalTracker.Tests
             Assert.That(state.bones.Count, Is.GreaterThan(0));
             Assert.That(state.detectionLayer.childCount, Is.EqualTo(1));
             Assert.That(state.labelLayer.childCount, Is.EqualTo(2));
-            Assert.That(state.labels[1].text, Does.Contain("person mask"));
+            Assert.That(state.labels[1].text, Does.Contain("person"));
 
             Object.Destroy(maskTexture);
         }

@@ -33,6 +33,15 @@ namespace UniversalTracker.OutputReceivers
         public Label lastErrorLabel;
         public Button startButton;
         public Button stopButton;
+        public Toggle visualizationToggle;
+        public Toggle detectionsToggle;
+        public Toggle posesToggle;
+        public Toggle masksToggle;
+        public Slider confidenceSlider;
+        public Slider nmsSlider;
+        public Slider keypointSlider;
+        public Slider maskAlphaSlider;
+        public Slider targetFpsSlider;
     }
 
     internal static class VisionToolkitDashboardViewBuilder
@@ -46,7 +55,7 @@ namespace UniversalTracker.OutputReceivers
             view.root = document.rootVisualElement;
             ConfigureRoot(view.root, isEnabled);
 
-            var side = CreatePanel(300, 0);
+            var side = CreatePanel(320, 0);
             side.name = "VisionControlPanel";
             side.style.marginRight = 14;
             side.style.marginBottom = 14;
@@ -57,6 +66,7 @@ namespace UniversalTracker.OutputReceivers
 
             AddHeader(side, view);
             AddControls(side, view, start, stop);
+            AddRuntimeSettings(side, view);
             AddStats(side, view);
             AddResultList(side, view);
             AddPreview(view);
@@ -195,6 +205,37 @@ namespace UniversalTracker.OutputReceivers
             row.Add(view.stopButton);
         }
 
+        private static void AddRuntimeSettings(VisualElement parent, VisionToolkitDashboardView view)
+        {
+            var settings = CreatePanel(0, 0);
+            settings.style.marginBottom = 14;
+            parent.Add(settings);
+
+            var title = new Label("Runtime Controls");
+            title.style.color = VisionDashboardTheme.Text;
+            title.style.fontSize = 13;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.marginBottom = 8;
+            settings.Add(title);
+
+            var toggles = new VisualElement();
+            toggles.style.flexDirection = FlexDirection.Row;
+            toggles.style.flexWrap = Wrap.Wrap;
+            toggles.style.marginBottom = 8;
+            settings.Add(toggles);
+
+            view.visualizationToggle = AddToggle(toggles, "Overlay", true);
+            view.detectionsToggle = AddToggle(toggles, "Boxes", true);
+            view.posesToggle = AddToggle(toggles, "Pose", true);
+            view.masksToggle = AddToggle(toggles, "Masks", true);
+
+            view.confidenceSlider = AddSlider(settings, "Confidence", 0.01f, 0.99f, 0.25f);
+            view.nmsSlider = AddSlider(settings, "NMS", 0.01f, 0.99f, 0.45f);
+            view.keypointSlider = AddSlider(settings, "Keypoints", 0.05f, 1f, 0.35f);
+            view.maskAlphaSlider = AddSlider(settings, "Mask alpha", 0.02f, 0.8f, 0.28f);
+            view.targetFpsSlider = AddSlider(settings, "FPS", 1f, 60f, 30f);
+        }
+
         private static void AddStats(VisualElement parent, VisionToolkitDashboardView view)
         {
             var stats = CreatePanel(0, 0);
@@ -296,6 +337,42 @@ namespace UniversalTracker.OutputReceivers
             button.style.unityFontStyleAndWeight = FontStyle.Bold;
             VisionDashboardTheme.SetBorderColor(button, color);
             return button;
+        }
+
+        private static Toggle AddToggle(VisualElement parent, string text, bool value)
+        {
+            var toggle = new Toggle(text);
+            toggle.value = value;
+            toggle.style.minWidth = 72;
+            toggle.style.marginRight = 8;
+            toggle.style.marginBottom = 6;
+            toggle.style.color = VisionDashboardTheme.Text;
+            toggle.style.fontSize = 11;
+            parent.Add(toggle);
+            return toggle;
+        }
+
+        private static Slider AddSlider(VisualElement parent, string label, float min, float max, float value)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.marginBottom = 6;
+            parent.Add(row);
+
+            var caption = new Label(label);
+            caption.style.color = VisionDashboardTheme.MutedText;
+            caption.style.fontSize = 11;
+            caption.style.minWidth = 78;
+            row.Add(caption);
+
+            var slider = new Slider(min, max);
+            slider.value = value;
+            slider.showInputField = true;
+            slider.style.flexGrow = 1f;
+            slider.style.minWidth = 120;
+            row.Add(slider);
+            return slider;
         }
 
         private static Label CreatePill(string text, Color color)

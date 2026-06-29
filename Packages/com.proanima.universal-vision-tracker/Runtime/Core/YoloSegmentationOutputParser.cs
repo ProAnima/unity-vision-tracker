@@ -6,7 +6,7 @@ namespace UniversalTracker.Core
 {
     public sealed class YoloSegmentationOutputParser : IVisionOutputParser
     {
-        private const int MaxContourPoints = 48;
+        private const int MaxContourSegments = 512;
         private const float MaskThreshold = 0.5f;
 
         public string ParserId => "yolo.segmentation.rows";
@@ -64,7 +64,7 @@ namespace UniversalTracker.Core
                         confidence = confidence,
                         normalizedRect = normalized,
                         sourceRect = detection.sourceRect,
-                        normalizedContour = BuildContour(rows, row, prototypeTensor, maskOffset, maskCoefficientCount, rawNormalized, context.coordinateTransform),
+                        normalizedContourSegments = BuildContourSegments(rows, row, prototypeTensor, maskOffset, maskCoefficientCount, rawNormalized, context.coordinateTransform),
                         texture = null
                     }));
             }
@@ -157,7 +157,7 @@ namespace UniversalTracker.Core
             return 0;
         }
 
-        private static Vector2[] BuildContour(
+        private static Vector2[] BuildContourSegments(
             YoloTensorRows rows,
             int row,
             VisionRawTensor prototypeTensor,
@@ -173,7 +173,7 @@ namespace UniversalTracker.Core
             int yMin = Mathf.Clamp(Mathf.FloorToInt(rawNormalizedRect.yMin * height), 0, height - 1);
             int xMax = Mathf.Clamp(Mathf.CeilToInt(rawNormalizedRect.xMax * width), xMin + 1, width);
             int yMax = Mathf.Clamp(Mathf.CeilToInt(rawNormalizedRect.yMax * height), yMin + 1, height);
-            var edgePoints = new List<Vector2>();
+            var segments = new List<Vector2>();
 
             for (int y = yMin; y < yMax; y++)
             {
@@ -182,22 +182,30 @@ namespace UniversalTracker.Core
                     if (!IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y))
                         continue;
 
-                    bool isEdge =
-                        x == xMin || y == yMin || x == xMax - 1 || y == yMax - 1 ||
-                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x - 1, y) ||
-                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x + 1, y) ||
-                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y - 1) ||
-                        !IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y + 1);
-
-                    if (isEdge)
-                        edgePoints.Add(new Vector2((x + 0.5f) / width, (y + 0.5f) / height));
+                    AddCellEdges(
+                        segments,
+                        rows,
+                        row,
+                        prototypeTensor,
+                        coefficientOffset,
+                        coefficientCount,
+                        channels,
+                        height,
+                        width,
+                        xMin,
+                        yMin,
+                        xMax,
+                        yMax,
+                        x,
+                        y,
+                        transform);
                 }
             }
 
-            if (edgePoints.Count < 3)
+            if (segments.Count < 4)
                 return Array.Empty<Vector2>();
 
-            return SimplifyContour(BuildConvexHull(edgePoints), transform);
+            return SimplifySegments(segments);
         }
 
         private static bool TryResolvePrototypeShape(VisionRawTensor tensor, out int channels, out int height, out int width)
@@ -247,66 +255,77 @@ namespace UniversalTracker.Core
             return Sigmoid(value) > MaskThreshold;
         }
 
+        private static void AddCellEdges(
+            List<Vector2> segments,
+            YoloTensorRows rows,
+            int row,
+            VisionRawTensor prototypeTensor,
+            int coefficientOffset,
+            int coefficientCount,
+            int channels,
+            int height,
+            int width,
+            int xMin,
+            int yMin,
+            int xMax,
+            int yMax,
+            int x,
+            int y,
+            VisionOutputCoordinateTransform transform)
+        {
+            if (segments.Count >= MaxContourSegments * 2)
+                return;
+
+            bool left = x > xMin && IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x - 1, y);
+            bool right = x < xMax - 1 && IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x + 1, y);
+            bool top = y > yMin && IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y - 1);
+            bool bottom = y < yMax - 1 && IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y + 1);
+
+            float x0 = x / (float)width;
+            float x1 = (x + 1) / (float)width;
+            float y0 = y / (float)height;
+            float y1 = (y + 1) / (float)height;
+
+            if (!top)
+                AddSegment(segments, transform.Apply(new Vector2(x0, y0)), transform.Apply(new Vector2(x1, y0)));
+            if (!right)
+                AddSegment(segments, transform.Apply(new Vector2(x1, y0)), transform.Apply(new Vector2(x1, y1)));
+            if (!bottom)
+                AddSegment(segments, transform.Apply(new Vector2(x1, y1)), transform.Apply(new Vector2(x0, y1)));
+            if (!left)
+                AddSegment(segments, transform.Apply(new Vector2(x0, y1)), transform.Apply(new Vector2(x0, y0)));
+        }
+
+        private static void AddSegment(List<Vector2> segments, Vector2 from, Vector2 to)
+        {
+            if (segments.Count >= MaxContourSegments * 2)
+                return;
+
+            segments.Add(from);
+            segments.Add(to);
+        }
+
         private static float Sigmoid(float value)
         {
             return 1f / (1f + Mathf.Exp(-value));
         }
 
-        private static List<Vector2> BuildConvexHull(List<Vector2> points)
+        private static Vector2[] SimplifySegments(List<Vector2> segments)
         {
-            points.Sort((a, b) =>
+            if (segments.Count <= MaxContourSegments * 2)
+                return segments.ToArray();
+
+            var simplified = new List<Vector2>(MaxContourSegments * 2);
+            int segmentCount = segments.Count / 2;
+            float step = segmentCount / (float)MaxContourSegments;
+            for (int i = 0; i < MaxContourSegments; i++)
             {
-                int x = a.x.CompareTo(b.x);
-                return x != 0 ? x : a.y.CompareTo(b.y);
-            });
+                int source = Mathf.Min(segmentCount - 1, Mathf.FloorToInt(i * step)) * 2;
+                simplified.Add(segments[source]);
+                simplified.Add(segments[source + 1]);
+            }
 
-            var hull = new List<Vector2>();
-            for (int i = 0; i < points.Count; i++)
-                AddHullPoint(hull, points[i]);
-
-            int lowerCount = hull.Count;
-            for (int i = points.Count - 2; i >= 0; i--)
-                AddHullPoint(hull, points[i], lowerCount);
-
-            if (hull.Count > 1)
-                hull.RemoveAt(hull.Count - 1);
-
-            return hull;
-        }
-
-        private static void AddHullPoint(List<Vector2> hull, Vector2 point, int minCount = 0)
-        {
-            while (hull.Count > minCount + 1 && Cross(hull[hull.Count - 2], hull[hull.Count - 1], point) <= 0f)
-                hull.RemoveAt(hull.Count - 1);
-
-            hull.Add(point);
-        }
-
-        private static float Cross(Vector2 origin, Vector2 a, Vector2 b)
-        {
-            return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
-        }
-
-        private static Vector2[] SimplifyContour(List<Vector2> contour, VisionOutputCoordinateTransform transform)
-        {
-            if (contour.Count <= MaxContourPoints)
-                return TransformContour(contour, transform);
-
-            var simplified = new List<Vector2>(MaxContourPoints);
-            float step = contour.Count / (float)MaxContourPoints;
-            for (int i = 0; i < MaxContourPoints; i++)
-                simplified.Add(contour[Mathf.Min(contour.Count - 1, Mathf.FloorToInt(i * step))]);
-
-            return TransformContour(simplified, transform);
-        }
-
-        private static Vector2[] TransformContour(List<Vector2> contour, VisionOutputCoordinateTransform transform)
-        {
-            var transformed = new Vector2[contour.Count];
-            for (int i = 0; i < contour.Count; i++)
-                transformed[i] = transform.Apply(contour[i]);
-
-            return transformed;
+            return simplified.ToArray();
         }
 
         private static void ApplyNms(List<SegmentationCandidate> candidates, float threshold, out VisionDetection[] detections, out VisionMask[] masks)

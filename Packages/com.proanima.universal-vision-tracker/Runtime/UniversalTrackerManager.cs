@@ -184,6 +184,24 @@ namespace UniversalTracker
             }
         }
 
+        public void SetTargetFps(int fps)
+        {
+            targetFPS = Mathf.Clamp(fps, 1, 120);
+            frameInterval = 1f / targetFPS;
+            if (pipelineProfile != null)
+                pipelineProfile.targetFps = targetFPS;
+        }
+
+        public void SetModelThresholds(float confidenceThreshold, float nmsThreshold)
+        {
+            VisionModelProfile profile = ActiveModelProfile ?? VisionModelProfileResolver.Resolve(pipelineProfile, modelProfiles, ref activeModelIndex);
+            if (profile == null)
+                return;
+
+            profile.confidenceThreshold = Mathf.Clamp(confidenceThreshold, 0.01f, 0.99f);
+            profile.nmsThreshold = Mathf.Clamp(nmsThreshold, 0.01f, 0.99f);
+        }
+
         public TrackedObject[] GetTrackedObjects()
         {
             return trackingStage.TrackedObjects;

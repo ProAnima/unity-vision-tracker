@@ -133,9 +133,12 @@ namespace UniversalTracker.Core
         public Rect sourceRect;
         public Rect normalizedRect;
         public Vector2[] normalizedContour;
+        public Vector2[] normalizedContourSegments;
         public Texture2D texture;
 
-        public bool HasContour => normalizedContour != null && normalizedContour.Length > 1;
+        public bool HasContour =>
+            (normalizedContourSegments != null && normalizedContourSegments.Length > 1) ||
+            (normalizedContour != null && normalizedContour.Length > 1);
     }
 
     [Serializable]
