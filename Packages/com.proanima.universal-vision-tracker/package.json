@@ -35,7 +35,7 @@
     },
     {
       "displayName": "Experimental Scene",
-      "description": "Polished synthetic VisionFrameResult scene for validating dashboard rendering before adding real models.",
+      "description": "Polished webcam-first dashboard scene for validating camera, profiles, and overlays before adding real models.",
       "path": "Samples~/Experimental Scene"
     }
   ],

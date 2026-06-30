@@ -6,6 +6,7 @@ Use this checklist before tagging a public package release.
 
 - Update `Packages/com.proanima.universal-vision-tracker/package.json`.
 - Update `Packages/com.proanima.universal-vision-tracker/CHANGELOG.md`.
+- Confirm the `package.json` version matches the release tag.
 - Use preview tags for unstable APIs, for example `v0.1.0-preview.1`.
 - Use stable tags only after installation, samples, and runtime smoke checks pass.
 

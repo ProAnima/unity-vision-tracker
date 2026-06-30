@@ -9,6 +9,7 @@ import sys
 
 
 PACKAGE_NAME = "com.proanima.universal-vision-tracker"
+INSTALL_URL = f"https://github.com/ProAnima/unity-vision-tracker.git?path=/Packages/{PACKAGE_NAME}"
 EXPECTED_PACKAGE_FIELDS = {
     "name": PACKAGE_NAME,
     "unity": "6000.0",
@@ -38,8 +39,10 @@ def main() -> int:
     manifest = load_manifest(manifest_path, errors)
     if manifest:
         validate_manifest(manifest, package_root, errors)
+        validate_release_metadata(root, package_root, manifest, errors)
 
     validate_required_paths(root, package_root, errors)
+    validate_install_docs(root, package_root, errors)
     validate_forbidden_model_weights(root, package_root, errors)
 
     if errors:
@@ -103,6 +106,35 @@ def validate_required_paths(root: pathlib.Path, package_root: pathlib.Path, erro
     for path in required_paths:
         if not path.exists():
             errors.append(f"Missing required path: {path.relative_to(root)}")
+
+
+def validate_release_metadata(root: pathlib.Path, package_root: pathlib.Path, manifest: dict, errors: list[str]) -> None:
+    version = manifest.get("version")
+    changelog_path = package_root / "CHANGELOG.md"
+    if not version:
+        errors.append("package.json must declare a version")
+        return
+
+    if changelog_path.exists():
+        changelog = changelog_path.read_text(encoding="utf-8")
+        if f"## {version}" not in changelog:
+            errors.append(f"CHANGELOG.md must contain an entry for package version {version}")
+
+    release_doc = root / "RELEASE.md"
+    if release_doc.exists():
+        release_text = release_doc.read_text(encoding="utf-8").replace("`", "").lower()
+        if "package.json version matches the release tag" not in release_text:
+            errors.append("RELEASE.md must include the package version release gate")
+
+
+def validate_install_docs(root: pathlib.Path, package_root: pathlib.Path, errors: list[str]) -> None:
+    docs = [
+        root / "README.md",
+        package_root / "README.md",
+    ]
+    for doc in docs:
+        if doc.exists() and INSTALL_URL not in doc.read_text(encoding="utf-8"):
+            errors.append(f"Install URL is missing from {doc.relative_to(root)}")
 
 
 def validate_forbidden_model_weights(root: pathlib.Path, package_root: pathlib.Path, errors: list[str]) -> None:

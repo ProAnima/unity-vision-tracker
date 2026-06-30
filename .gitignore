@@ -15,6 +15,12 @@
 [Cc]overage/
 [Tt]est[Rr]esults/
 
+# Locally imported UPM samples from this package. Source samples live under Packages/*/Samples~.
+Assets/Samples/
+Assets/Samples.meta
+Assets/ProAnima Vision/
+Assets/ProAnima Vision.meta
+
 # Unity recovery and local profiling artifacts
 Assets/_Recovery/
 Assets/_Recovery.meta
