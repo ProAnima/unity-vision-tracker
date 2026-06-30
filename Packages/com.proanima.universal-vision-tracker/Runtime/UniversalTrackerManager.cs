@@ -10,49 +10,81 @@ namespace UniversalTracker
     public class UniversalTrackerManager : MonoBehaviour
     {
         [Header("Runtime")]
+        [Tooltip("Start the vision pipeline automatically when this component starts.")]
         public bool autoStart = true;
+        [Tooltip("Target processing rate for the pipeline. Lower values reduce GPU and CPU load.")]
         [Range(1, 120)] public int targetFPS = 30;
+        [Tooltip("Enable object identity tracking between frames after model output is parsed.")]
         public bool useTracking = true;
 
         [Header("Source")]
+        [Tooltip("Frame source used by the pipeline.")]
         public InputProviderType inputType = InputProviderType.WebCam;
+        [Tooltip("Custom MonoBehaviour implementing IInputProvider or IVisionFrameSource bridge logic.")]
         public MonoBehaviour customInputProvider;
+        [Tooltip("Static texture source used when Input Type is Texture.")]
         public Texture sourceTexture;
+        [Tooltip("RenderTexture source used when Input Type is RenderTexture.")]
         public RenderTexture sourceRenderTexture;
+        [Tooltip("Unity Camera source used when Input Type is Camera.")]
         public Camera sourceCamera;
+        [Tooltip("Optional target texture for the Unity Camera source. Created automatically when empty.")]
         public RenderTexture cameraTargetTexture;
+        [Tooltip("VideoPlayer source used when Input Type is Video.")]
         public VideoPlayer sourceVideoPlayer;
 
         [Header("WebCam")]
+        [Tooltip("Specific webcam device name. Leave empty to use the default or selected device.")]
         public string webCamDeviceName;
+        [Tooltip("Requested webcam width in pixels.")]
         [Min(16)] public int webCamRequestedWidth = 1280;
+        [Tooltip("Requested webcam height in pixels.")]
         [Min(16)] public int webCamRequestedHeight = 720;
+        [Tooltip("Requested webcam frame rate.")]
         [Range(1, 120)] public int webCamRequestedFps = 30;
 
         [Header("Models")]
+        [Tooltip("Main pipeline profile containing model list, runtime policy, and performance budgets.")]
         public VisionPipelineProfile pipelineProfile;
+        [Tooltip("Compatibility model list used when no Pipeline Profile is assigned.")]
         public VisionModelProfile[] modelProfiles;
+        [Tooltip("Index of the active model inside the resolved model list.")]
         public int activeModelIndex;
 
         [Header("Output Receivers")]
+        [Tooltip("Optional uGUI receiver for simple RawImage preview output.")]
         public UIVisualizationReceiver manualUIReceiver;
+        [Tooltip("Optional UI Toolkit dashboard receiver for preview, overlays, controls, and metrics.")]
         public VisionToolkitDashboardReceiver manualToolkitDashboardReceiver;
+        [Tooltip("Optional UnityEvent receiver for gameplay and integration callbacks.")]
         public EventOutputReceiver manualEventReceiver;
+        [Tooltip("Optional scene receiver for spawning 3D markers from detections and poses.")]
         public SceneVisualizationReceiver manualSceneReceiver;
+        [Tooltip("Optional debug receiver for throttled console and IMGUI diagnostics.")]
         public DebugOutputReceiver manualDebugReceiver;
+        [Tooltip("Create or use the event output receiver.")]
         public bool useEventOutput = true;
+        [Tooltip("Create or use the legacy uGUI visualization receiver.")]
         public bool useUIVisualization = true;
+        [Tooltip("Create or use the UI Toolkit dashboard receiver.")]
         public bool useToolkitDashboard;
+        [Tooltip("Create or use scene-space visualization markers.")]
         public bool useSceneVisualization;
+        [Tooltip("Create or use debug output diagnostics.")]
         public bool useDebugOutput = true;
 
         [Header("Tracking")]
+        [Tooltip("Tracking algorithm used to preserve target identities between frames.")]
         public TrackerType trackerType = TrackerType.IOU;
+        [Tooltip("Minimum overlap required to match a detection with an existing track.")]
         [Range(0.1f, 0.9f)] public float trackingIoUThreshold = 0.3f;
+        [Tooltip("Frames a track can be missing before it is removed.")]
         [Range(1, 30)] public int maxMissedFrames = 10;
 
         [Header("Safety")]
+        [Tooltip("Maximum consecutive recoverable errors before the manager stops the pipeline.")]
         public int maxConsecutiveErrors = 10;
+        [Tooltip("Log recoverable runtime warnings. Keep disabled for normal per-frame production use.")]
         public bool verboseLogging;
 
         public bool IsRunning { get; private set; }

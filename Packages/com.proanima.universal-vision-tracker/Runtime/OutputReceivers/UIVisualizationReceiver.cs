@@ -6,8 +6,10 @@ namespace UniversalTracker.OutputReceivers
 {
     public class UIVisualizationReceiver : MonoBehaviour, IOutputReceiver
     {
+        [Tooltip("RawImage that receives the current source texture.")]
         public RawImage displayImage;
-        [SerializeField] private bool isEnabled = true;
+        [SerializeField, Tooltip("Enable this receiver.")]
+        private bool isEnabled = true;
 
         public bool IsEnabled { get => isEnabled; set => isEnabled = value; }
         public VisionFrameResult LastResult { get; private set; }

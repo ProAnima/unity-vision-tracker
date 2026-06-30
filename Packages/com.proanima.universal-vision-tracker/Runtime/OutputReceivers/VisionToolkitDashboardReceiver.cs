@@ -13,26 +13,45 @@ namespace UniversalTracker.OutputReceivers
     public sealed class VisionToolkitDashboardReceiver : MonoBehaviour, IOutputReceiver, IVisionFrameResultReceiver
     {
         [Header("Data Source")]
+        [Tooltip("Tracker manager that feeds this dashboard.")]
         public UniversalTrackerManager trackerManager;
+        [Tooltip("Find the first UniversalTrackerManager automatically when no manager is assigned.")]
         public bool autoFindManager = true;
+        [Tooltip("Subscribe to the manager event stream instead of relying only on manual receiver dispatch.")]
         public bool subscribeToManagerEvent = true;
 
         [Header("Dashboard")]
-        [SerializeField] private bool isReceiverEnabled = true;
+        [SerializeField, Tooltip("Show and update the dashboard.")]
+        private bool isReceiverEnabled = true;
+        [Tooltip("Show the source frame preview.")]
         public bool showPreview = true;
+        [Tooltip("Show all enabled overlays on top of the preview.")]
         public bool showVisualization = true;
+        [Tooltip("Draw detection bounding boxes and labels.")]
         public bool showDetections = true;
+        [Tooltip("Draw pose keypoints and skeleton bones.")]
         public bool showPoses = true;
+        [Tooltip("Draw segmentation mask fills and contours.")]
         public bool showMasks = true;
+        [Tooltip("Show runtime status, frame counters, and result counts.")]
         public bool showStats = true;
+        [Tooltip("Show source, viewport, and fit metrics in the overlay corner.")]
         public bool showOverlayMetrics = true;
+        [Tooltip("How the source preview fits inside the dashboard viewport.")]
         public ScaleMode previewScaleMode = ScaleMode.ScaleToFit;
+        [Tooltip("Clockwise preview rotation in degrees.")]
         public int previewRotationDegrees;
+        [Tooltip("Mirror the preview horizontally.")]
         public bool mirrorPreviewX;
+        [Tooltip("Mirror the preview vertically.")]
         public bool mirrorPreviewY;
+        [Tooltip("Minimum keypoint confidence required for pose drawing.")]
         [Range(0.05f, 1f)] public float keypointConfidenceThreshold = 0.35f;
+        [Tooltip("Temporal smoothing amount for pose bones and keypoints.")]
         [Range(0f, 0.95f)] public float poseSmoothing = 0.55f;
+        [Tooltip("Opacity of segmentation mask fills.")]
         [Range(0.05f, 0.8f)] public float maskAlpha = 0.28f;
+        [Tooltip("Maximum result rows displayed in the side panel.")]
         [Range(1, 20)] public int maxRows = 8;
 
         public bool IsEnabled

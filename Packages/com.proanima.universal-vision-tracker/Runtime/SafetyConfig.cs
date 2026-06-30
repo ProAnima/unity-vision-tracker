@@ -19,8 +19,11 @@ namespace UniversalTracker
         public int maxConsecutiveErrors = 10;
 
         [Header("Debug")]
+        [Tooltip("Log additional diagnostic warnings and state transitions.")]
         public bool verboseLogging;
+        [Tooltip("Log every processed frame. This is noisy and should stay disabled in production.")]
         public bool logEveryFrame;
+        [Tooltip("Stop immediately on the first runtime error.")]
         public bool stopOnFirstError;
     }
 }

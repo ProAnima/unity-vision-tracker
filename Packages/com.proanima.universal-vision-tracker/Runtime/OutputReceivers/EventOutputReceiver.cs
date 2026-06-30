@@ -7,9 +7,11 @@ namespace UniversalTracker.OutputReceivers
     public class EventOutputReceiver : MonoBehaviour, IOutputReceiver, IVisionFrameResultReceiver
     {
         [Header("Events")]
+        [Tooltip("UnityEvent invoked for every processed VisionFrameResult.")]
         public UnityEvent<VisionFrameResult> OnVisionFrameReceived = new UnityEvent<VisionFrameResult>();
 
-        [SerializeField] private bool isEnabled = true;
+        [SerializeField, Tooltip("Enable this receiver.")]
+        private bool isEnabled = true;
         public bool IsEnabled { get => isEnabled; set => isEnabled = value; }
 
         public void Initialize()

@@ -10,24 +10,39 @@ namespace ProAnimaVision.Samples
     public sealed partial class ProAnimaVisionExperimentalSceneBootstrap : MonoBehaviour
     {
         [Header("WebCam Preview")]
+        [Tooltip("Run a direct webcam preview when the real model pipeline is disabled.")]
         public bool runWebCamPreview = true;
+        [Tooltip("Index of the webcam device used when no explicit device name is selected.")]
         public int deviceIndex;
+        [Tooltip("Exact webcam device name selected from runtime controls or entered manually.")]
         public string deviceNameOverride;
+        [Tooltip("Requested webcam width in pixels.")]
         [Min(16)] public int requestedWidth = 1280;
+        [Tooltip("Requested webcam height in pixels.")]
         [Min(16)] public int requestedHeight = 720;
+        [Tooltip("Requested webcam frame rate.")]
         [Range(1, 120)] public int requestedFps = 30;
+        [Tooltip("How the webcam preview fits inside the dashboard viewport.")]
         public ScaleMode previewScaleMode = ScaleMode.ScaleToFit;
+        [Tooltip("Clockwise preview rotation in degrees.")]
         public int previewRotationDegrees;
+        [Tooltip("Mirror the preview horizontally.")]
         public bool mirrorPreviewX;
+        [Tooltip("Mirror the preview vertically.")]
         public bool mirrorPreviewY;
 
         [Header("Real Pipeline")]
+        [Tooltip("Use UniversalTrackerManager with the selected profiles instead of preview-only webcam mode.")]
         public bool configureRealPipeline;
+        [Tooltip("Pipeline profile to run in the demo scene.")]
         public VisionPipelineProfile pipelineProfile;
+        [Tooltip("Compatibility model profile used when no pipeline profile is assigned.")]
         public VisionModelProfile modelProfile;
+        [Tooltip("Start the real pipeline automatically on scene start.")]
         public bool autoStartRealPipeline;
 
         [Header("Fallback")]
+        [Tooltip("Show a synthetic texture if no camera frames are available.")]
         public bool syntheticFallbackWhenNoCamera = true;
 
         private UIDocument document;

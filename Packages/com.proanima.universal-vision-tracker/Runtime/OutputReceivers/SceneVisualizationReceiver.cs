@@ -5,12 +5,18 @@ namespace UniversalTracker.OutputReceivers
 {
     public class SceneVisualizationReceiver : MonoBehaviour, IOutputReceiver
     {
+        [Tooltip("Camera used as the reference for scene-space visualization.")]
         public Camera targetCamera;
+        [Tooltip("Parent transform for spawned visualization markers.")]
         public Transform visualizationRoot;
+        [Tooltip("Prefab spawned for each detection.")]
         public GameObject bboxMarkerPrefab;
+        [Tooltip("Prefab spawned for each visible pose keypoint.")]
         public GameObject keypointMarkerPrefab;
 
-        [SerializeField] private bool isEnabled = true;
+        [SerializeField, Tooltip("Enable this receiver.")]
+        private bool isEnabled = true;
+        [Tooltip("Spawn 3D scene markers for detections and keypoints.")]
         public bool spawn3DMarkers = true;
 
         public bool IsEnabled { get => isEnabled; set => isEnabled = value; }

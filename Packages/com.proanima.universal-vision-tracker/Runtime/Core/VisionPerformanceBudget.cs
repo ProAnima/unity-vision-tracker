@@ -38,9 +38,13 @@ namespace UniversalTracker.Core
     [Serializable]
     public struct VisionStagePerformanceBudget
     {
+        [Tooltip("Enable budget checks for this stage.")]
         public bool enabled;
+        [Tooltip("Maximum expected time in milliseconds. Set 0 to ignore time.")]
         [Min(0f)] public float maxMilliseconds;
+        [Tooltip("Maximum expected managed allocation in bytes. Set 0 to ignore allocations.")]
         [Min(0)] public int maxAllocatedBytes;
+        [Tooltip("Maximum expected item count for this stage. Set 0 to ignore item count.")]
         [Min(0)] public int maxItems;
 
         public VisionStagePerformanceBudget(float maxMilliseconds, int maxAllocatedBytes, int maxItems)
@@ -121,10 +125,15 @@ namespace UniversalTracker.Core
     [Serializable]
     public sealed class VisionPerformanceBudget
     {
+        [Tooltip("Enable all configured performance budget checks.")]
         public bool enabled = true;
+        [Tooltip("Budget for converting raw tensors into canonical detections, poses, and masks.")]
         public VisionStagePerformanceBudget parser = new VisionStagePerformanceBudget(4f, 64 * 1024, 512);
+        [Tooltip("Budget for drawing UI Toolkit overlays.")]
         public VisionStagePerformanceBudget overlay = new VisionStagePerformanceBudget(3f, 32 * 1024, 1024);
+        [Tooltip("Budget for assigning stable track ids between frames.")]
         public VisionStagePerformanceBudget tracking = new VisionStagePerformanceBudget(2f, 16 * 1024, 256);
+        [Tooltip("Total per-frame pipeline budget.")]
         public VisionStagePerformanceBudget pipeline = new VisionStagePerformanceBudget(33.3f, 128 * 1024, 1024);
 
         public static VisionPerformanceBudget Default => new VisionPerformanceBudget();

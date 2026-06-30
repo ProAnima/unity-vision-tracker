@@ -5,9 +5,13 @@ namespace UniversalTracker.OutputReceivers
 {
     public class DebugOutputReceiver : MonoBehaviour, IOutputReceiver
     {
-        [SerializeField] private bool isEnabled = true;
+        [SerializeField, Tooltip("Enable this receiver.")]
+        private bool isEnabled = true;
+        [Tooltip("Write throttled frame summaries to the Unity console.")]
         public bool logToConsole = true;
+        [Tooltip("Show a small IMGUI debug window in play mode.")]
         public bool showDebugWindow = false;
+        [Tooltip("Minimum seconds between console log entries.")]
         [Range(0.1f, 5f)] public float logInterval = 1f;
 
         public bool IsEnabled { get => isEnabled; set => isEnabled = value; }

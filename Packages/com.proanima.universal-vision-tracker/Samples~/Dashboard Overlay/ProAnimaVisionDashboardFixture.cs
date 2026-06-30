@@ -8,6 +8,7 @@ namespace ProAnimaVision.Samples
     [RequireComponent(typeof(VisionToolkitDashboardReceiver))]
     public sealed class ProAnimaVisionDashboardFixture : MonoBehaviour
     {
+        [Tooltip("Synthetic result update rate used by the dashboard sample.")]
         [Range(0.1f, 5f)] public float updateRate = 1f;
 
         private VisionToolkitDashboardReceiver dashboard;
