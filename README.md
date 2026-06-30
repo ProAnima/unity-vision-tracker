@@ -142,6 +142,37 @@ ProjectSettings/                  Unity project settings
 - Unity Inference Engine `2.6.1`.
 - Git LFS for model and media assets.
 
+## Installation
+
+Most users should install the package through Unity Package Manager instead of cloning the whole repository.
+
+In Unity, open `Window/Package Manager`, press `+`, choose `Add package from git URL...`, and use:
+
+```text
+https://github.com/ProAnima/unity-vision-tracker.git?path=/Packages/com.proanima.universal-vision-tracker
+```
+
+You can also add it directly to `Packages/manifest.json`:
+
+```json
+{
+  "dependencies": {
+    "com.proanima.universal-vision-tracker": "https://github.com/ProAnima/unity-vision-tracker.git?path=/Packages/com.proanima.universal-vision-tracker"
+  }
+}
+```
+
+After installation, import samples from Package Manager:
+
+- `Experimental Scene` for the polished webcam/dashboard scene;
+- `YOLO Model Profiles` for detection, pose, and segmentation profile templates;
+- `Minimal Pipeline` for a small scene bootstrap;
+- `Dashboard Overlay` for a synthetic UI smoke scene.
+
+Clone the full repository only for package development, tests, CI, and contribution work.
+
+YOLO model weights are not bundled with the package. Import your own `.onnx` or Unity Inference model asset and connect it to a `VisionModelProfile`; keep the source model license attached in the profile metadata.
+
 After cloning:
 
 ```bash
@@ -186,6 +217,18 @@ Usage:
 3. Assign the receiver to `UniversalTrackerManager.manualToolkitDashboardReceiver`, or enable `useToolkitDashboard` for dynamic creation.
 
 `UIVisualizationReceiver` remains available as a lightweight Canvas/RawImage preview receiver.
+
+## Dependency Policy
+
+The package core intentionally keeps dependencies small:
+
+- `com.unity.ai.inference` is the only built-in model runtime dependency.
+- `com.unity.ugui` is used for the lightweight legacy preview receiver.
+- UI Toolkit comes from Unity itself and is used for the production dashboard and editor tools.
+- AR Foundation, XR passthrough, MediaPipe, native runtimes, remote runtimes, and model-weight packs must stay optional modules or separate packages.
+- Model weights are not committed to the package unless their license, size, provenance, and redistribution rules are explicitly approved.
+
+The goal is that a clean Unity project can install the package through UPM without pulling unrelated SDKs or large model files.
 
 ## Plugin And Adapter Architecture
 

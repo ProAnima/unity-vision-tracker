@@ -30,4 +30,14 @@ Start with `Documentation~/GETTING_STARTED.md` for the shortest production setup
 
 Use `Tools/ProAnima Vision/Control Center` as the primary editor entry point for setup, profiles, validation, docs, and samples.
 
+## Install From Git
+
+Use this URL in Unity Package Manager:
+
+```text
+https://github.com/ProAnima/unity-vision-tracker.git?path=/Packages/com.proanima.universal-vision-tracker
+```
+
+The package contains runtime code, editor tools, documentation, and importable samples. It does not bundle YOLO model weights; connect your own model asset to a `VisionModelProfile`.
+
 Main user documentation lives in the repository root `README.md`. Production rules live in repository root `CODEX.md`.

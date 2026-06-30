@@ -79,9 +79,10 @@ The repository includes a GitHub Actions workflow:
 
 ```text
 .github/workflows/unity-editmode-tests.yml
+.github/workflows/package-validation.yml
 ```
 
-It uses GameCI Unity Test Runner to run EditMode tests on push and pull requests.
+It uses GameCI Unity Test Runner to run Unity tests on push and pull requests. The package validation workflow checks the UPM manifest, sample paths, required documentation, assembly definitions, and the policy that model weights are not bundled in the package.
 
 Required repository secrets:
 
@@ -114,3 +115,14 @@ Current automated tests cover the pure runtime core. A production-ready release 
 | UI overlay mapping | PlayMode screenshot tests | Planned |
 | Performance/allocation budgets | Performance tests | Planned |
 | AR/XR sources | Platform integration tests | Planned |
+
+## Package Release Gate
+
+Before tagging a release, verify:
+
+- `package.json` version matches the release tag.
+- The package installs through the git URL with `?path=/Packages/com.proanima.universal-vision-tracker`.
+- Importable samples compile after import into a clean Unity project.
+- EditMode and PlayMode baselines pass.
+- No `.onnx`, `.sentis`, `.tflite`, `.pt`, or other large model-weight files are bundled in the package unless explicitly approved.
+- `VisionModelProfile` assets include license and source metadata for model templates.

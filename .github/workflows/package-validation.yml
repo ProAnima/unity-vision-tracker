@@ -1,0 +1,95 @@
+name: Package Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate-upm-package:
+    name: Validate UPM package layout
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Validate package manifest and layout
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          root = pathlib.Path.cwd()
+          package_root = root / "Packages" / "com.proanima.universal-vision-tracker"
+          manifest_path = package_root / "package.json"
+
+          errors = []
+
+          if not manifest_path.exists():
+              errors.append("Missing package.json")
+          else:
+              manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+              expected = {
+                  "name": "com.proanima.universal-vision-tracker",
+                  "unity": "6000.0",
+                  "license": "MIT",
+              }
+              for key, value in expected.items():
+                  if manifest.get(key) != value:
+                      errors.append(f"package.json {key!r} must be {value!r}, got {manifest.get(key)!r}")
+
+              dependencies = manifest.get("dependencies", {})
+              if dependencies.get("com.unity.ai.inference") != "2.6.1":
+                  errors.append("com.unity.ai.inference must stay pinned to 2.6.1")
+              if dependencies.get("com.unity.ugui") != "2.0.0":
+                  errors.append("com.unity.ugui must stay pinned to 2.0.0")
+
+              for sample in manifest.get("samples", []):
+                  sample_path = package_root / sample.get("path", "")
+                  if not sample_path.exists():
+                      errors.append(f"Sample path does not exist: {sample.get('path')}")
+
+          required_paths = [
+              package_root / "Runtime" / "UniversalTracker.Runtime.asmdef",
+              package_root / "Editor" / "UniversalTracker.Editor.asmdef",
+              package_root / "Documentation~" / "GETTING_STARTED.md",
+              package_root / "Documentation~" / "ARCHITECTURE_ROADMAP.md",
+              package_root / "Samples~" / "YOLO Model Profiles" / "README.md",
+              root / "README.md",
+              root / "LICENSE",
+              root / "CODEX.md",
+              root / "TESTING.md",
+          ]
+          for path in required_paths:
+              if not path.exists():
+                  errors.append(f"Missing required path: {path.relative_to(root)}")
+
+          forbidden_suffixes = {
+              ".onnx",
+              ".sentis",
+              ".tflite",
+              ".pt",
+              ".pth",
+              ".weights",
+              ".engine",
+          }
+          for path in package_root.rglob("*"):
+              if path.is_file() and path.suffix.lower() in forbidden_suffixes:
+                  errors.append(f"Model weight file must not be bundled in the package: {path.relative_to(root)}")
+
+          if errors:
+              for error in errors:
+                  print(f"::error::{error}")
+              sys.exit(1)
+
+          print("UPM package layout validated.")
+          PY

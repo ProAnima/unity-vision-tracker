@@ -1,4 +1,4 @@
-name: Unity EditMode Tests
+name: Unity Tests
 
 on:
   push:
@@ -10,9 +10,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  editmode:
-    name: EditMode Tests
+  unity-tests:
+    name: ${{ matrix.testMode }} - Unity ${{ matrix.unityVersion }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unityVersion:
+          - 6000.5.1f1
+        testMode:
+          - EditMode
+          - PlayMode
 
     steps:
       - name: Checkout
@@ -24,11 +32,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-${{ runner.os }}-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}
+          key: Library-${{ runner.os }}-${{ matrix.unityVersion }}-${{ matrix.testMode }}-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}
           restore-keys: |
+            Library-${{ runner.os }}-${{ matrix.unityVersion }}-
             Library-${{ runner.os }}-
 
-      - name: Run EditMode tests
+      - name: Run Unity tests
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -36,15 +45,14 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           projectPath: .
-          unityVersion: 6000.3.15f1
-          testMode: EditMode
-          artifactsPath: test-results
+          unityVersion: ${{ matrix.unityVersion }}
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: test-results/${{ matrix.testMode }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: unity-editmode-test-results
-          path: test-results
-
+          name: unity-${{ matrix.testMode }}-test-results
+          path: test-results/${{ matrix.testMode }}
