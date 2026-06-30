@@ -312,6 +312,8 @@ PlayMode: 3 tests, 3 passed, 0 failed
 
 See [TESTING.md](TESTING.md) for the batchmode command and result-file notes.
 
+Release gates and package validation steps live in [RELEASE.md](RELEASE.md).
+
 ## Licensing
 
 This project is licensed under the [MIT License](LICENSE).

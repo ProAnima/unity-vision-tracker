@@ -73,6 +73,12 @@ Run PlayMode smoke tests from PowerShell:
   -logFile 'D:\Projects\ProAnimaStudio\pas-UCT\Temp\playmode-test.log'
 ```
 
+Run the same UPM package validation used by CI:
+
+```powershell
+python scripts/validate_upm_package.py
+```
+
 ## GitHub Actions
 
 The repository includes a GitHub Actions workflow:

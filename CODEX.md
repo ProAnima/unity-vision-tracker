@@ -135,6 +135,7 @@ Test coverage expectations:
 - New editor setup tools require EditMode tests for scene object creation/update behavior.
 - New optional modules require tests that core remains independent from module/vendor dependencies.
 - Device/camera behavior should have manual or PlayMode test notes until automated device tests exist.
+- Package/release changes must pass `python scripts/validate_upm_package.py`.
 
 ## Debug Visualization Rules
 
@@ -163,6 +164,7 @@ When changing architecture, update at least one of:
 
 - `README.md` for user-facing capabilities and setup.
 - `TESTING.md` for test counts, commands, or coverage matrix.
+- `RELEASE.md` for release gates, versioning, and packaging policy.
 - `Packages/com.proanima.universal-vision-tracker/Documentation~/ARCHITECTURE_ROADMAP.md` for architecture increments.
 - `Documentation/TECHNOLOGY_RESEARCH.md` for research-level decisions.
 
