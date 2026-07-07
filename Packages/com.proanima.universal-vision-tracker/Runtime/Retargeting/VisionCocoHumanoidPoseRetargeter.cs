@@ -109,10 +109,10 @@ namespace UniversalTracker.Core
 
         private static void AddLimbs(JointBuilder builder, CocoKeypoints coco)
         {
-            builder.Add(VisionHumanoidJoint.LeftUpperArm, coco.leftShoulder);
+            builder.Add(VisionHumanoidJoint.LeftUpperArm, LimbStart(coco.leftShoulder, coco.leftElbow));
             builder.Add(VisionHumanoidJoint.LeftLowerArm, coco.leftElbow);
             builder.Add(VisionHumanoidJoint.LeftHand, coco.leftWrist);
-            builder.Add(VisionHumanoidJoint.RightUpperArm, coco.rightShoulder);
+            builder.Add(VisionHumanoidJoint.RightUpperArm, LimbStart(coco.rightShoulder, coco.rightElbow));
             builder.Add(VisionHumanoidJoint.RightLowerArm, coco.rightElbow);
             builder.Add(VisionHumanoidJoint.RightHand, coco.rightWrist);
             builder.Add(VisionHumanoidJoint.LeftUpperLeg, coco.leftHip);
@@ -159,6 +159,11 @@ namespace UniversalTracker.Core
                 observed = a.observed && b.observed,
                 predicted = a.predicted || b.predicted
             };
+        }
+
+        private static KeypointPoint LimbStart(KeypointPoint parent, KeypointPoint child)
+        {
+            return child.available ? Lerp(parent, child, 0.12f) : parent;
         }
 
         private static KeypointPoint EnsureChild(

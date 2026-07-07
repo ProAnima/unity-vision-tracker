@@ -17,9 +17,12 @@ namespace UniversalTracker.Tests
             Assert.GreaterOrEqual(pose.joints.Length, 19);
             Assert.IsTrue(pose.TryGetJoint(VisionHumanoidJoint.Hips, out VisionHumanoidJointPose hips));
             Assert.IsTrue(pose.TryGetJoint(VisionHumanoidJoint.Head, out VisionHumanoidJointPose head));
+            Assert.IsTrue(pose.TryGetJoint(VisionHumanoidJoint.LeftShoulder, out VisionHumanoidJointPose leftShoulder));
+            Assert.IsTrue(pose.TryGetJoint(VisionHumanoidJoint.LeftUpperArm, out VisionHumanoidJointPose leftUpperArm));
             Assert.IsTrue(pose.TryGetJoint(VisionHumanoidJoint.LeftHand, out VisionHumanoidJointPose leftHand));
             Assert.Greater(head.position.y, hips.position.y);
             Assert.Less(leftHand.position.x, hips.position.x);
+            Assert.Greater(Vector3.Distance(leftShoulder.position, leftUpperArm.position), 0.001f);
             Assert.IsTrue(hips.hasRotation);
         }
 
