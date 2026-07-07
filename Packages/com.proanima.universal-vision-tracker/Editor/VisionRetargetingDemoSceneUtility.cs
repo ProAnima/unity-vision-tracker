@@ -3,6 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.SceneManagement;
+using UniversalTracker.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -125,7 +126,9 @@ namespace UniversalTracker.Editor
                 return false;
 
             EditorSceneManager.OpenScene(scenePath);
-            Selection.activeGameObject = GameObject.Find("Yolo Humanoid Retargeting Demo");
+            GameObject demo = GameObject.Find("Yolo Humanoid Retargeting Demo");
+            ConfigureDemoObject(demo);
+            Selection.activeGameObject = demo;
             return true;
         }
 
@@ -156,7 +159,58 @@ namespace UniversalTracker.Editor
         {
             var demoObject = new GameObject("Yolo Humanoid Retargeting Demo");
             demoObject.transform.position = new Vector3(0f, 0.15f, 0f);
-            demoObject.AddComponent(demoType);
+            Component demo = demoObject.AddComponent(demoType);
+            ConfigureDemoObject(demoObject);
+            if (demo == null)
+                Debug.LogWarning("[ProAnima Vision] Retargeting demo component could not be configured.");
+        }
+
+        private static void ConfigureDemoObject(GameObject demoObject)
+        {
+            if (demoObject == null)
+                return;
+
+            Component demo = demoObject.GetComponent(DemoScriptTypeName);
+            if (demo == null)
+                return;
+
+            VisionModelProfile profile = ResolvePoseProfile();
+            if (profile == null)
+                return;
+
+            var serialized = new SerializedObject(demo);
+            SerializedProperty profileProperty = serialized.FindProperty("poseModelProfile");
+            if (profileProperty != null && profileProperty.objectReferenceValue == null)
+                profileProperty.objectReferenceValue = profile;
+
+            SerializedProperty runPipeline = serialized.FindProperty("runYoloPosePipeline");
+            if (runPipeline != null)
+                runPipeline.boolValue = true;
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(demo);
+        }
+
+        private static VisionModelProfile ResolvePoseProfile()
+        {
+            const string preferredPath = "Assets/ProAnima Vision/Profiles/YoloPose2DProfile.asset";
+            VisionModelProfile profile = AssetDatabase.LoadAssetAtPath<VisionModelProfile>(preferredPath);
+            if (profile != null)
+                return profile;
+
+            string[] guids = AssetDatabase.FindAssets("t:VisionModelProfile", new[] { "Assets" });
+            if (guids == null)
+                return null;
+
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                profile = AssetDatabase.LoadAssetAtPath<VisionModelProfile>(path);
+                if (profile != null && profile.Supports(VisionModelCapability.Pose2D))
+                    return profile;
+            }
+
+            return null;
         }
 
         private static string FindScenePath()

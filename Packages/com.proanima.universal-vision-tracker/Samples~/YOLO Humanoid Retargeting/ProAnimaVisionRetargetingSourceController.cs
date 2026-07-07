@@ -19,6 +19,7 @@ namespace UniversalTracker.Samples
         private readonly int requestedWidth;
         private readonly int requestedHeight;
         private readonly int requestedFps;
+        private readonly bool ownsFrameSource;
         private readonly List<string> cameraChoices = new List<string>();
         private readonly List<string> videoChoices = new List<string>();
         private IVisionFrameSource frameSource;
@@ -35,7 +36,8 @@ namespace UniversalTracker.Samples
             int requestedHeight,
             int requestedFps,
             VideoPlayer videoPlayer,
-            VisionVideoPlaylistSource videoPlaylist)
+            VisionVideoPlaylistSource videoPlaylist,
+            bool ownsFrameSource = true)
         {
             this.owner = owner;
             Mode = mode;
@@ -46,6 +48,7 @@ namespace UniversalTracker.Samples
             this.requestedFps = requestedFps;
             SourceVideoPlayer = videoPlayer;
             VideoPlaylist = videoPlaylist;
+            this.ownsFrameSource = ownsFrameSource;
         }
 
         public ProAnimaVisionRetargetingSourceMode Mode { get; private set; }
@@ -54,17 +57,22 @@ namespace UniversalTracker.Samples
         public VideoPlayer SourceVideoPlayer { get; private set; }
         public VisionVideoPlaylistSource VideoPlaylist { get; private set; }
         public string Status { get; private set; } = "Initializing source";
+        public int SettingsRevision { get; private set; }
         public Texture CurrentTexture => lastFrame.texture != null ? lastFrame.texture : fallbackTexture;
         public Vector2Int SourceSize => lastFrame.IsValid ? lastFrame.sourceSize : new Vector2Int(requestedWidth, requestedHeight);
         public IReadOnlyList<string> CameraChoices => cameraChoices;
         public IReadOnlyList<string> VideoChoices => videoChoices;
+        public string CurrentCameraDeviceName => ResolveDeviceName();
 
         public void Initialize()
         {
             RefreshCameraChoices();
             RefreshVideoChoices();
             EnsureFallbackTexture();
-            SetMode(Mode);
+            if (ownsFrameSource)
+                SetMode(Mode);
+            else
+                Status = $"{Mode} selected";
         }
 
         public void Dispose()
@@ -77,7 +85,14 @@ namespace UniversalTracker.Samples
         public void SetMode(ProAnimaVisionRetargetingSourceMode mode)
         {
             Mode = mode;
+            SettingsRevision++;
             DisposeFrameSource();
+
+            if (!ownsFrameSource)
+            {
+                Status = $"{Mode} selected";
+                return;
+            }
 
             if (mode == ProAnimaVisionRetargetingSourceMode.Camera)
                 StartCameraSource();
@@ -135,6 +150,7 @@ namespace UniversalTracker.Samples
                 return;
 
             CameraDeviceName = choice == DefaultCameraLabel ? null : choice;
+            SettingsRevision++;
             WebCamDevice[] devices = WebCamTexture.devices;
             if (devices != null)
             {
@@ -160,6 +176,7 @@ namespace UniversalTracker.Samples
 
             CameraDeviceIndex = (CameraDeviceIndex + 1) % devices.Length;
             CameraDeviceName = devices[CameraDeviceIndex].name;
+            SettingsRevision++;
             RefreshCameraChoices();
             if (Mode == ProAnimaVisionRetargetingSourceMode.Camera)
                 SetMode(Mode);
@@ -193,6 +210,7 @@ namespace UniversalTracker.Samples
 
             SourceVideoPlayer = playlist.EnsureVideoPlayer();
             RefreshVideoChoices();
+            SettingsRevision++;
             if (Mode == ProAnimaVisionRetargetingSourceMode.Video)
                 SetMode(Mode);
 
@@ -207,6 +225,7 @@ namespace UniversalTracker.Samples
 
             SourceVideoPlayer = playlist.EnsureVideoPlayer();
             RefreshVideoChoices();
+            SettingsRevision++;
             if (Mode == ProAnimaVisionRetargetingSourceMode.Video)
                 SetMode(Mode);
 
@@ -221,6 +240,7 @@ namespace UniversalTracker.Samples
 
             SourceVideoPlayer = playlist.EnsureVideoPlayer();
             RefreshVideoChoices();
+            SettingsRevision++;
             if (Mode == ProAnimaVisionRetargetingSourceMode.Video)
                 SetMode(Mode);
 
@@ -231,6 +251,16 @@ namespace UniversalTracker.Samples
         {
             VisionVideoPlaylistSource playlist = ResolveVideoPlaylist(false);
             return playlist != null && playlist.HasVideos && (playlist.wrapNavigation || playlist.ValidCount > 1);
+        }
+
+        public VideoPlayer PrepareVideoPlayerForPipeline()
+        {
+            VideoPlayer player = EnsureVideoPlayer();
+            VisionVideoPlaylistSource playlist = ResolveVideoPlaylist(true);
+            if (playlist != null && playlist.HasVideos)
+                playlist.ApplyCurrent(true);
+
+            return player;
         }
 
         private void StartCameraSource()

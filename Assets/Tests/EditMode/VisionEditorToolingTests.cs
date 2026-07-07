@@ -146,6 +146,10 @@ namespace UniversalTracker.Tests
             Assert.That(utility, Does.Contain("IsImportedSampleCurrent"));
             Assert.That(utility, Does.Contain("ProAnimaVisionRetargetingSourceController.cs"));
             Assert.That(utility, Does.Contain("!view.Contains(\"RawImage\")"));
+            Assert.That(utility, Does.Contain("ConfigureDemoObject"));
+            Assert.That(utility, Does.Contain("ResolvePoseProfile"));
+            Assert.That(utility, Does.Contain("YoloPose2DProfile.asset"));
+            Assert.That(utility, Does.Contain("\"poseModelProfile\""));
         }
 
         [Test]

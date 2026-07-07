@@ -49,14 +49,14 @@ namespace UniversalTracker.Samples
                 UnityEngine.Object.Destroy(panelSettings);
         }
 
-        public void Update(VisionFrameResult result)
+        public void Update(VisionFrameResult result, string statusOverride = null)
         {
             EnsureDocument();
             if (previewImage != null)
-                previewImage.image = sources.CurrentTexture;
+                previewImage.image = result?.sourceTexture != null ? result.sourceTexture : sources.CurrentTexture;
 
             overlay?.SetResult(result);
-            UpdateLabels(result);
+            UpdateLabels(result, statusOverride);
         }
 
         private void EnsureDocument()
@@ -275,10 +275,10 @@ namespace UniversalTracker.Samples
                 videoDropdown.SetValueWithoutNotify(videoDropdown.choices[videoIndex]);
         }
 
-        private void UpdateLabels(VisionFrameResult result)
+        private void UpdateLabels(VisionFrameResult result, string statusOverride)
         {
             if (statusLabel != null)
-                statusLabel.text = sources.Status;
+                statusLabel.text = string.IsNullOrWhiteSpace(statusOverride) ? sources.Status : statusOverride;
 
             if (metricsLabel == null)
                 return;

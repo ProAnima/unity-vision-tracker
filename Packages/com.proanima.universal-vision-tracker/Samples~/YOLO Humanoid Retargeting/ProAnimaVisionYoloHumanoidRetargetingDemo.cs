@@ -44,10 +44,21 @@ namespace UniversalTracker.Samples
         [SerializeField]
         private VisionVideoPlaylistSource videoPlaylist = null;
 
+        [Header("YOLO Pose Pipeline")]
+        [SerializeField]
+        private bool runYoloPosePipeline = true;
+
+        [SerializeField]
+        private VisionModelProfile poseModelProfile = null;
+
         private ProAnimaVisionGeneratedHumanoidRig rig;
         private ProAnimaVisionRetargetingSourceController sourceController;
         private ProAnimaVisionRetargetingDemoView view;
         private VisionHumanoidRigReceiver receiver;
+        private UniversalTrackerManager trackerManager;
+        private VisionFrameResult lastPipelineResult;
+        private string liveStatus = "YOLO pose pipeline starting";
+        private int observedSourceRevision = -1;
         private float time;
 
         private void Awake()
@@ -65,7 +76,8 @@ namespace UniversalTracker.Samples
                 requestedHeight,
                 requestedFps,
                 sourceVideoPlayer,
-                videoPlaylist);
+                videoPlaylist,
+                ownsFrameSource: !CanUseLivePipeline());
             sourceController.Initialize();
             view = new ProAnimaVisionRetargetingDemoView(this, sourceController);
             view.Initialize();
@@ -88,22 +100,165 @@ namespace UniversalTracker.Samples
                 missingJointConfidence = 0.14f
             };
             receiver.Initialize();
+            ConfigureLivePipelineIfNeeded();
         }
 
         private void Update()
         {
             time += Time.deltaTime * animationSpeed;
-            sourceController.TryUpdate(time, out VisionFrame frame);
-            VisionFrameResult result = CreateFrameResult(CreateSyntheticCocoPose(time), frame);
-            receiver.ReceiveVisionResult(result, result.sourceTexture);
-            rig.UpdateVisuals(receiver.LastHumanoidPose, receiver.HasLastHumanoidPose);
-            view.Update(result);
+            RestartLivePipelineIfSourceChanged();
+
+            VisionFrameResult result = ResolveFrameResult();
+            if (result?.poses != null && result.poses.Length > 0)
+            {
+                receiver.ReceiveVisionResult(result, result.sourceTexture);
+                rig.UpdateVisuals(receiver.LastHumanoidPose, receiver.HasLastHumanoidPose);
+            }
+            else
+            {
+                rig.UpdateVisuals(default, false);
+            }
+
+            view.Update(result, ResolveStatus(result));
         }
 
         private void OnDestroy()
         {
+            if (trackerManager != null)
+            {
+                trackerManager.OnVisionFrameResult -= HandleVisionFrameResult;
+                trackerManager.OnVisionHealthChanged -= HandleVisionHealthChanged;
+                trackerManager.StopTracking();
+            }
+
             view?.Dispose();
             sourceController?.Dispose();
+        }
+
+        private VisionFrameResult ResolveFrameResult()
+        {
+            if (ShouldUseLivePipeline())
+                return lastPipelineResult ?? CreateEmptyFrameResult();
+
+            sourceController.TryUpdate(time, out VisionFrame frame);
+            if (sourceController.Mode == ProAnimaVisionRetargetingSourceMode.Synthetic)
+                return CreateFrameResult(CreateSyntheticCocoPose(time), frame);
+
+            return CreateEmptyFrameResult(frame);
+        }
+
+        private bool CanUseLivePipeline()
+        {
+            return runYoloPosePipeline && poseModelProfile != null;
+        }
+
+        private bool ShouldUseLivePipeline()
+        {
+            return CanUseLivePipeline() && sourceController != null && sourceController.Mode != ProAnimaVisionRetargetingSourceMode.Synthetic;
+        }
+
+        private void ConfigureLivePipelineIfNeeded()
+        {
+            observedSourceRevision = sourceController.SettingsRevision;
+            if (!ShouldUseLivePipeline())
+            {
+                liveStatus = poseModelProfile == null ? "YOLO pose profile is not assigned" : "Synthetic fixture mode";
+                return;
+            }
+
+            trackerManager = GetComponent<UniversalTrackerManager>() ?? gameObject.AddComponent<UniversalTrackerManager>();
+            trackerManager.OnVisionFrameResult -= HandleVisionFrameResult;
+            trackerManager.OnVisionHealthChanged -= HandleVisionHealthChanged;
+            ApplyTrackerSettings();
+            trackerManager.OnVisionFrameResult += HandleVisionFrameResult;
+            trackerManager.OnVisionHealthChanged += HandleVisionHealthChanged;
+            trackerManager.StartTracking();
+        }
+
+        private void RestartLivePipelineIfSourceChanged()
+        {
+            if (sourceController == null || observedSourceRevision == sourceController.SettingsRevision)
+                return;
+
+            observedSourceRevision = sourceController.SettingsRevision;
+            lastPipelineResult = null;
+            if (trackerManager != null && trackerManager.IsRunning)
+                trackerManager.StopTracking();
+
+            ConfigureLivePipelineIfNeeded();
+        }
+
+        private void ApplyTrackerSettings()
+        {
+            trackerManager.autoStart = false;
+            trackerManager.targetFPS = requestedFps;
+            trackerManager.pipelineProfile = null;
+            trackerManager.modelProfiles = new[] { poseModelProfile };
+            trackerManager.activeModelIndex = 0;
+            trackerManager.inputType = sourceController.Mode == ProAnimaVisionRetargetingSourceMode.Video
+                ? InputProviderType.Video
+                : InputProviderType.WebCam;
+            trackerManager.webCamDeviceName = sourceController.CurrentCameraDeviceName;
+            trackerManager.webCamRequestedWidth = requestedWidth;
+            trackerManager.webCamRequestedHeight = requestedHeight;
+            trackerManager.webCamRequestedFps = requestedFps;
+            trackerManager.sourceVideoPlayer = sourceController.Mode == ProAnimaVisionRetargetingSourceMode.Video
+                ? sourceController.PrepareVideoPlayerForPipeline()
+                : null;
+            trackerManager.useTracking = true;
+            trackerManager.useEventOutput = false;
+            trackerManager.useUIVisualization = false;
+            trackerManager.useToolkitDashboard = false;
+            trackerManager.useSceneVisualization = false;
+            trackerManager.useDebugOutput = false;
+            liveStatus = $"YOLO pose starting: {sourceController.Mode}";
+        }
+
+        private void HandleVisionFrameResult(VisionFrameResult result)
+        {
+            lastPipelineResult = result;
+            int poses = result?.poses?.Length ?? 0;
+            int detections = result?.detections?.Length ?? 0;
+            liveStatus = poses > 0
+                ? $"YOLO pose detected: {poses} pose / {detections} detections"
+                : $"YOLO running: no pose detected / {detections} detections";
+        }
+
+        private void HandleVisionHealthChanged(VisionHealthStatus status)
+        {
+            if (status == null || string.IsNullOrWhiteSpace(status.message))
+                return;
+
+            liveStatus = status.message;
+        }
+
+        private string ResolveStatus(VisionFrameResult result)
+        {
+            if (ShouldUseLivePipeline())
+                return liveStatus;
+
+            if (sourceController.Mode == ProAnimaVisionRetargetingSourceMode.Synthetic)
+                return "Synthetic retargeting fixture";
+
+            return poseModelProfile == null
+                ? "Assign YOLO Pose 2D profile to run live detection"
+                : "Live YOLO pipeline is disabled";
+        }
+
+        private static VisionFrameResult CreateEmptyFrameResult()
+        {
+            return VisionFrameResult.Empty(Time.frameCount, Time.realtimeSinceStartupAsDouble, Vector2Int.zero);
+        }
+
+        private static VisionFrameResult CreateEmptyFrameResult(VisionFrame frame)
+        {
+            Vector2Int sourceSize = frame.sourceSize.x > 0 && frame.sourceSize.y > 0
+                ? frame.sourceSize
+                : Vector2Int.zero;
+
+            VisionFrameResult result = VisionFrameResult.Empty(frame.frameIndex, frame.timestamp, sourceSize);
+            result.sourceTexture = frame.texture;
+            return result;
         }
 
         private static VisionFrameResult CreateFrameResult(VisionPose pose, VisionFrame frame)

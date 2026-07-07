@@ -90,7 +90,7 @@ namespace UniversalTracker.Editor
             panel.style.backgroundColor = new Color(0.06f, 0.08f, 0.075f, 1f);
 
             panel.Add(CreateHeading("Retargeting Demo"));
-            panel.Add(CreateBodyText("Import and open a fully configured live test scene for YOLO/COCO-17 humanoid retargeting. The scene creates a procedural humanoid rig, camera, light, synthetic pose stream, and dropout filtering demo."));
+            panel.Add(CreateBodyText("Import and open a fully configured live test scene for YOLO/COCO-17 humanoid retargeting. The scene creates a procedural humanoid rig, camera, light, source controls, and a real YOLO pose pipeline when the pose profile is available."));
 
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;

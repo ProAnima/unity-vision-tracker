@@ -87,6 +87,10 @@ namespace UniversalTracker.Tests
             Assert.That(demo, Does.Contain("CreateDetection"));
             Assert.That(demo, Does.Contain("sourceTexture"));
             Assert.That(demo, Does.Contain("camera.rect = new Rect(0.5f"));
+            Assert.That(demo, Does.Contain("UniversalTrackerManager"));
+            Assert.That(demo, Does.Contain("poseModelProfile"));
+            Assert.That(demo, Does.Contain("ShouldUseLivePipeline"));
+            Assert.That(demo, Does.Contain("Synthetic retargeting fixture"));
             Assert.That(view, Does.Contain("UIDocument"));
             Assert.That(view, Does.Contain("DropdownField"));
             Assert.That(view, Does.Contain("RefreshCameraChoices"));
