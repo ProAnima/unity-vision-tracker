@@ -16,10 +16,12 @@ namespace UniversalTracker.Tests
             Assert.That(manifest, Does.Contain("\"Dashboard Overlay\""));
             Assert.That(manifest, Does.Contain("\"YOLO Model Profiles\""));
             Assert.That(manifest, Does.Contain("\"Experimental Scene\""));
+            Assert.That(manifest, Does.Contain("\"YOLO Humanoid Retargeting\""));
             Assert.That(manifest, Does.Contain("\"Samples~/Minimal Pipeline\""));
             Assert.That(manifest, Does.Contain("\"Samples~/Dashboard Overlay\""));
             Assert.That(manifest, Does.Contain("\"Samples~/YOLO Model Profiles\""));
             Assert.That(manifest, Does.Contain("\"Samples~/Experimental Scene\""));
+            Assert.That(manifest, Does.Contain("\"Samples~/YOLO Humanoid Retargeting\""));
         }
 
         [Test]
@@ -60,6 +62,15 @@ namespace UniversalTracker.Tests
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVision.Samples.ExperimentalScene.asmdef")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/Editor/ProAnimaVisionExperimentalSceneBootstrapEditor.cs")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/Editor/ProAnimaVision.ExperimentalScene.Editor.asmdef")), Is.True);
+        }
+
+        [Test]
+        public void YoloHumanoidRetargetingSample_ContainsDemoRigAndReadme()
+        {
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/README.md")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVision.Samples.YoloHumanoidRetargeting.asmdef")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionGeneratedHumanoidRig.cs")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionYoloHumanoidRetargetingDemo.cs")), Is.True);
         }
 
         [Test]

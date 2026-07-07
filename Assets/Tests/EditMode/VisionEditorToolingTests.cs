@@ -56,10 +56,16 @@ namespace UniversalTracker.Tests
                 BindingFlags.NonPublic | BindingFlags.Static);
 
             Assert.That(import, Is.Not.Null);
+
+            MethodInfo retargetingImport = typeof(VisionControlCenterWindow).GetMethod(
+                "EnsureRetargetingDemoImportedAndOpen",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.That(retargetingImport, Is.Not.Null);
         }
 
         [Test]
-        public void PackageManifest_ExposesExperimentalSceneSampleForControlCenterImport()
+        public void PackageManifest_ExposesControlCenterSamplesForImport()
         {
             Type sampleType = FindType("UnityEditor.PackageManager.UI.Sample");
             Assert.That(sampleType, Is.Not.Null);
@@ -81,6 +87,7 @@ namespace UniversalTracker.Tests
                 null,
                 new object[] { packageInfo.name, packageInfo.version }) as IEnumerable;
             Assert.That(ContainsSample(sampleType, samples, "Experimental Scene"), Is.True);
+            Assert.That(ContainsSample(sampleType, samples, "YOLO Humanoid Retargeting"), Is.True);
         }
 
         [Test]

@@ -41,6 +41,7 @@ namespace UniversalTracker.Editor
 
             scroll.Add(CreateHeader());
             scroll.Add(CreatePreviewSceneBlock());
+            scroll.Add(CreateRetargetingDemoBlock());
             scroll.Add(CreatePresetBlock());
             scroll.Add(CreateAdvancedBlock());
         }
@@ -80,6 +81,24 @@ namespace UniversalTracker.Editor
 
             row.Add(CreateButton("Import / Open Demo Scene", () => EnsureExperimentalSceneImportedAndOpen(), true));
             row.Add(CreateButton("Open Samples Folder", () => EditorUtility.RevealInFinder(SamplesPath), false));
+            return panel;
+        }
+
+        private VisualElement CreateRetargetingDemoBlock()
+        {
+            VisualElement panel = CreatePanel();
+            panel.style.backgroundColor = new Color(0.06f, 0.08f, 0.075f, 1f);
+
+            panel.Add(CreateHeading("Retargeting Demo"));
+            panel.Add(CreateBodyText("Import and open a fully configured live test scene for YOLO/COCO-17 humanoid retargeting. The scene creates a procedural humanoid rig, camera, light, synthetic pose stream, and dropout filtering demo."));
+
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.flexWrap = Wrap.Wrap;
+            row.style.marginTop = 8;
+            panel.Add(row);
+
+            row.Add(CreateButton("Import / Open Retargeting Demo", () => EnsureRetargetingDemoImportedAndOpen(), true));
             return panel;
         }
 
@@ -245,6 +264,11 @@ namespace UniversalTracker.Editor
         internal static bool EnsureExperimentalSceneImportedAndOpen()
         {
             return VisionExperimentalSceneSampleUtility.EnsureImportedAndOpen();
+        }
+
+        internal static bool EnsureRetargetingDemoImportedAndOpen()
+        {
+            return VisionRetargetingDemoSceneUtility.EnsureImportedAndOpen();
         }
 
         private static void OpenAsset(string path)

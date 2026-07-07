@@ -12,8 +12,17 @@ This sample demonstrates the production retargeting path from a YOLO/COCO-17 pos
 
 ## How To Use
 
-1. Import the sample from Package Manager.
-2. Add `ProAnimaVisionYoloHumanoidRetargetingDemo` to an empty GameObject.
+Preferred path:
+
+1. Open `Tools > ProAnima Vision > Control Center`.
+2. Click `Import / Open Retargeting Demo`.
 3. Enter Play Mode.
+
+Manual path:
+
+1. Import the sample from Package Manager.
+2. Create an empty scene with a camera and light.
+3. Add `ProAnimaVisionYoloHumanoidRetargetingDemo` to an empty GameObject.
+4. Enter Play Mode.
 
 The sample uses generated Unity primitives rather than an FBX so the retargeting logic can be inspected without external assets. Production rigs should use `VisionHumanoidRigReceiver` with either an `Animator` humanoid auto-binding or explicit `Transform` bindings for a Generic rig.
