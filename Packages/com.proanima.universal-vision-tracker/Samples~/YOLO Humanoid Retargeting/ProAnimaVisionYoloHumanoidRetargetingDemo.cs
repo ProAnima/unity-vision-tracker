@@ -97,7 +97,8 @@ namespace UniversalTracker.Samples
                 smoothing = 0.3f,
                 bodyHeightMeters = 1.7f,
                 minimumPoseQuality = 0.2f,
-                missingJointConfidence = 0.14f
+                missingJointConfidence = 0.14f,
+                maxTorsoRollDegrees = 18f
             };
             receiver.Initialize();
             ConfigureLivePipelineIfNeeded();

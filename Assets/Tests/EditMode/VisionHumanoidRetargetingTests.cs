@@ -81,6 +81,28 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void CocoPoseRetargeterNormalizesSlantedTorsoToUprightBodySpace()
+        {
+            var retargeter = new VisionCocoHumanoidPoseRetargeter(new VisionPoseRetargetingOptions
+            {
+                minimumPoseQuality = 0.1f,
+                smoothing = 0f,
+                maxTorsoRollDegrees = 0f
+            });
+            VisionPose pose = CreatePose(0.9f);
+            ShiftUpperBody(pose, 0.24f);
+
+            bool ok = retargeter.TryRetarget(pose, 1f / 30f, out VisionHumanoidPose humanoidPose);
+
+            Assert.IsTrue(ok);
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.Hips, out VisionHumanoidJointPose hips));
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.Neck, out VisionHumanoidJointPose neck));
+            Vector3 torso = (neck.position - hips.position).normalized;
+            Assert.Greater(Vector3.Dot(torso, Vector3.up), 0.98f);
+            Assert.Less(Mathf.Abs(torso.x), 0.2f);
+        }
+
+        [Test]
         public void HumanoidRigReceiverAppliesPoseToExplicitBindings()
         {
             var host = new GameObject("RigReceiverTest");
@@ -132,6 +154,59 @@ namespace UniversalTracker.Tests
             }
         }
 
+        [Test]
+        public void HumanoidRigReceiverUsesPrimaryChildForSharedJointRotation()
+        {
+            var host = new GameObject("RigReceiverSharedJointTest");
+            var hips = new GameObject("Hips").transform;
+            var spine = new GameObject("Spine").transform;
+            var leftLeg = new GameObject("LeftUpperLeg").transform;
+            var rightLeg = new GameObject("RightUpperLeg").transform;
+            hips.SetParent(host.transform);
+            spine.SetParent(hips);
+            leftLeg.SetParent(hips);
+            rightLeg.SetParent(hips);
+            hips.localPosition = Vector3.zero;
+            spine.localPosition = Vector3.up;
+            leftLeg.localPosition = new Vector3(-0.35f, -0.65f, 0f);
+            rightLeg.localPosition = new Vector3(0.95f, -0.25f, 0f);
+
+            try
+            {
+                var receiver = host.AddComponent<VisionHumanoidRigReceiver>();
+                receiver.poseSpaceRoot = host.transform;
+                receiver.driveBoneRotations = true;
+                receiver.driveJointPositions = false;
+                receiver.blend = 1f;
+                receiver.bindings = new[]
+                {
+                    Binding(VisionHumanoidJoint.Hips, hips, spine),
+                    Binding(VisionHumanoidJoint.Spine, spine),
+                    Binding(VisionHumanoidJoint.LeftUpperLeg, leftLeg),
+                    Binding(VisionHumanoidJoint.RightUpperLeg, rightLeg)
+                };
+                receiver.Initialize();
+
+                receiver.ApplyHumanoidPose(new VisionHumanoidPose
+                {
+                    joints = new[]
+                    {
+                        Joint(VisionHumanoidJoint.Hips, Vector3.zero),
+                        Joint(VisionHumanoidJoint.Spine, Vector3.up),
+                        Joint(VisionHumanoidJoint.LeftUpperLeg, new Vector3(-0.35f, -0.65f, 0f)),
+                        Joint(VisionHumanoidJoint.RightUpperLeg, new Vector3(0.95f, -0.25f, 0f))
+                    }
+                });
+
+                Vector3 up = hips.rotation * Vector3.up;
+                Assert.Greater(Vector3.Dot(up.normalized, Vector3.up), 0.95f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static VisionPose CreatePose(float leftWristConfidence)
         {
             var keypoints = new VisionKeypoint[17];
@@ -157,6 +232,18 @@ namespace UniversalTracker.Tests
             };
         }
 
+        private static void ShiftUpperBody(VisionPose pose, float xOffset)
+        {
+            int[] upperBody = { 0, 5, 6, 7, 8, 9, 10 };
+            for (int i = 0; i < upperBody.Length; i++)
+            {
+                int index = upperBody[i];
+                VisionKeypoint keypoint = pose.keypoints[index];
+                keypoint.normalizedPosition.x += xOffset;
+                pose.keypoints[index] = keypoint;
+            }
+        }
+
         private static void Set(VisionKeypoint[] keypoints, int index, float x, float y, float confidence)
         {
             keypoints[index] = new VisionKeypoint
@@ -177,6 +264,19 @@ namespace UniversalTracker.Tests
                 confidence = 1f,
                 observed = true,
                 rotation = Quaternion.identity
+            };
+        }
+
+        private static VisionHumanoidRigJointBinding Binding(
+            VisionHumanoidJoint joint,
+            Transform transform,
+            Transform child = null)
+        {
+            return new VisionHumanoidRigJointBinding
+            {
+                joint = joint,
+                transform = transform,
+                child = child
             };
         }
     }

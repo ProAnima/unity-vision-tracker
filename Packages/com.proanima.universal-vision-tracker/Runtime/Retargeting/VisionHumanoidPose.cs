@@ -192,6 +192,9 @@ namespace UniversalTracker.Core
         [Min(0.01f)]
         public float missingJointConfidence = 0.15f;
 
+        [Range(0f, 90f)]
+        public float maxTorsoRollDegrees = 25f;
+
         public static VisionPoseRetargetingOptions Default => new VisionPoseRetargetingOptions();
     }
 

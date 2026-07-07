@@ -291,25 +291,80 @@ namespace UniversalTracker.OutputReceivers
             if (!driveBoneRotations)
                 return;
 
-            VisionHumanoidBone[] bones = VisionHumanoidJointUtility.Bones;
-            for (int i = 0; i < bones.Length; i++)
+            for (int i = 0; i < bindingLookup.Length; i++)
             {
-                int from = (int)bones[i].from;
-                int to = (int)bones[i].to;
-                VisionHumanoidRigJointBinding binding = bindingLookup[from];
-                if (binding == null || !binding.HasTransform || !hasPose[from] || !hasPose[to])
+                VisionHumanoidRigJointBinding binding = bindingLookup[i];
+                if (binding == null || !binding.HasTransform || !hasPose[i])
                     continue;
 
-                Vector3 localDirection = poseLookup[to].position - poseLookup[from].position;
+                if (!TryResolveDrivenChildJoint(binding, (VisionHumanoidJoint)i, out VisionHumanoidJoint childJoint))
+                    continue;
+
+                int to = (int)childJoint;
+                if (!hasPose[to])
+                    continue;
+
+                Vector3 localDirection = poseLookup[to].position - poseLookup[i].position;
                 if (localDirection.sqrMagnitude < 0.000001f)
                     continue;
 
                 Vector3 worldDirection = poseSpaceRoot.TransformDirection(localDirection.normalized);
                 Quaternion target = Quaternion.FromToRotation(binding.bindWorldDirection, worldDirection) * binding.bindWorldRotation;
-                float confidence = Mathf.Min(poseLookup[from].confidence, poseLookup[to].confidence);
+                float confidence = Mathf.Min(poseLookup[i].confidence, poseLookup[to].confidence);
                 float weight = Mathf.Clamp01(blend * Mathf.Max(0.05f, confidence));
                 binding.transform.rotation = Quaternion.Slerp(binding.transform.rotation, target, weight);
             }
+        }
+
+        private bool TryResolveDrivenChildJoint(
+            VisionHumanoidRigJointBinding binding,
+            VisionHumanoidJoint joint,
+            out VisionHumanoidJoint child)
+        {
+            VisionHumanoidBone[] bones = VisionHumanoidJointUtility.Bones;
+            if (binding.child != null && TryFindChildBindingJoint(binding.child, joint, bones, out child))
+                return true;
+
+            for (int i = 0; i < bones.Length; i++)
+            {
+                if (bones[i].from != joint)
+                    continue;
+
+                int childIndex = (int)bones[i].to;
+                VisionHumanoidRigJointBinding childBinding = bindingLookup[childIndex];
+                if (childBinding != null && childBinding.HasTransform)
+                {
+                    child = bones[i].to;
+                    return true;
+                }
+            }
+
+            child = default;
+            return false;
+        }
+
+        private bool TryFindChildBindingJoint(
+            Transform childTransform,
+            VisionHumanoidJoint joint,
+            VisionHumanoidBone[] bones,
+            out VisionHumanoidJoint child)
+        {
+            for (int i = 0; i < bones.Length; i++)
+            {
+                if (bones[i].from != joint)
+                    continue;
+
+                int childIndex = (int)bones[i].to;
+                VisionHumanoidRigJointBinding childBinding = bindingLookup[childIndex];
+                if (childBinding != null && childBinding.transform == childTransform)
+                {
+                    child = bones[i].to;
+                    return true;
+                }
+            }
+
+            child = default;
+            return false;
         }
     }
 }

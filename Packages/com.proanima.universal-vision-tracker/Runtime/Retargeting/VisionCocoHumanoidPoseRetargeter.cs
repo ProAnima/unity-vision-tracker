@@ -28,11 +28,11 @@ namespace UniversalTracker.Core
                 return false;
             }
 
-            Vector2 pelvis = Average(coco.leftHip.point, coco.rightHip.point);
+            BodyBasis bodyBasis = BodyBasis.Create(coco, options);
             float scale = EstimateScale(coco);
             StabilizeMissingLimbs(ref coco, scale, options);
 
-            var builder = new JointBuilder(sourcePose.personId, pelvis, scale, options.bodyHeightMeters);
+            var builder = new JointBuilder(sourcePose.personId, bodyBasis, scale, options.bodyHeightMeters);
 
             AddTorso(builder, coco);
             AddLimbs(builder, coco);
@@ -210,6 +210,52 @@ namespace UniversalTracker.Core
             return Mathf.Max(0.0001f, Mathf.Max(torso, shoulders));
         }
 
+        private readonly struct BodyBasis
+        {
+            private static readonly Vector2 ImageUp = new Vector2(0f, -1f);
+
+            private readonly Vector2 origin;
+            private readonly Vector2 right;
+            private readonly Vector2 up;
+
+            private BodyBasis(Vector2 origin, Vector2 right, Vector2 up)
+            {
+                this.origin = origin;
+                this.right = right;
+                this.up = up;
+            }
+
+            public static BodyBasis Create(CocoKeypoints coco, VisionPoseRetargetingOptions options)
+            {
+                Vector2 pelvis = Average(coco.leftHip.point, coco.rightHip.point);
+                Vector2 shoulders = Average(coco.leftShoulder.point, coco.rightShoulder.point);
+                Vector2 rawUp = SafeDirection(shoulders - pelvis, ImageUp);
+                Vector2 up = ResolveBasisUp(ImageUp, rawUp, options.maxTorsoRollDegrees);
+                Vector2 right = new Vector2(-up.y, up.x);
+                Vector2 anatomicalRight = SafeDirection(coco.rightShoulder.point - coco.leftShoulder.point, right);
+                if (Vector2.Dot(right, anatomicalRight) < 0f)
+                    right = -right;
+
+                return new BodyBasis(pelvis, right.normalized, up.normalized);
+            }
+
+            public Vector2 ToLocal(Vector2 point)
+            {
+                Vector2 centered = point - origin;
+                return new Vector2(Vector2.Dot(centered, right), Vector2.Dot(centered, up));
+            }
+
+            private static Vector2 ResolveBasisUp(Vector2 reference, Vector2 direction, float maxOutputRollDegrees)
+            {
+                float limit = Mathf.Clamp(maxOutputRollDegrees, 0f, 90f);
+                float rawAngle = Vector2.SignedAngle(reference, direction);
+                float allowedOutputAngle = Mathf.Clamp(rawAngle, -limit, limit);
+                float basisAngle = rawAngle - allowedOutputAngle;
+                Vector3 rotated = Quaternion.Euler(0f, 0f, basisAngle) * new Vector3(reference.x, reference.y, 0f);
+                return new Vector2(rotated.x, rotated.y).normalized;
+            }
+        }
+
         private struct CocoKeypoints
         {
             public KeypointPoint nose;
@@ -240,17 +286,17 @@ namespace UniversalTracker.Core
         {
             private readonly VisionHumanoidJointPose[] joints = new VisionHumanoidJointPose[VisionHumanoidJointUtility.JointCount];
             private readonly int personId;
-            private readonly Vector2 pelvis;
+            private readonly BodyBasis bodyBasis;
             private readonly float scale;
             private readonly float bodyHeight;
             private int count;
             private float confidenceSum;
             private int observedCount;
 
-            public JointBuilder(int personId, Vector2 pelvis, float scale, float bodyHeight)
+            public JointBuilder(int personId, BodyBasis bodyBasis, float scale, float bodyHeight)
             {
                 this.personId = personId;
-                this.pelvis = pelvis;
+                this.bodyBasis = bodyBasis;
                 this.scale = scale;
                 this.bodyHeight = bodyHeight;
             }
@@ -325,8 +371,8 @@ namespace UniversalTracker.Core
 
             private Vector3 ToBodySpace(Vector2 point)
             {
-                Vector2 centered = (point - pelvis) / scale;
-                return new Vector3(centered.x * bodyHeight, -centered.y * bodyHeight, 0f);
+                Vector2 local = bodyBasis.ToLocal(point) / scale;
+                return new Vector3(local.x * bodyHeight, local.y * bodyHeight, 0f);
             }
         }
     }
