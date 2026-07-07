@@ -239,8 +239,8 @@ namespace ProAnimaVision.Samples
         {
             manager = GetComponent<UniversalTrackerManager>() ?? gameObject.AddComponent<UniversalTrackerManager>();
             AdoptExistingVideoSourceIfNeeded();
-            manager.pipelineProfile = pipelineProfile;
-            manager.modelProfiles = pipelineProfile == null && modelProfile != null ? new[] { modelProfile } : null;
+            AdoptExistingProfilesIfNeeded();
+            ApplyManagerProfiles();
             manager.inputType = realPipelineSource;
             VideoPlayer videoPlayer = realPipelineSource == InputProviderType.Video ? EnsureVideoPlayer() : null;
             if (videoPlayer != null)
@@ -270,6 +270,37 @@ namespace ProAnimaVision.Samples
             dashboard.trackerManager = null;
             dashboard.subscribeToManagerEvent = false;
             dashboard.SetCommandHandlers(RestartWebCamPreview, StopWebCamPreview);
+        }
+
+        private void AdoptExistingProfilesIfNeeded()
+        {
+            if (manager == null)
+                return;
+
+            if (pipelineProfile == null && manager.pipelineProfile != null)
+                pipelineProfile = manager.pipelineProfile;
+
+            if (pipelineProfile == null &&
+                modelProfile == null &&
+                manager.modelProfiles != null &&
+                manager.modelProfiles.Length > 0)
+            {
+                modelProfile = manager.modelProfiles[0];
+            }
+        }
+
+        private void ApplyManagerProfiles()
+        {
+            if (pipelineProfile != null)
+            {
+                manager.pipelineProfile = pipelineProfile;
+                manager.modelProfiles = null;
+            }
+            else if (modelProfile != null)
+            {
+                manager.pipelineProfile = null;
+                manager.modelProfiles = new[] { modelProfile };
+            }
         }
 
         private VideoPlayer EnsureVideoPlayer()

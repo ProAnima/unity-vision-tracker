@@ -144,6 +144,18 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void ExperimentalSceneSample_PreservesConfiguredManagerProfilesOnPlay()
+        {
+            string bootstrap = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneBootstrap.cs"));
+
+            Assert.That(bootstrap, Does.Contain("AdoptExistingProfilesIfNeeded"));
+            Assert.That(bootstrap, Does.Contain("ApplyManagerProfiles"));
+            Assert.That(bootstrap, Does.Contain("pipelineProfile = manager.pipelineProfile"));
+            Assert.That(bootstrap, Does.Contain("modelProfile = manager.modelProfiles[0]"));
+            Assert.That(bootstrap, Does.Not.Contain("manager.modelProfiles = pipelineProfile == null && modelProfile != null"));
+        }
+
+        [Test]
         public void ExperimentalSceneSample_ProvidesRuntimeVideoPlaylistControls()
         {
             string controls = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneVideoPlaylist.cs"));
