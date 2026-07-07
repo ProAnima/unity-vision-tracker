@@ -8,7 +8,10 @@ namespace UniversalTracker.Editor
         WebCamPreview,
         YoloDetectionWebCam,
         YoloPoseWebCam,
-        YoloSegmentationWebCam
+        YoloSegmentationWebCam,
+        YoloDetectionVideo,
+        YoloPoseVideo,
+        YoloSegmentationVideo
     }
 
     internal sealed class VisionQuickStartPresetDefinition
@@ -38,6 +41,24 @@ namespace UniversalTracker.Editor
                 "YOLO Segmentation + WebCam",
                 "Create segmentation model and pipeline profiles, wire the demo scene, and enable mask overlay output.",
                 "Finds Assets/Models/yolo26n-seg.onnx first",
+                "Apply Preset"),
+            new(
+                VisionQuickStartPreset.YoloDetectionVideo,
+                "YOLO Detection + Video",
+                "Create detection profiles, wire the demo scene to a VideoPlayer source, and let you assign a clip or URL instead of using a webcam.",
+                "Assign a Video Clip or URL on the scene VideoPlayer",
+                "Apply Preset"),
+            new(
+                VisionQuickStartPreset.YoloPoseVideo,
+                "YOLO Pose + Video",
+                "Create pose profiles, wire the demo scene to a VideoPlayer source, and show stabilized skeleton overlay output on file/video playback.",
+                "Assign a Video Clip or URL on the scene VideoPlayer",
+                "Apply Preset"),
+            new(
+                VisionQuickStartPreset.YoloSegmentationVideo,
+                "YOLO Segmentation + Video",
+                "Create segmentation profiles, wire the demo scene to a VideoPlayer source, and render mask contours on file/video playback.",
+                "Assign a Video Clip or URL on the scene VideoPlayer",
                 "Apply Preset")
         };
 

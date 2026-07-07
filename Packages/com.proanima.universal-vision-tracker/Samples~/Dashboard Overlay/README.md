@@ -2,7 +2,7 @@
 
 This sample previews the UI Toolkit dashboard with synthetic `VisionFrameResult` data.
 
-It does not require a model, camera, or runtime adapter. Use it to inspect overlay geometry, labels, keypoints, skeleton bones, masks, and runtime stats.
+It does not require a model, camera, or runtime adapter. Use it to inspect overlay geometry, labels, keypoints, skeleton bones, mask fills, segmentation contours, bounding boxes, and runtime stats.
 
 ## Use
 
@@ -11,4 +11,4 @@ It does not require a model, camera, or runtime adapter. Use it to inspect overl
 3. Add `ProAnimaVisionDashboardFixture`.
 4. Enter Play Mode.
 
-The component adds/configures `VisionToolkitDashboardReceiver` and sends a moving synthetic person/object frame to the dashboard.
+The component adds/configures `VisionToolkitDashboardReceiver` and sends a moving synthetic person/object frame to the dashboard, including detection boxes, a COCO-17-style pose, and a person-like segmentation contour.

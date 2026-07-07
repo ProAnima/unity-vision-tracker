@@ -47,7 +47,7 @@ namespace UniversalTracker.OutputReceivers
         public bool mirrorPreviewY;
         [Tooltip("Minimum keypoint confidence required for pose drawing.")]
         [Range(0.05f, 1f)] public float keypointConfidenceThreshold = 0.35f;
-        [Tooltip("Temporal smoothing amount for pose bones and keypoints.")]
+        [Tooltip("Temporal smoothing amount for overlay boxes, contours, pose bones, and keypoints.")]
         [Range(0f, 0.95f)] public float poseSmoothing = 0.55f;
         [Tooltip("Opacity of segmentation mask fills.")]
         [Range(0.05f, 0.8f)] public float maskAlpha = 0.28f;

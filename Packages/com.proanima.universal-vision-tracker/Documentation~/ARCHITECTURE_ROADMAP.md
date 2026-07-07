@@ -57,6 +57,8 @@ Configuration is profile-first:
 - Dashboard runtime controls now have stable UI Toolkit ids, tooltips, and PlayMode coverage for visualization, threshold, and FPS wiring.
 - The default adapter registry intentionally resolves only implemented YOLO/Unity Inference profiles; optional MediaPipe, SAM, native, remote, AR, and XR packages remain extension skeletons until real adapters are added.
 - `VisionFrameResult` now exposes optional GPU output handles so future BodyPix/SAM/pose adapters can provide mask `RenderTexture` and keypoint `GraphicsBuffer` data without forcing CPU readback.
+- UI Toolkit dashboard overlays now render YOLO detection, pose, and segmentation outputs with stable identity colors, temporal smoothing, short anti-flicker hold frames, corner-accented boxes, readable labels, haloed pose bones/keypoints, and haloed mask contour strokes from `VisionFrameResult`.
+- Control Center Quick Start presets now include YOLO Detection/Pose/Segmentation + Video variants that wire the Experimental Scene through a `VideoPlayer` source instead of a webcam.
 
 ## Next Production Steps
 

@@ -3,6 +3,7 @@ using Unity.InferenceEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Video;
 using UnityEngine.UIElements;
 using UniversalTracker;
 using UniversalTracker.Core;
@@ -29,8 +30,9 @@ namespace UniversalTracker.Editor
                 return;
 
             VisionModelProfile model = CreateModelProfile(ToTemplate(preset));
+            VisionSceneSetupSource source = ToSceneSource(preset);
             VisionPipelineProfile pipeline = VisionModelProfileTemplateFactory.CreatePipelineProfile(new[] { model });
-            pipeline.name = $"{model.displayName} WebCam Pipeline";
+            pipeline.name = $"{model.displayName} {SourceLabel(source)} Pipeline";
             pipeline.targetFps = 30;
             pipeline.enableTracking = true;
             pipeline = CreateOrUpdateAsset(pipeline, $"{ProfileFolder}/{Sanitize(pipeline.name)}.asset");
@@ -41,21 +43,27 @@ namespace UniversalTracker.Editor
                 sceneObjectName,
                 pipeline,
                 null,
-                VisionSceneSetupSource.WebCam,
+                source,
                 addDashboard: !useExperimentalSceneBootstrap,
                 enableTracking: true,
                 autoStart: model.modelAsset != null,
                 targetFps: pipeline.targetFps));
-            ConfigureExperimentalBootstrap(result.root, pipeline, model.modelAsset != null);
+            ConfigureExperimentalBootstrap(result.root, pipeline, model.modelAsset != null, source, result.manager.sourceVideoPlayer);
 
-            Selection.activeObject = pipeline;
-            EditorGUIUtility.PingObject(pipeline);
+            if (source == VisionSceneSetupSource.Video)
+            {
+                Selection.activeGameObject = result.root;
+                EditorGUIUtility.PingObject(result.root);
+            }
+            else
+            {
+                Selection.activeObject = pipeline;
+                EditorGUIUtility.PingObject(pipeline);
+            }
 
             EditorUtility.DisplayDialog(
                 "Preset Applied",
-                model.modelAsset == null
-                    ? "The demo scene and profiles are ready. Assign a ModelAsset in the model profile, then run Profile Validator before pressing Play."
-                    : "The demo scene and profiles are ready. Press Play to start.",
+                CreatePresetMessage(model.modelAsset != null, source),
                 "OK");
         }
 
@@ -86,9 +94,27 @@ namespace UniversalTracker.Editor
             return preset switch
             {
                 VisionQuickStartPreset.YoloPoseWebCam => VisionModelProfileTemplate.YoloPose2D,
+                VisionQuickStartPreset.YoloPoseVideo => VisionModelProfileTemplate.YoloPose2D,
                 VisionQuickStartPreset.YoloSegmentationWebCam => VisionModelProfileTemplate.YoloSegmentation,
+                VisionQuickStartPreset.YoloSegmentationVideo => VisionModelProfileTemplate.YoloSegmentation,
                 _ => VisionModelProfileTemplate.YoloDetection
             };
+        }
+
+        private static VisionSceneSetupSource ToSceneSource(VisionQuickStartPreset preset)
+        {
+            return preset switch
+            {
+                VisionQuickStartPreset.YoloDetectionVideo => VisionSceneSetupSource.Video,
+                VisionQuickStartPreset.YoloPoseVideo => VisionSceneSetupSource.Video,
+                VisionQuickStartPreset.YoloSegmentationVideo => VisionSceneSetupSource.Video,
+                _ => VisionSceneSetupSource.WebCam
+            };
+        }
+
+        private static string SourceLabel(VisionSceneSetupSource source)
+        {
+            return source == VisionSceneSetupSource.Video ? "Video" : "WebCam";
         }
 
         private static T CreateOrUpdateAsset<T>(T asset, string path)
@@ -110,7 +136,7 @@ namespace UniversalTracker.Editor
             return asset;
         }
 
-        private static void ConfigureExperimentalBootstrap(GameObject root, VisionPipelineProfile pipeline, bool autoStart)
+        private static void ConfigureExperimentalBootstrap(GameObject root, VisionPipelineProfile pipeline, bool autoStart, VisionSceneSetupSource source, VideoPlayer videoPlayer)
         {
             Component bootstrap = FindExperimentalBootstrap(root);
             if (bootstrap == null)
@@ -123,9 +149,16 @@ namespace UniversalTracker.Editor
             SetObject(serialized, "pipelineProfile", pipeline);
             SetObject(serialized, "modelProfile", null);
             SetBool(serialized, "autoStartRealPipeline", autoStart);
+            SetEnum(serialized, "realPipelineSource", (int)ToInputProviderType(source));
+            SetObject(serialized, "sourceVideoPlayer", source == VisionSceneSetupSource.Video ? videoPlayer : null);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(bootstrap);
             EditorSceneManager.MarkSceneDirty(root.scene);
+        }
+
+        private static InputProviderType ToInputProviderType(VisionSceneSetupSource source)
+        {
+            return source == VisionSceneSetupSource.Video ? InputProviderType.Video : InputProviderType.WebCam;
         }
 
         private static void CleanupEditTimeDashboard(GameObject root)
@@ -173,6 +206,28 @@ namespace UniversalTracker.Editor
             SerializedProperty property = serialized.FindProperty(propertyName);
             if (property != null)
                 property.objectReferenceValue = value;
+        }
+
+        private static void SetEnum(SerializedObject serialized, string propertyName, int value)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+                property.enumValueIndex = value;
+        }
+
+        private static string CreatePresetMessage(bool hasModelAsset, VisionSceneSetupSource source)
+        {
+            if (source == VisionSceneSetupSource.Video)
+            {
+                string modelMessage = hasModelAsset
+                    ? "The demo scene and profiles are ready."
+                    : "The demo scene and profiles are ready. Assign a ModelAsset in the model profile.";
+                return $"{modelMessage} Assign a Video Clip or URL on the selected VideoPlayer, then press Play.";
+            }
+
+            return hasModelAsset
+                ? "The demo scene and profiles are ready. Press Play to start."
+                : "The demo scene and profiles are ready. Assign a ModelAsset in the model profile, then run Profile Validator before pressing Play.";
         }
 
         private static ModelAsset ResolveModelAsset(VisionModelProfileTemplate template)

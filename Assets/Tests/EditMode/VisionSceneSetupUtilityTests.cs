@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Video;
 using UniversalTracker.Core;
 using UniversalTracker.Editor;
 using UniversalTracker.OutputReceivers;
@@ -80,6 +81,33 @@ namespace UniversalTracker.Tests
             Assert.That(result.root.GetComponent<VisionToolkitDashboardReceiver>(), Is.Null);
 
             Object.DestroyImmediate(model);
+        }
+
+        [Test]
+        public void CreateOrUpdate_WithVideoSource_ConfiguresVideoPlayer()
+        {
+            VisionPipelineProfile profile = ScriptableObject.CreateInstance<VisionPipelineProfile>();
+            var options = new VisionSceneSetupOptions(
+                "Vision Video Setup Test",
+                profile,
+                null,
+                VisionSceneSetupSource.Video,
+                addDashboard: true,
+                enableTracking: true,
+                autoStart: false,
+                targetFps: 30);
+
+            VisionSceneSetupResult result = VisionSceneSetupUtility.CreateOrUpdate(options);
+            VideoPlayer player = result.root.GetComponent<VideoPlayer>();
+
+            Assert.That(result.manager.inputType, Is.EqualTo(InputProviderType.Video));
+            Assert.That(player, Is.Not.Null);
+            Assert.That(result.manager.sourceVideoPlayer, Is.SameAs(player));
+            Assert.That(player.renderMode, Is.EqualTo(VideoRenderMode.APIOnly));
+            Assert.That(player.isLooping, Is.True);
+            Assert.That(player.playOnAwake, Is.False);
+
+            Object.DestroyImmediate(profile);
         }
 
         [Test]

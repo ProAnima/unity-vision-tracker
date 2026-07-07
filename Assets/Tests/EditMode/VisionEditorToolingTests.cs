@@ -102,7 +102,7 @@ namespace UniversalTracker.Tests
         {
             var labels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            Assert.That(VisionQuickStartPresetDefinition.All, Has.Length.EqualTo(4));
+            Assert.That(VisionQuickStartPresetDefinition.All, Has.Length.EqualTo(7));
             foreach (VisionQuickStartPresetDefinition definition in VisionQuickStartPresetDefinition.All)
             {
                 Assert.That(definition.Label, Is.Not.Empty);
@@ -122,6 +122,8 @@ namespace UniversalTracker.Tests
 
             Assert.That(utility, Does.Contain("SetBool(serialized, \"runWebCamPreview\", false)"));
             Assert.That(utility, Does.Contain("SetBool(serialized, \"configureRealPipeline\", true)"));
+            Assert.That(utility, Does.Contain("SetEnum(serialized, \"realPipelineSource\""));
+            Assert.That(utility, Does.Contain("SetObject(serialized, \"sourceVideoPlayer\""));
             Assert.That(utility, Does.Contain("addDashboard: !useExperimentalSceneBootstrap"));
             Assert.That(utility, Does.Contain("CleanupEditTimeDashboard"));
         }

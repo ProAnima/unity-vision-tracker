@@ -14,11 +14,12 @@ namespace UniversalTracker.OutputReceivers
             Vector2 viewportSize,
             float stroke,
             Color color,
+            float opacity,
             ref int segmentsUsed)
         {
             if (mask.normalizedContourSegments != null && mask.normalizedContourSegments.Length > 1)
             {
-                RenderSegments(mask.normalizedContourSegments, state, sourceSize, viewportSize, stroke, color, ref segmentsUsed);
+                RenderSegments(mask.normalizedContourSegments, state, sourceSize, viewportSize, stroke, color, opacity, ref segmentsUsed);
                 return;
             }
 
@@ -32,10 +33,10 @@ namespace UniversalTracker.OutputReceivers
                 VisualElement segment = VisionDashboardElementPool.GetElement(
                     state.maskContourSegments,
                     state.maskLayer,
-                    VisionToolkitDashboardPrimitives.CreateBone,
+                    VisionToolkitDashboardPrimitives.CreateContourSegment,
                     segmentsUsed);
 
-                UpdateSegment(segment, from, to, color, stroke);
+                UpdateSegment(segment, from, to, color, stroke, opacity);
                 segmentsUsed++;
             }
         }
@@ -47,6 +48,7 @@ namespace UniversalTracker.OutputReceivers
             Vector2 viewportSize,
             float stroke,
             Color color,
+            float opacity,
             ref int segmentsUsed)
         {
             for (int i = 0; i + 1 < segments.Length; i += 2)
@@ -56,23 +58,27 @@ namespace UniversalTracker.OutputReceivers
                 VisualElement segment = VisionDashboardElementPool.GetElement(
                     state.maskContourSegments,
                     state.maskLayer,
-                    VisionToolkitDashboardPrimitives.CreateBone,
+                    VisionToolkitDashboardPrimitives.CreateContourSegment,
                     segmentsUsed);
 
-                UpdateSegment(segment, from, to, color, stroke);
+                UpdateSegment(segment, from, to, color, stroke, opacity);
                 segmentsUsed++;
             }
         }
 
-        private static void UpdateSegment(VisualElement segment, Vector2 from, Vector2 to, Color color, float stroke)
+        private static void UpdateSegment(VisualElement segment, Vector2 from, Vector2 to, Color color, float stroke, float opacity)
         {
-            BoneLine line = VisionDashboardGeometry.CalculateBoneLine(from, to);
-            segment.style.left = line.center.x - line.length * 0.5f;
-            segment.style.top = line.center.y - stroke * 0.5f;
-            segment.style.width = Mathf.Max(1f, line.length);
-            segment.style.height = Mathf.Max(2f, stroke * 1.35f);
-            segment.style.rotate = new Rotate(new Angle(line.angleDegrees, AngleUnit.Degree));
-            segment.style.backgroundColor = new Color(color.r, color.g, color.b, 0.96f);
+            float core = VisionDashboardOverlayStyle.ContourCoreThickness(stroke);
+            float halo = VisionDashboardOverlayStyle.HaloThickness(core);
+            VisionToolkitDashboardLineRenderer.UpdateLine(
+                segment,
+                from,
+                to,
+                core,
+                halo,
+                VisionDashboardOverlayStyle.WithAlpha(color, 0.98f * opacity),
+                0.64f * opacity);
+            segment.style.opacity = opacity;
         }
     }
 }

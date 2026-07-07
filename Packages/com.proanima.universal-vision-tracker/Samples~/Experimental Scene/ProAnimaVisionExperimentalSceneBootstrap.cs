@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Video;
 using UnityEngine.UIElements;
 using UniversalTracker;
 using UniversalTracker.Core;
@@ -40,6 +41,10 @@ namespace ProAnimaVision.Samples
         public VisionModelProfile modelProfile;
         [Tooltip("Start the real pipeline automatically on scene start.")]
         public bool autoStartRealPipeline;
+        [Tooltip("Frame source used by UniversalTrackerManager when real pipeline mode is enabled.")]
+        public InputProviderType realPipelineSource = InputProviderType.WebCam;
+        [Tooltip("VideoPlayer used when Real Pipeline Source is Video. Assign a Video Clip or URL here.")]
+        public VideoPlayer sourceVideoPlayer;
 
         [Header("Fallback")]
         [Tooltip("Show a synthetic texture if no camera frames are available.")]
@@ -223,7 +228,8 @@ namespace ProAnimaVision.Samples
             manager = GetComponent<UniversalTrackerManager>() ?? gameObject.AddComponent<UniversalTrackerManager>();
             manager.pipelineProfile = pipelineProfile;
             manager.modelProfiles = pipelineProfile == null && modelProfile != null ? new[] { modelProfile } : null;
-            manager.inputType = InputProviderType.WebCam;
+            manager.inputType = realPipelineSource;
+            manager.sourceVideoPlayer = realPipelineSource == InputProviderType.Video ? EnsureVideoPlayer() : null;
             manager.webCamDeviceName = ResolveDeviceName();
             manager.webCamRequestedWidth = requestedWidth;
             manager.webCamRequestedHeight = requestedHeight;
@@ -248,6 +254,18 @@ namespace ProAnimaVision.Samples
             dashboard.trackerManager = null;
             dashboard.subscribeToManagerEvent = false;
             dashboard.SetCommandHandlers(RestartWebCamPreview, StopWebCamPreview);
+        }
+
+        private VideoPlayer EnsureVideoPlayer()
+        {
+            if (sourceVideoPlayer == null)
+                sourceVideoPlayer = GetComponent<VideoPlayer>() ?? gameObject.AddComponent<VideoPlayer>();
+
+            sourceVideoPlayer.playOnAwake = false;
+            sourceVideoPlayer.waitForFirstFrame = true;
+            sourceVideoPlayer.isLooping = true;
+            sourceVideoPlayer.renderMode = VideoRenderMode.APIOnly;
+            return sourceVideoPlayer;
         }
 
         private VisionFrameResult CreatePreviewResult(Texture texture)

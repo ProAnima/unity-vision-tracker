@@ -31,7 +31,7 @@ Open Unity Package Manager, select `ProAnima Universal Vision Tracker`, then imp
 - `Minimal Pipeline` for a compact manager bootstrap.
 - `Dashboard Overlay` for UI Toolkit overlay preview without a camera or model.
 - `YOLO Model Profiles` for detection, pose, and segmentation profile templates.
-- `Experimental Scene` for a polished runnable WebCam dashboard scene with fit, rotation, and mirror controls.
+- `Experimental Scene` for a polished runnable WebCam or VideoPlayer dashboard scene with fit, rotation, and mirror controls.
 
 You can also use `Control Center > Import / Open Demo Scene`; it attempts to import the Experimental Scene automatically and falls back to Package Manager instructions if Unity does not expose the sample import API.
 
@@ -45,8 +45,13 @@ Open `Tools/ProAnima Vision/Control Center`, choose one preset, then click the p
 - `YOLO Detection + WebCam` creates or updates detection profiles, opens the demo scene, and wires the camera pipeline.
 - `YOLO Pose + WebCam` creates or updates pose profiles and skeleton overlay wiring.
 - `YOLO Segmentation + WebCam` creates or updates segmentation profiles and mask overlay wiring.
+- `YOLO Detection + Video` creates detection profiles, opens the demo scene, wires a `VideoPlayer` source, and lets you assign a clip or URL.
+- `YOLO Pose + Video` creates pose profiles and runs skeleton overlay on file/video playback.
+- `YOLO Segmentation + Video` creates segmentation profiles and runs mask contours on file/video playback.
 
 Preset assets are written under `Assets/ProAnima Vision/Profiles`. Re-applying the same preset updates the same assets instead of creating duplicates.
+
+For Video presets, select `ProAnima Vision Experimental Demo` after applying the preset and assign a `Video Clip` or URL on its `VideoPlayer` component before pressing Play. The generated `VideoPlayer` is configured for `APIOnly` rendering so the same texture can feed the vision pipeline and dashboard.
 
 ## Create A Model Profile Manually
 

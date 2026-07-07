@@ -130,6 +130,70 @@ namespace UniversalTracker.Tests
             Object.Destroy(maskTexture);
         }
 
+        [UnityTest]
+        public IEnumerator OverlayRenderer_HoldsMissingDetectionAndMaskBriefly()
+        {
+            var state = new VisionDashboardOverlayState
+            {
+                maskLayer = new VisualElement(),
+                detectionLayer = new VisualElement(),
+                boneLayer = new VisualElement(),
+                keypointLayer = new VisualElement(),
+                labelLayer = new VisualElement()
+            };
+
+            VisionToolkitDashboardOverlayRenderer.Render(
+                CreateFrameResult(),
+                state,
+                new Vector2(640, 480),
+                new Vector2(640, 480),
+                2f,
+                true,
+                true,
+                false,
+                0.25f,
+                0.1f,
+                0.55f);
+            VisionToolkitDashboardOverlayRenderer.Render(
+                EmptyFrameResult(),
+                state,
+                new Vector2(640, 480),
+                new Vector2(640, 480),
+                2f,
+                true,
+                true,
+                false,
+                0.25f,
+                0.1f,
+                0.55f);
+
+            yield return null;
+
+            Assert.That(state.detections[0].style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            Assert.That(state.masks[0].style.display.value, Is.EqualTo(DisplayStyle.Flex));
+
+            for (int i = 0; i < 3; i++)
+            {
+                VisionToolkitDashboardOverlayRenderer.Render(
+                    EmptyFrameResult(),
+                    state,
+                    new Vector2(640, 480),
+                    new Vector2(640, 480),
+                    2f,
+                    true,
+                    true,
+                    false,
+                    0.25f,
+                    0.1f,
+                    0.55f);
+            }
+
+            yield return null;
+
+            Assert.That(state.detections[0].style.display.value, Is.EqualTo(DisplayStyle.None));
+            Assert.That(state.masks[0].style.display.value, Is.EqualTo(DisplayStyle.None));
+        }
+
         private static VisionFrameResult CreateFrameResult(Texture2D maskTexture = null)
         {
             return new VisionFrameResult
@@ -187,6 +251,19 @@ namespace UniversalTracker.Tests
                         }
                     }
                 }
+            };
+        }
+
+        private static VisionFrameResult EmptyFrameResult()
+        {
+            return new VisionFrameResult
+            {
+                frameIndex = 2,
+                timestamp = 2d,
+                sourceSize = new Vector2Int(640, 480),
+                detections = new VisionDetection[0],
+                masks = new VisionMask[0],
+                poses = new VisionPose[0]
             };
         }
 

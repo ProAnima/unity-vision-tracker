@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Video;
 using UniversalTracker.Core;
 using UniversalTracker.OutputReceivers;
 
@@ -129,6 +130,7 @@ namespace UniversalTracker.Editor
                 : null;
             manager.activeModelIndex = 0;
             manager.inputType = ToInputProviderType(options.source);
+            manager.sourceVideoPlayer = options.source == VisionSceneSetupSource.Video ? EnsureVideoPlayer(manager.gameObject) : null;
             manager.useToolkitDashboard = options.addDashboard;
             manager.useDebugOutput = false;
             manager.useUIVisualization = false;
@@ -146,6 +148,20 @@ namespace UniversalTracker.Editor
             dashboard.subscribeToManagerEvent = true;
             manager.manualToolkitDashboardReceiver = dashboard;
             return dashboard;
+        }
+
+        private static VideoPlayer EnsureVideoPlayer(GameObject root)
+        {
+            VideoPlayer player = root.GetComponent<VideoPlayer>();
+            if (player == null)
+                player = Undo.AddComponent<VideoPlayer>(root);
+
+            player.playOnAwake = false;
+            player.waitForFirstFrame = true;
+            player.isLooping = true;
+            player.renderMode = VideoRenderMode.APIOnly;
+            EditorUtility.SetDirty(player);
+            return player;
         }
 
         private static InputProviderType ToInputProviderType(VisionSceneSetupSource source)

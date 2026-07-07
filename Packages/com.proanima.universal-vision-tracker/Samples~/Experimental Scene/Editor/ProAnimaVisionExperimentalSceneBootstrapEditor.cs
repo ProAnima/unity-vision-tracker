@@ -57,6 +57,8 @@ namespace ProAnimaVision.Samples.Editor
             EditorGUILayout.PropertyField(serializedObject.FindProperty("pipelineProfile"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("modelProfile"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("autoStartRealPipeline"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("realPipelineSource"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("sourceVideoPlayer"));
             EditorGUI.indentLevel--;
             EditorGUILayout.Space(6f);
         }

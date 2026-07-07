@@ -233,7 +233,7 @@ namespace UniversalTracker.OutputReceivers
             view.confidenceSlider = AddSlider(settings, "Confidence", "VisionConfidenceSlider", "Minimum model confidence accepted by the active profile.", 0.01f, 0.99f, 0.25f);
             view.nmsSlider = AddSlider(settings, "NMS", "VisionNmsSlider", "Overlap threshold for suppressing duplicate boxes.", 0.01f, 0.99f, 0.45f);
             view.keypointSlider = AddSlider(settings, "Keypoints", "VisionKeypointSlider", "Minimum keypoint confidence for skeleton rendering.", 0.05f, 1f, 0.35f);
-            view.poseSmoothingSlider = AddSlider(settings, "Pose smooth", "VisionPoseSmoothingSlider", "Visual smoothing for pose bones and keypoints.", 0f, 0.95f, 0.55f);
+            view.poseSmoothingSlider = AddSlider(settings, "Overlay smooth", "VisionPoseSmoothingSlider", "Visual smoothing for boxes, contours, pose bones, and keypoints.", 0f, 0.95f, 0.55f);
             view.maskAlphaSlider = AddSlider(settings, "Mask alpha", "VisionMaskAlphaSlider", "Transparency for segmentation mask fills.", 0.02f, 0.8f, 0.28f);
             view.targetFpsSlider = AddSlider(settings, "FPS", "VisionTargetFpsSlider", "Runtime target frame rate for processing.", 1f, 60f, 30f);
         }

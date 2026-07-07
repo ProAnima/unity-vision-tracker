@@ -70,7 +70,7 @@ namespace UniversalTracker.Editor
 
             var heading = CreateHeading("Scene Preview");
             panel.Add(heading);
-            panel.Add(CreateBodyText("Import and open the polished WebCam demo scene. This is the fastest way to verify camera access, preview fitting, rotation, mirroring, and overlay layout."));
+            panel.Add(CreateBodyText("Import and open the polished source demo scene. This is the fastest way to verify WebCam access, VideoPlayer wiring, preview fitting, rotation, mirroring, and overlay layout."));
 
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
