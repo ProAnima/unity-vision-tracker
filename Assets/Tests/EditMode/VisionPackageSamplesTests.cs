@@ -109,9 +109,11 @@ namespace UniversalTracker.Tests
             Assert.That(controls, Does.Contain("VideoPlaylistControls"));
             Assert.That(controls, Does.Contain("UsePreviousVideo"));
             Assert.That(controls, Does.Contain("UseNextVideo"));
-            Assert.That(controls, Does.Contain("UpdateVideoHotkeys"));
+            Assert.That(controls, Does.Contain("RegisterVideoHotkeys"));
+            Assert.That(controls, Does.Contain("KeyDownEvent"));
             Assert.That(controls, Does.Contain("KeyCode.LeftArrow"));
             Assert.That(controls, Does.Contain("KeyCode.RightArrow"));
+            Assert.That(controls, Does.Not.Contain("Input.GetKeyDown"));
             Assert.That(controls, Does.Contain("VisionVideoPlaylistSource"));
         }
 

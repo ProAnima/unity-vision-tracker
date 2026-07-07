@@ -12,6 +12,7 @@ namespace ProAnimaVision.Samples
         private Label videoPlaylistLabel;
         private Button previousVideoButton;
         private Button nextVideoButton;
+        private bool videoHotkeysRegistered;
 
         private void EnsureVideoControls()
         {
@@ -23,6 +24,7 @@ namespace ProAnimaVision.Samples
             if (existing != null)
             {
                 CacheVideoControls(existing);
+                RegisterVideoHotkeys();
                 UpdateVideoControls();
                 return;
             }
@@ -30,6 +32,7 @@ namespace ProAnimaVision.Samples
             var section = CreateVideoControlsSection();
             controlPanel.Insert(Mathf.Min(4, controlPanel.childCount), section);
             CacheVideoControls(section);
+            RegisterVideoHotkeys();
             UpdateVideoControls();
         }
 
@@ -43,15 +46,33 @@ namespace ProAnimaVision.Samples
             SelectPlaylistVideo(-1);
         }
 
-        private void UpdateVideoHotkeys()
+        private void RegisterVideoHotkeys()
         {
-            if (realPipelineSource != InputProviderType.Video || !HasSwitchableVideoPlaylist())
+            if (videoHotkeysRegistered || document == null || document.rootVisualElement == null)
                 return;
 
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            VisualElement root = document.rootVisualElement;
+            root.focusable = true;
+            root.RegisterCallback<KeyDownEvent>(HandleVideoHotkey);
+            root.Focus();
+            videoHotkeysRegistered = true;
+        }
+
+        private void HandleVideoHotkey(KeyDownEvent evt)
+        {
+            if (evt == null || realPipelineSource != InputProviderType.Video || !HasSwitchableVideoPlaylist())
+                return;
+
+            if (evt.keyCode == KeyCode.LeftArrow)
+            {
                 UsePreviousVideo();
-            else if (Input.GetKeyDown(KeyCode.RightArrow))
+                evt.StopPropagation();
+            }
+            else if (evt.keyCode == KeyCode.RightArrow)
+            {
                 UseNextVideo();
+                evt.StopPropagation();
+            }
         }
 
         private VisionVideoPlaylistSource EnsureVideoPlaylist(VideoPlayer player)

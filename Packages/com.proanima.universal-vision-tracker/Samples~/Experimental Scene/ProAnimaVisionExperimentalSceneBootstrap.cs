@@ -87,7 +87,6 @@ namespace ProAnimaVision.Samples
             ApplyDashboardPreviewSettings();
             UpdateCameraControls();
             UpdateVideoControls();
-            UpdateVideoHotkeys();
             if (!ShouldRunStandaloneWebCamPreview())
                 StopWebCamPreview();
 
