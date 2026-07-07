@@ -37,6 +37,11 @@
       "displayName": "Experimental Scene",
       "description": "Polished webcam-first dashboard scene for validating camera, profiles, and overlays before adding real models.",
       "path": "Samples~/Experimental Scene"
+    },
+    {
+      "displayName": "YOLO Humanoid Retargeting",
+      "description": "Generated humanoid test rig showing COCO-17 pose retargeting with temporal keypoint dropout filtering.",
+      "path": "Samples~/YOLO Humanoid Retargeting"
     }
   ],
   "author": {

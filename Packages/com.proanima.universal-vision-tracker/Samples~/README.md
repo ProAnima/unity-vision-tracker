@@ -8,6 +8,7 @@ Available samples:
 - `Dashboard Overlay`: synthetic `VisionFrameResult` fixture for previewing UI Toolkit overlay rendering without a model or camera.
 - `YOLO Model Profiles`: detection, pose, and segmentation `VisionModelProfile` templates with labels and parser schemas.
 - `Experimental Scene`: polished runnable source scene with WebCam controls, VideoPlayer playlist controls, and UI Toolkit dashboard overlays.
+- `YOLO Humanoid Retargeting`: generated humanoid test rig that adapts COCO-17 pose data into canonical humanoid joints with dropout filtering.
 
 Planned sample groups:
 

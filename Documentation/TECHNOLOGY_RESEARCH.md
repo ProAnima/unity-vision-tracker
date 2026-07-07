@@ -79,6 +79,27 @@ Reference:
 
 - [AR Foundation CPU camera image docs](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@4.2/manual/cpu-camera-image.html)
 
+## 4. Pose Retargeting: Model Output To Humanoid Intent
+
+Pose models should not drive Unity rigs directly. A parser should emit `VisionPose`, then a retargeting layer should convert model-family keypoints into a canonical humanoid pose that rig receivers can consume.
+
+Current increment:
+
+- `VisionCocoHumanoidPoseRetargeter` maps COCO-17 keypoints into `VisionHumanoidPose`.
+- `VisionPoseTemporalFilter` holds and predicts short keypoint dropouts before confidence decays.
+- `YOLO Humanoid Retargeting` sample builds a generated humanoid test rig and shows COCO pose adaptation without an external FBX.
+
+Why it matters:
+
+- YOLO, MediaPipe, Kinect-style skeletons, and future body-pose models can converge on the same humanoid receiver contract.
+- Runtime rig code can target Animator bones, generic transforms, or IK targets without depending on a specific detector.
+- Keypoint instability is handled before rig application, so short wrist/ankle losses do not snap limbs to bind pose.
+
+Migration impact:
+
+- Existing `VisionPose` outputs remain unchanged.
+- Rig integrations should consume `VisionHumanoidPose` as an optional downstream receiver rather than bypassing `VisionFrameResult`.
+
 Architectural implication:
 
 ```text
