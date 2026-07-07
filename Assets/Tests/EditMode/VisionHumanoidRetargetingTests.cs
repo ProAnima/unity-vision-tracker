@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UniversalTracker.Core;
+using UniversalTracker.OutputReceivers;
 using UnityEngine;
 
 namespace UniversalTracker.Tests
@@ -19,6 +20,7 @@ namespace UniversalTracker.Tests
             Assert.IsTrue(pose.TryGetJoint(VisionHumanoidJoint.LeftHand, out VisionHumanoidJointPose leftHand));
             Assert.Greater(head.position.y, hips.position.y);
             Assert.Less(leftHand.position.x, hips.position.x);
+            Assert.IsTrue(hips.hasRotation);
         }
 
         [Test]
@@ -54,6 +56,79 @@ namespace UniversalTracker.Tests
             Assert.IsFalse(ok);
         }
 
+        [Test]
+        public void CocoPoseRetargeterInfersMissingWristOnFirstFrame()
+        {
+            var retargeter = new VisionCocoHumanoidPoseRetargeter(new VisionPoseRetargetingOptions
+            {
+                minimumPoseQuality = 0.1f,
+                missingJointConfidence = 0.12f
+            });
+            VisionPose pose = CreatePose(0.9f);
+            pose.keypoints[9].confidence = 0f;
+            pose.keypoints[9].isVisible = false;
+
+            bool ok = retargeter.TryRetarget(pose, 1f / 30f, out VisionHumanoidPose humanoidPose);
+
+            Assert.IsTrue(ok);
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.LeftHand, out VisionHumanoidJointPose hand));
+            Assert.IsTrue(hand.predicted);
+            Assert.Greater(hand.confidence, 0f);
+            Assert.Less(hand.position.x, 0f);
+        }
+
+        [Test]
+        public void HumanoidRigReceiverAppliesPoseToExplicitBindings()
+        {
+            var host = new GameObject("RigReceiverTest");
+            var hips = new GameObject("Hips").transform;
+            var spine = new GameObject("Spine").transform;
+            hips.SetParent(host.transform);
+            spine.SetParent(hips);
+            hips.localPosition = Vector3.zero;
+            spine.localPosition = Vector3.up;
+
+            try
+            {
+                var receiver = host.AddComponent<VisionHumanoidRigReceiver>();
+                receiver.poseSpaceRoot = host.transform;
+                receiver.driveBoneRotations = true;
+                receiver.driveJointPositions = false;
+                receiver.blend = 1f;
+                receiver.bindings = new[]
+                {
+                    new VisionHumanoidRigJointBinding
+                    {
+                        joint = VisionHumanoidJoint.Hips,
+                        transform = hips,
+                        child = spine
+                    },
+                    new VisionHumanoidRigJointBinding
+                    {
+                        joint = VisionHumanoidJoint.Spine,
+                        transform = spine
+                    }
+                };
+                receiver.Initialize();
+
+                receiver.ApplyHumanoidPose(new VisionHumanoidPose
+                {
+                    joints = new[]
+                    {
+                        Joint(VisionHumanoidJoint.Hips, Vector3.zero),
+                        Joint(VisionHumanoidJoint.Spine, Vector3.right)
+                    }
+                });
+
+                Vector3 up = hips.rotation * Vector3.up;
+                Assert.Greater(Vector3.Dot(up.normalized, Vector3.right), 0.95f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static VisionPose CreatePose(float leftWristConfidence)
         {
             var keypoints = new VisionKeypoint[17];
@@ -87,6 +162,18 @@ namespace UniversalTracker.Tests
                 normalizedPosition = new Vector2(x, y),
                 confidence = confidence,
                 isVisible = confidence > 0.01f
+            };
+        }
+
+        private static VisionHumanoidJointPose Joint(VisionHumanoidJoint joint, Vector3 position)
+        {
+            return new VisionHumanoidJointPose
+            {
+                joint = joint,
+                position = position,
+                confidence = 1f,
+                observed = true,
+                rotation = Quaternion.identity
             };
         }
     }

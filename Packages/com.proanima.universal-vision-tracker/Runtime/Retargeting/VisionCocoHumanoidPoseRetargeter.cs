@@ -30,6 +30,8 @@ namespace UniversalTracker.Core
 
             Vector2 pelvis = Average(coco.leftHip.point, coco.rightHip.point);
             float scale = EstimateScale(coco);
+            StabilizeMissingLimbs(ref coco, scale, options);
+
             var builder = new JointBuilder(sourcePose.personId, pelvis, scale, options.bodyHeightMeters);
 
             AddTorso(builder, coco);
@@ -68,6 +70,24 @@ namespace UniversalTracker.Core
                    coco.rightHip.available &&
                    coco.leftShoulder.available &&
                    coco.rightShoulder.available;
+        }
+
+        private static void StabilizeMissingLimbs(
+            ref CocoKeypoints coco,
+            float scale,
+            VisionPoseRetargetingOptions options)
+        {
+            float armLength = scale * 0.45f;
+            float legLength = scale * 0.55f;
+
+            coco.leftElbow = EnsureChild(coco.leftShoulder, coco.leftElbow, new Vector2(-0.45f, 0.65f), armLength, options);
+            coco.rightElbow = EnsureChild(coco.rightShoulder, coco.rightElbow, new Vector2(0.45f, 0.65f), armLength, options);
+            coco.leftWrist = EnsureChild(coco.leftElbow, coco.leftWrist, Direction(coco.leftShoulder, coco.leftElbow, new Vector2(-0.35f, 0.7f)), armLength, options);
+            coco.rightWrist = EnsureChild(coco.rightElbow, coco.rightWrist, Direction(coco.rightShoulder, coco.rightElbow, new Vector2(0.35f, 0.7f)), armLength, options);
+            coco.leftKnee = EnsureChild(coco.leftHip, coco.leftKnee, new Vector2(-0.05f, 1f), legLength, options);
+            coco.rightKnee = EnsureChild(coco.rightHip, coco.rightKnee, new Vector2(0.05f, 1f), legLength, options);
+            coco.leftAnkle = EnsureChild(coco.leftKnee, coco.leftAnkle, Direction(coco.leftHip, coco.leftKnee, new Vector2(-0.02f, 1f)), legLength, options);
+            coco.rightAnkle = EnsureChild(coco.rightKnee, coco.rightAnkle, Direction(coco.rightHip, coco.rightKnee, new Vector2(0.02f, 1f)), legLength, options);
         }
 
         private static void AddTorso(JointBuilder builder, CocoKeypoints coco)
@@ -110,6 +130,7 @@ namespace UniversalTracker.Core
                 point = keypoint.normalizedPosition,
                 confidence = Mathf.Clamp01(keypoint.confidence),
                 available = keypoint.isVisible,
+                observed = keypoint.isVisible && keypoint.confidence >= threshold,
                 predicted = keypoint.isVisible && keypoint.confidence < threshold
             };
         }
@@ -121,6 +142,7 @@ namespace UniversalTracker.Core
                 point = Average(a.point, b.point),
                 confidence = (a.confidence + b.confidence) * 0.5f,
                 available = a.available && b.available,
+                observed = a.observed && b.observed,
                 predicted = a.predicted || b.predicted
             };
         }
@@ -134,8 +156,46 @@ namespace UniversalTracker.Core
                 point = Vector2.LerpUnclamped(a.point, b.point, t),
                 confidence = Mathf.Min(a.confidence, b.confidence),
                 available = a.available && b.available,
+                observed = a.observed && b.observed,
                 predicted = a.predicted || b.predicted
             };
+        }
+
+        private static KeypointPoint EnsureChild(
+            KeypointPoint parent,
+            KeypointPoint child,
+            Vector2 fallbackDirection,
+            float length,
+            VisionPoseRetargetingOptions options)
+        {
+            if (child.available)
+                return child;
+
+            Vector2 direction = SafeDirection(fallbackDirection, Vector2.down);
+            return new KeypointPoint
+            {
+                point = parent.point + direction * length,
+                confidence = Mathf.Clamp01(options.missingJointConfidence),
+                available = parent.available,
+                observed = false,
+                predicted = true
+            };
+        }
+
+        private static Vector2 Direction(KeypointPoint from, KeypointPoint to, Vector2 fallback)
+        {
+            if (!from.available || !to.available)
+                return SafeDirection(fallback, Vector2.down);
+
+            return SafeDirection(to.point - from.point, fallback);
+        }
+
+        private static Vector2 SafeDirection(Vector2 direction, Vector2 fallback)
+        {
+            if (direction.sqrMagnitude > 0.000001f)
+                return direction.normalized;
+
+            return fallback.sqrMagnitude > 0.000001f ? fallback.normalized : Vector2.down;
         }
 
         private static float EstimateScale(CocoKeypoints coco)
@@ -167,12 +227,13 @@ namespace UniversalTracker.Core
             public Vector2 point;
             public float confidence;
             public bool available;
+            public bool observed;
             public bool predicted;
         }
 
         private sealed class JointBuilder
         {
-            private readonly VisionHumanoidJointPose[] joints = new VisionHumanoidJointPose[19];
+            private readonly VisionHumanoidJointPose[] joints = new VisionHumanoidJointPose[VisionHumanoidJointUtility.JointCount];
             private readonly int personId;
             private readonly Vector2 pelvis;
             private readonly float scale;
@@ -195,27 +256,66 @@ namespace UniversalTracker.Core
                 {
                     joint = joint,
                     position = ToBodySpace(point.point),
+                    rotation = Quaternion.identity,
                     confidence = point.confidence,
-                    observed = point.available && !point.predicted,
-                    predicted = point.predicted
+                    observed = point.observed,
+                    predicted = point.predicted,
+                    hasRotation = false
                 };
 
                 confidenceSum += point.confidence;
-                if (point.available && !point.predicted)
+                if (point.observed)
                     observedCount++;
             }
 
             public VisionHumanoidPose Build()
             {
-                Array.Resize(ref joints, count);
+                ApplyRotations();
+                var output = new VisionHumanoidJointPose[count];
+                Array.Copy(joints, output, count);
                 float quality = count == 0 ? 0f : observedCount / (float)count;
                 return new VisionHumanoidPose
                 {
                     personId = personId,
                     confidence = count == 0 ? 0f : confidenceSum / count,
                     trackingQuality = quality,
-                    joints = joints
+                    joints = output
                 };
+            }
+
+            private void ApplyRotations()
+            {
+                VisionHumanoidBone[] bones = VisionHumanoidJointUtility.Bones;
+                for (int i = 0; i < bones.Length; i++)
+                {
+                    if (!TryFind(bones[i].from, out int fromIndex) ||
+                        !TryFind(bones[i].to, out int toIndex))
+                    {
+                        continue;
+                    }
+
+                    Vector3 direction = joints[toIndex].position - joints[fromIndex].position;
+                    if (direction.sqrMagnitude < 0.000001f)
+                        continue;
+
+                    joints[fromIndex].rotation = Quaternion.FromToRotation(Vector3.up, direction.normalized);
+                    joints[fromIndex].hasRotation = true;
+                }
+            }
+
+            private bool TryFind(VisionHumanoidJoint joint, out int index)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    if (joints[i].joint == joint)
+                    {
+                        index = i;
+                        return true;
+                    }
+                }
+
+                index = -1;
+                return false;
             }
 
             private Vector3 ToBodySpace(Vector2 point)

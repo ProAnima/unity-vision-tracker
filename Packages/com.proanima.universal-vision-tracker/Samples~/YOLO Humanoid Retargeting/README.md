@@ -1,13 +1,14 @@
 # YOLO Humanoid Retargeting Sample
 
-This sample demonstrates the first production retargeting path from a YOLO/COCO-17 pose into a canonical Unity humanoid pose.
+This sample demonstrates the production retargeting path from a YOLO/COCO-17 pose into a canonical Unity humanoid pose and then into a Unity rig.
 
 ## What It Shows
 
-- A runtime-created test rig with standard humanoid joints.
+- A runtime-created humanoid rig hierarchy with standard hips, spine, chest, neck, head, arm, hand, leg, and foot joints.
 - A synthetic COCO-17 pose stream, including intermittent wrist dropout.
 - `VisionCocoHumanoidPoseRetargeter` converting `VisionPose` into `VisionHumanoidPose`.
-- Temporal hold/prediction so short keypoint losses do not snap limbs back to bind pose.
+- `VisionHumanoidRigReceiver` applying the canonical pose to explicit `Transform` bindings.
+- Temporal hold, prediction, and kinematic fallback so short wrist/ankle losses do not snap limbs back to bind pose.
 
 ## How To Use
 
@@ -15,4 +16,4 @@ This sample demonstrates the first production retargeting path from a YOLO/COCO-
 2. Add `ProAnimaVisionYoloHumanoidRetargetingDemo` to an empty GameObject.
 3. Enter Play Mode.
 
-The sample uses generated Unity primitives rather than an FBX so the retargeting logic can be inspected without external assets. Production rigs should consume `VisionHumanoidPose` from a receiver that maps joints to `Animator` humanoid bones, generic bone transforms, or Animation Rigging targets.
+The sample uses generated Unity primitives rather than an FBX so the retargeting logic can be inspected without external assets. Production rigs should use `VisionHumanoidRigReceiver` with either an `Animator` humanoid auto-binding or explicit `Transform` bindings for a Generic rig.

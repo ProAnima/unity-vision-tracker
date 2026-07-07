@@ -87,6 +87,7 @@ Current increment:
 
 - `VisionCocoHumanoidPoseRetargeter` maps COCO-17 keypoints into `VisionHumanoidPose`.
 - `VisionPoseTemporalFilter` holds and predicts short keypoint dropouts before confidence decays.
+- `VisionHumanoidRigReceiver` applies canonical humanoid poses to Humanoid Animator bones or explicit Generic rig transforms using bind-pose direction calibration.
 - `YOLO Humanoid Retargeting` sample builds a generated humanoid test rig and shows COCO pose adaptation without an external FBX.
 
 Why it matters:
