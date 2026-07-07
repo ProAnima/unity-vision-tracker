@@ -43,6 +43,17 @@ namespace ProAnimaVision.Samples
             SelectPlaylistVideo(-1);
         }
 
+        private void UpdateVideoHotkeys()
+        {
+            if (realPipelineSource != InputProviderType.Video || !HasSwitchableVideoPlaylist())
+                return;
+
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+                UsePreviousVideo();
+            else if (Input.GetKeyDown(KeyCode.RightArrow))
+                UseNextVideo();
+        }
+
         private VisionVideoPlaylistSource EnsureVideoPlaylist(VideoPlayer player)
         {
             VisionVideoPlaylistSource playlist = ResolveVideoPlaylist(true);
@@ -74,6 +85,12 @@ namespace ProAnimaVision.Samples
                 manager.sourceVideoPlayer = playlist.EnsureVideoPlayer();
 
             UpdateVideoControls();
+        }
+
+        private bool HasSwitchableVideoPlaylist()
+        {
+            VisionVideoPlaylistSource playlist = ResolveVideoPlaylist(false);
+            return playlist != null && playlist.HasVideos && (playlist.wrapNavigation || playlist.ValidCount > 1);
         }
 
         private VisualElement CreateVideoControlsSection()
@@ -137,7 +154,7 @@ namespace ProAnimaVision.Samples
             if (videoPlaylistLabel != null)
                 videoPlaylistLabel.text = hasPlaylist ? CreateVideoPlaylistLabel(playlist) : "Add clips or URLs to VisionVideoPlaylistSource.";
 
-            bool canSwitch = hasPlaylist && (playlist.wrapNavigation || playlist.ValidCount > 1);
+            bool canSwitch = HasSwitchableVideoPlaylist();
             previousVideoButton?.SetEnabled(canSwitch);
             nextVideoButton?.SetEnabled(canSwitch);
         }
