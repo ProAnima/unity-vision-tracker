@@ -49,8 +49,7 @@ namespace UniversalTracker.Core
                 activeProfile != null ? activeProfile.nmsThreshold : 0.45f,
                 labels,
                 ResolveModelInputSize(activeProfile),
-                activeProfile != null ? activeProfile.outputTransform : VisionOutputCoordinateTransform.Identity,
-                activeProfile != null && activeProfile.input.preserveAspectRatio);
+                activeProfile != null ? activeProfile.outputTransform : VisionOutputCoordinateTransform.Identity);
             VisionParsedOutput parsed = outputParser.Parse(rawOutput, context);
             return parsed.ToFrameResult(frame.frameIndex, frame.timestamp, frame.sourceSize);
         }

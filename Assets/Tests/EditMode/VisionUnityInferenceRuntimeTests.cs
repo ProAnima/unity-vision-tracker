@@ -60,10 +60,13 @@ namespace UniversalTracker.Tests
             Assert.That(provider.InitializeCount, Is.EqualTo(1));
             Assert.That(provider.ExecuteCount, Is.EqualTo(1));
             Assert.That(provider.Disposed, Is.True);
+            Assert.That(profile.input.preserveAspectRatio, Is.True);
             Assert.That(result.frameIndex, Is.EqualTo(3));
             Assert.That(result.detections.Length, Is.EqualTo(1));
             Assert.That(result.detections[0].sourceRect.x, Is.EqualTo(40f).Within(0.0001f));
             Assert.That(result.detections[0].sourceRect.y, Is.EqualTo(20f).Within(0.0001f));
+            Assert.That(result.detections[0].sourceRect.width, Is.EqualTo(20f).Within(0.0001f));
+            Assert.That(result.detections[0].sourceRect.height, Is.EqualTo(10f).Within(0.0001f));
 
             Object.DestroyImmediate(profile);
             Object.DestroyImmediate(texture);
