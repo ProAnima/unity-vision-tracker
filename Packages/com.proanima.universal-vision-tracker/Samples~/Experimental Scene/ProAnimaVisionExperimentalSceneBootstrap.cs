@@ -71,7 +71,7 @@ namespace ProAnimaVision.Samples
             EnsureManager();
             EnsureCameraControls();
             EnsureVideoControls();
-            if (!configureRealPipeline)
+            if (ShouldRunStandaloneWebCamPreview())
                 StartWebCamPreview();
         }
 
@@ -85,12 +85,15 @@ namespace ProAnimaVision.Samples
         {
             EnsureDocumentPanelSettings();
             ApplyDashboardPreviewSettings();
+            UpdateCameraControls();
             UpdateVideoControls();
+            if (!ShouldRunStandaloneWebCamPreview())
+                StopWebCamPreview();
 
             if (configureRealPipeline)
                 return;
 
-            if (runWebCamPreview && webCamTexture != null && webCamTexture.isPlaying)
+            if (ShouldRunStandaloneWebCamPreview() && webCamTexture != null && webCamTexture.isPlaying)
             {
                 dashboard.SetHealthStatus(ResolvePreviewHealth(webCamTexture));
                 dashboard.ReceiveVisionResult(CreatePreviewResult(webCamTexture), webCamTexture);
@@ -139,7 +142,7 @@ namespace ProAnimaVision.Samples
 
         private void StartWebCamPreview()
         {
-            if (!runWebCamPreview || configureRealPipeline)
+            if (!ShouldRunStandaloneWebCamPreview())
                 return;
 
             string deviceName = ResolveDeviceName();
@@ -147,6 +150,11 @@ namespace ProAnimaVision.Samples
                 ? new WebCamTexture(requestedWidth, requestedHeight, requestedFps)
                 : new WebCamTexture(deviceName, requestedWidth, requestedHeight, requestedFps);
             webCamTexture.Play();
+        }
+
+        private bool ShouldRunStandaloneWebCamPreview()
+        {
+            return runWebCamPreview && !configureRealPipeline && realPipelineSource == InputProviderType.WebCam;
         }
 
         private void StopWebCamPreview()

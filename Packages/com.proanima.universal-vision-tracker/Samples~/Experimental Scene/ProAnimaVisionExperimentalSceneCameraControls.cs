@@ -2,18 +2,30 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UniversalTracker;
 
 namespace ProAnimaVision.Samples
 {
     public sealed partial class ProAnimaVisionExperimentalSceneBootstrap
     {
+        private VisualElement cameraControlsSection;
+
         private void EnsureCameraControls()
         {
             VisualElement controlPanel = document.rootVisualElement.Q<VisualElement>("VisionControlPanel");
-            if (controlPanel == null || controlPanel.Q<VisualElement>("WebCamControls") != null)
+            if (controlPanel == null)
                 return;
 
+            VisualElement existing = controlPanel.Q<VisualElement>("WebCamControls");
+            if (existing != null)
+            {
+                cameraControlsSection = existing;
+                UpdateCameraControls();
+                return;
+            }
+
             var section = new VisualElement { name = "WebCamControls" };
+            cameraControlsSection = section;
             section.style.marginTop = 2;
             section.style.marginBottom = 14;
             section.style.paddingTop = 12;
@@ -43,6 +55,7 @@ namespace ProAnimaVision.Samples
             row.Add(CreateSmallButton(mirrorPreviewX ? "Mirror On" : "Mirror", ToggleMirror));
 
             controlPanel.Insert(Mathf.Min(3, controlPanel.childCount), section);
+            UpdateCameraControls();
         }
 
         private Button CreateSmallButton(string text, Action action)
@@ -139,6 +152,15 @@ namespace ProAnimaVision.Samples
             manager.webCamRequestedWidth = requestedWidth;
             manager.webCamRequestedHeight = requestedHeight;
             manager.webCamRequestedFps = requestedFps;
+        }
+
+        private void UpdateCameraControls()
+        {
+            if (cameraControlsSection == null)
+                return;
+
+            bool isCameraSource = realPipelineSource == InputProviderType.WebCam;
+            cameraControlsSection.style.display = isCameraSource ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void RestartPipelineIfNeeded()

@@ -88,6 +88,18 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void ExperimentalSceneSample_GatesStandaloneWebCamPreviewToWebCamSource()
+        {
+            string bootstrap = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneBootstrap.cs"));
+            string controls = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneCameraControls.cs"));
+
+            Assert.That(bootstrap, Does.Contain("ShouldRunStandaloneWebCamPreview()"));
+            Assert.That(bootstrap, Does.Contain("realPipelineSource == InputProviderType.WebCam"));
+            Assert.That(controls, Does.Contain("UpdateCameraControls"));
+            Assert.That(controls, Does.Contain("realPipelineSource == InputProviderType.WebCam"));
+        }
+
+        [Test]
         public void ExperimentalSceneSample_ProvidesRuntimeVideoPlaylistControls()
         {
             string controls = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneVideoPlaylist.cs"));
