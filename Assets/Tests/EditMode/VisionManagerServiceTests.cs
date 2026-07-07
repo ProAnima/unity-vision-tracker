@@ -115,5 +115,74 @@ namespace UniversalTracker.Tests
             Assert.That(result.detections[0].classId, Is.EqualTo(1));
             Assert.That(result.detections[0].IsTracked, Is.False);
         }
+
+        [Test]
+        public void TrackingStage_PropagatesStableTrackIdsToMatchingPoses()
+        {
+            var stage = new VisionTrackingStage();
+            stage.Configure(true, TrackerType.IOU, 0.2f, 10);
+
+            var first = VisionFrameResult.Empty(1, 0d, new Vector2Int(100, 100));
+            first.detections = new[]
+            {
+                Detection(new Rect(0.1f, 0.1f, 0.2f, 0.5f)),
+                Detection(new Rect(0.6f, 0.1f, 0.2f, 0.5f))
+            };
+            first.poses = new[]
+            {
+                Pose(new Rect(0.1f, 0.1f, 0.2f, 0.5f)),
+                Pose(new Rect(0.6f, 0.1f, 0.2f, 0.5f))
+            };
+
+            stage.Apply(first, 0.016f);
+            int leftId = first.poses[0].personId;
+            int rightId = first.poses[1].personId;
+
+            Assert.That(leftId, Is.GreaterThanOrEqualTo(0));
+            Assert.That(rightId, Is.GreaterThanOrEqualTo(0));
+            Assert.That(rightId, Is.Not.EqualTo(leftId));
+
+            var second = VisionFrameResult.Empty(2, 0.016d, new Vector2Int(100, 100));
+            second.detections = new[]
+            {
+                Detection(new Rect(0.6f, 0.1f, 0.2f, 0.5f)),
+                Detection(new Rect(0.1f, 0.1f, 0.2f, 0.5f))
+            };
+            second.poses = new[]
+            {
+                Pose(new Rect(0.6f, 0.1f, 0.2f, 0.5f)),
+                Pose(new Rect(0.1f, 0.1f, 0.2f, 0.5f))
+            };
+
+            stage.Apply(second, 0.016f);
+
+            Assert.That(second.poses[0].personId, Is.EqualTo(rightId));
+            Assert.That(second.poses[1].personId, Is.EqualTo(leftId));
+        }
+
+        private static VisionDetection Detection(Rect rect)
+        {
+            return new VisionDetection
+            {
+                classId = 0,
+                confidence = 0.9f,
+                normalizedRect = rect,
+                sourceRect = rect,
+                trackId = -1,
+                trackState = VisionTrackState.None
+            };
+        }
+
+        private static VisionPose Pose(Rect rect)
+        {
+            return new VisionPose
+            {
+                personId = -1,
+                confidence = 0.9f,
+                normalizedRect = rect,
+                sourceRect = rect,
+                trackState = VisionTrackState.None
+            };
+        }
     }
 }

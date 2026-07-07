@@ -64,5 +64,31 @@ namespace UniversalTracker.Tests
             Assert.That(reset, Is.Not.SameAs(initial));
             Assert.That(reset.Length, Is.EqualTo(3));
         }
+
+        [Test]
+        public void SmoothPoint_ResetsOnLargeJump()
+        {
+            var cache = new Dictionary<int, Vector2>();
+
+            VisionDashboardTemporalSmoothing.SmoothPoint(cache, 12, Vector2.zero, 0.8f, 10f);
+            Vector2 reset = VisionDashboardTemporalSmoothing.SmoothPoint(cache, 12, new Vector2(100f, 0f), 0.8f, 10f);
+
+            Assert.That(reset, Is.EqualTo(new Vector2(100f, 0f)));
+        }
+
+        [Test]
+        public void PoseKey_UsesTrackedPersonIdAcrossPoseOrderChanges()
+        {
+            var pose = new VisionPose
+            {
+                personId = 7,
+                normalizedRect = new Rect(0.1f, 0.1f, 0.2f, 0.4f)
+            };
+
+            int first = VisionDashboardTemporalSmoothing.PoseKey(pose, 0, 5);
+            int reordered = VisionDashboardTemporalSmoothing.PoseKey(pose, 4, 5);
+
+            Assert.That(reordered, Is.EqualTo(first));
+        }
     }
 }

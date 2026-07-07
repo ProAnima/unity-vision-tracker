@@ -122,19 +122,19 @@ namespace UniversalTracker.OutputReceivers
             if (pose.keypoints == null)
                 return;
 
+            PreparePosePoints(pose, poseIndex, state, sourceSize, viewportSize, keypointConfidenceThreshold, poseSmoothing);
+
             if (pose.skeleton.bones != null)
             {
                 for (int i = 0; i < pose.skeleton.bones.Length; i++)
                 {
                     VisionSkeletonBone bone = pose.skeleton.bones[i];
-                    if (!TryGetVisibleKeypoint(pose, bone.from, keypointConfidenceThreshold, out VisionKeypoint from) ||
-                        !TryGetVisibleKeypoint(pose, bone.to, keypointConfidenceThreshold, out VisionKeypoint to))
+                    if (!TryGetPreparedKeypoint(pose, state, bone.from, out VisionKeypoint from, out Vector2 fromPoint) ||
+                        !TryGetPreparedKeypoint(pose, state, bone.to, out VisionKeypoint to, out Vector2 toPoint))
                     {
                         continue;
                     }
 
-                    Vector2 fromPoint = ResolvePosePoint(pose, poseIndex, from, state, sourceSize, viewportSize, poseSmoothing);
-                    Vector2 toPoint = ResolvePosePoint(pose, poseIndex, to, state, sourceSize, viewportSize, poseSmoothing);
                     VisualElement boneElement = VisionDashboardElementPool.GetElement(
                         state.bones,
                         state.boneLayer,
@@ -147,18 +147,47 @@ namespace UniversalTracker.OutputReceivers
 
             for (int i = 0; i < pose.keypoints.Length; i++)
             {
-                if (!IsVisibleKeypoint(pose.keypoints[i], keypointConfidenceThreshold))
+                if (!state.scratchPoseVisible[i])
                     continue;
 
-                Vector2 point = ResolvePosePoint(pose, poseIndex, pose.keypoints[i], state, sourceSize, viewportSize, poseSmoothing);
                 VisualElement keypoint = VisionDashboardElementPool.GetElement(
                     state.keypoints,
                     state.keypointLayer,
                     VisionToolkitDashboardPrimitives.CreateKeypoint,
                     keypointsUsed);
-                UpdateKeypoint(keypoint, point, pose.keypoints[i], stroke);
+                UpdateKeypoint(keypoint, state.scratchPosePoints[i], pose.keypoints[i], stroke);
                 keypointsUsed++;
             }
+        }
+
+        private static void PreparePosePoints(
+            VisionPose pose,
+            int poseIndex,
+            VisionDashboardOverlayState state,
+            Vector2 sourceSize,
+            Vector2 viewportSize,
+            float keypointConfidenceThreshold,
+            float poseSmoothing)
+        {
+            EnsurePoseScratch(state, pose.keypoints.Length);
+            for (int i = 0; i < pose.keypoints.Length; i++)
+            {
+                state.scratchPoseVisible[i] = false;
+                if (!IsVisibleKeypoint(pose.keypoints[i], keypointConfidenceThreshold))
+                    continue;
+
+                state.scratchPosePoints[i] = ResolvePosePoint(pose, poseIndex, pose.keypoints[i], state, sourceSize, viewportSize, poseSmoothing);
+                state.scratchPoseVisible[i] = true;
+            }
+        }
+
+        private static void EnsurePoseScratch(VisionDashboardOverlayState state, int count)
+        {
+            if (state.scratchPosePoints.Length < count)
+                state.scratchPosePoints = new Vector2[count];
+
+            if (state.scratchPoseVisible.Length < count)
+                state.scratchPoseVisible = new bool[count];
         }
 
         private static void UpdateBone(VisualElement bone, VisionSkeletonBone skeletonBone, Vector2 from, Vector2 to, float fromConfidence, float toConfidence, float stroke)
@@ -209,7 +238,8 @@ namespace UniversalTracker.OutputReceivers
             int key = VisionDashboardTemporalSmoothing.PoseKey(pose, poseIndex, keypoint.index);
             state.activeKeypointKeys.Add(key);
             state.keypointLastSeen[key] = state.renderSequence;
-            return VisionDashboardTemporalSmoothing.SmoothPoint(state.smoothedKeypoints, key, current, smoothing);
+            float resetDistance = Mathf.Max(24f, Mathf.Min(viewportSize.x, viewportSize.y) * 0.18f);
+            return VisionDashboardTemporalSmoothing.SmoothPoint(state.smoothedKeypoints, key, current, smoothing, resetDistance);
         }
 
         private static void PruneKeypointTemporal(VisionDashboardOverlayState state)
@@ -229,19 +259,26 @@ namespace UniversalTracker.OutputReceivers
             }
         }
 
-        private static bool TryGetVisibleKeypoint(VisionPose pose, int index, float threshold, out VisionKeypoint keypoint)
-        {
-            keypoint = default;
-            if (pose.keypoints == null || index < 0 || index >= pose.keypoints.Length)
-                return false;
-
-            keypoint = pose.keypoints[index];
-            return IsVisibleKeypoint(keypoint, threshold);
-        }
-
         private static bool IsVisibleKeypoint(VisionKeypoint keypoint, float threshold)
         {
             return keypoint.isVisible && keypoint.confidence >= threshold;
+        }
+
+        private static bool TryGetPreparedKeypoint(
+            VisionPose pose,
+            VisionDashboardOverlayState state,
+            int index,
+            out VisionKeypoint keypoint,
+            out Vector2 point)
+        {
+            keypoint = default;
+            point = default;
+            if (pose.keypoints == null || index < 0 || index >= pose.keypoints.Length || !state.scratchPoseVisible[index])
+                return false;
+
+            keypoint = pose.keypoints[index];
+            point = state.scratchPosePoints[index];
+            return true;
         }
     }
 }

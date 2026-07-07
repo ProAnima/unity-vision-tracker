@@ -24,8 +24,10 @@ namespace UniversalTracker.OutputReceivers
 
         public static int PoseKey(VisionPose pose, int poseIndex, int keypointIndex)
         {
-            int person = pose.personId >= 0 ? pose.personId : poseIndex;
-            return person * 1000 + keypointIndex;
+            if (pose.personId >= 0)
+                return 500000 + pose.personId * 1000 + keypointIndex;
+
+            return 600000 + SpatialPoseKey(pose, poseIndex) * 1000 + keypointIndex;
         }
 
         public static Rect SmoothRect(Dictionary<int, Rect> cache, int key, Rect current, float smoothing)
@@ -48,8 +50,13 @@ namespace UniversalTracker.OutputReceivers
 
         public static Vector2 SmoothPoint(Dictionary<int, Vector2> cache, int key, Vector2 current, float smoothing)
         {
+            return SmoothPoint(cache, key, current, smoothing, float.PositiveInfinity);
+        }
+
+        public static Vector2 SmoothPoint(Dictionary<int, Vector2> cache, int key, Vector2 current, float smoothing, float resetDistance)
+        {
             smoothing = Mathf.Clamp01(smoothing);
-            if (!cache.TryGetValue(key, out Vector2 previous) || smoothing <= 0f)
+            if (!cache.TryGetValue(key, out Vector2 previous) || smoothing <= 0f || ShouldResetPoint(previous, current, resetDistance))
             {
                 cache[key] = current;
                 return current;
@@ -99,6 +106,25 @@ namespace UniversalTracker.OutputReceivers
             float currentArea = Mathf.Max(0.0001f, current.width * current.height);
             float ratio = Mathf.Max(previousArea, currentArea) / Mathf.Min(previousArea, currentArea);
             return ratio > 4f;
+        }
+
+        private static bool ShouldResetPoint(Vector2 previous, Vector2 current, float resetDistance)
+        {
+            return resetDistance > 0f &&
+                   !float.IsInfinity(resetDistance) &&
+                   Vector2.Distance(previous, current) > resetDistance;
+        }
+
+        private static int SpatialPoseKey(VisionPose pose, int poseIndex)
+        {
+            Rect rect = pose.normalizedRect;
+            if (rect.width <= 0f || rect.height <= 0f)
+                return Mathf.Max(0, poseIndex);
+
+            int centerX = Mathf.Clamp(Mathf.RoundToInt(rect.center.x * 32f), 0, 32);
+            int centerY = Mathf.Clamp(Mathf.RoundToInt(rect.center.y * 32f), 0, 32);
+            int size = Mathf.Clamp(Mathf.RoundToInt((rect.width + rect.height) * 16f), 0, 64);
+            return (centerY * 33 + centerX) * 65 + size;
         }
     }
 }

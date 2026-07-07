@@ -74,6 +74,8 @@ namespace UniversalTracker.OutputReceivers
         public readonly Dictionary<int, Vector2> smoothedKeypoints = new Dictionary<int, Vector2>();
         public readonly Dictionary<int, Vector2[]> smoothedMaskContours = new Dictionary<int, Vector2[]>();
         public readonly Dictionary<int, Vector2[]> smoothedMaskContourSegments = new Dictionary<int, Vector2[]>();
+        public Vector2[] scratchPosePoints = Array.Empty<Vector2>();
+        public bool[] scratchPoseVisible = Array.Empty<bool>();
         public int renderSequence;
 
         public void ClearTemporal()
