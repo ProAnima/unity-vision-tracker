@@ -130,7 +130,10 @@ namespace UniversalTracker.Editor
                 : null;
             manager.activeModelIndex = 0;
             manager.inputType = ToInputProviderType(options.source);
-            manager.sourceVideoPlayer = options.source == VisionSceneSetupSource.Video ? EnsureVideoPlayer(manager.gameObject) : null;
+            VideoPlayer videoPlayer = options.source == VisionSceneSetupSource.Video ? EnsureVideoPlayer(manager.gameObject) : null;
+            manager.sourceVideoPlayer = videoPlayer;
+            if (videoPlayer != null)
+                EnsureVideoPlaylist(manager.gameObject, videoPlayer);
             manager.useToolkitDashboard = options.addDashboard;
             manager.useDebugOutput = false;
             manager.useUIVisualization = false;
@@ -162,6 +165,18 @@ namespace UniversalTracker.Editor
             player.renderMode = VideoRenderMode.APIOnly;
             EditorUtility.SetDirty(player);
             return player;
+        }
+
+        private static VisionVideoPlaylistSource EnsureVideoPlaylist(GameObject root, VideoPlayer player)
+        {
+            VisionVideoPlaylistSource playlist = root.GetComponent<VisionVideoPlaylistSource>();
+            if (playlist == null)
+                playlist = Undo.AddComponent<VisionVideoPlaylistSource>(root);
+
+            playlist.videoPlayer = player;
+            playlist.ConfigureVideoPlayerDefaults();
+            EditorUtility.SetDirty(playlist);
+            return playlist;
         }
 
         private static InputProviderType ToInputProviderType(VisionSceneSetupSource source)

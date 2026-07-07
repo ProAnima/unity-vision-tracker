@@ -45,6 +45,8 @@ namespace ProAnimaVision.Samples
         public InputProviderType realPipelineSource = InputProviderType.WebCam;
         [Tooltip("VideoPlayer used when Real Pipeline Source is Video. Assign a Video Clip or URL here.")]
         public VideoPlayer sourceVideoPlayer;
+        [Tooltip("Optional ordered video row for Previous/Next runtime controls.")]
+        public VisionVideoPlaylistSource videoPlaylist;
 
         [Header("Fallback")]
         [Tooltip("Show a synthetic texture if no camera frames are available.")]
@@ -68,6 +70,7 @@ namespace ProAnimaVision.Samples
             EnsureDashboard();
             EnsureManager();
             EnsureCameraControls();
+            EnsureVideoControls();
             if (!configureRealPipeline)
                 StartWebCamPreview();
         }
@@ -82,6 +85,7 @@ namespace ProAnimaVision.Samples
         {
             EnsureDocumentPanelSettings();
             ApplyDashboardPreviewSettings();
+            UpdateVideoControls();
 
             if (configureRealPipeline)
                 return;
@@ -229,7 +233,10 @@ namespace ProAnimaVision.Samples
             manager.pipelineProfile = pipelineProfile;
             manager.modelProfiles = pipelineProfile == null && modelProfile != null ? new[] { modelProfile } : null;
             manager.inputType = realPipelineSource;
-            manager.sourceVideoPlayer = realPipelineSource == InputProviderType.Video ? EnsureVideoPlayer() : null;
+            VideoPlayer videoPlayer = realPipelineSource == InputProviderType.Video ? EnsureVideoPlayer() : null;
+            if (videoPlayer != null)
+                EnsureVideoPlaylist(videoPlayer).ApplyCurrent(false);
+            manager.sourceVideoPlayer = videoPlayer;
             manager.webCamDeviceName = ResolveDeviceName();
             manager.webCamRequestedWidth = requestedWidth;
             manager.webCamRequestedHeight = requestedHeight;
@@ -261,10 +268,7 @@ namespace ProAnimaVision.Samples
             if (sourceVideoPlayer == null)
                 sourceVideoPlayer = GetComponent<VideoPlayer>() ?? gameObject.AddComponent<VideoPlayer>();
 
-            sourceVideoPlayer.playOnAwake = false;
-            sourceVideoPlayer.waitForFirstFrame = true;
-            sourceVideoPlayer.isLooping = true;
-            sourceVideoPlayer.renderMode = VideoRenderMode.APIOnly;
+            VisionVideoPlaylistSource.ConfigureVideoPlayerDefaults(sourceVideoPlayer);
             return sourceVideoPlayer;
         }
 

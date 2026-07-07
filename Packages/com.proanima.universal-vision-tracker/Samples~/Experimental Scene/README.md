@@ -23,6 +23,6 @@ Select `ProAnima Vision Experimental Demo` in the scene and configure:
 
 Quick Start YOLO presets disable the standalone `Run WebCam Preview` option on purpose. In that mode the real `VisionPipeline` owns the camera and passes the same source texture to the dashboard, avoiding two competing `WebCamTexture` instances.
 
-For `YOLO ... + Video` presets, assign a `Video Clip` or URL on the `VideoPlayer` component added to `ProAnima Vision Experimental Demo`. The preset sets `Real Pipeline Source` to `Video`, loops playback, and uses `APIOnly` rendering so the pipeline consumes the decoded frame texture directly.
+For `YOLO ... + Video` presets, assign one `Video Clip` or URL on the `VideoPlayer` component, or add several clips/URLs to `VisionVideoPlaylistSource > Videos`. During Play Mode, the dashboard `Video` controls expose `<` and `>` buttons for moving backward and forward through that row. The preset sets `Real Pipeline Source` to `Video`, loops playback, and uses `APIOnly` rendering so the pipeline consumes the decoded frame texture directly.
 
 Use `Tools/ProAnima Vision/Control Center > Compatibility Inspector` before running real models.

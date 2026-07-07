@@ -124,6 +124,7 @@ namespace UniversalTracker.Tests
             Assert.That(utility, Does.Contain("SetBool(serialized, \"configureRealPipeline\", true)"));
             Assert.That(utility, Does.Contain("SetEnum(serialized, \"realPipelineSource\""));
             Assert.That(utility, Does.Contain("SetObject(serialized, \"sourceVideoPlayer\""));
+            Assert.That(utility, Does.Contain("SetObject(serialized, \"videoPlaylist\""));
             Assert.That(utility, Does.Contain("addDashboard: !useExperimentalSceneBootstrap"));
             Assert.That(utility, Does.Contain("CleanupEditTimeDashboard"));
         }

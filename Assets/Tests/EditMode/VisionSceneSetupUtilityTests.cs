@@ -106,6 +106,9 @@ namespace UniversalTracker.Tests
             Assert.That(player.renderMode, Is.EqualTo(VideoRenderMode.APIOnly));
             Assert.That(player.isLooping, Is.True);
             Assert.That(player.playOnAwake, Is.False);
+            VisionVideoPlaylistSource playlist = result.root.GetComponent<VisionVideoPlaylistSource>();
+            Assert.That(playlist, Is.Not.Null);
+            Assert.That(playlist.videoPlayer, Is.SameAs(player));
 
             Object.DestroyImmediate(profile);
         }

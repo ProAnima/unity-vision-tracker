@@ -56,6 +56,7 @@ namespace UniversalTracker.Tests
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalScene.unity")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneBootstrap.cs")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneCameraControls.cs")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneVideoPlaylist.cs")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/ProAnimaVision.Samples.ExperimentalScene.asmdef")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/Editor/ProAnimaVisionExperimentalSceneBootstrapEditor.cs")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/Experimental Scene/Editor/ProAnimaVision.ExperimentalScene.Editor.asmdef")), Is.True);
@@ -84,6 +85,17 @@ namespace UniversalTracker.Tests
             Assert.That(bootstrap, Does.Contain("RotatePreview"));
             Assert.That(bootstrap, Does.Contain("ToggleMirror"));
             Assert.That(bootstrap, Does.Contain("RestartPipelineIfNeeded"));
+        }
+
+        [Test]
+        public void ExperimentalSceneSample_ProvidesRuntimeVideoPlaylistControls()
+        {
+            string controls = File.ReadAllText(PackagePath("Samples~/Experimental Scene/ProAnimaVisionExperimentalSceneVideoPlaylist.cs"));
+
+            Assert.That(controls, Does.Contain("VideoPlaylistControls"));
+            Assert.That(controls, Does.Contain("UsePreviousVideo"));
+            Assert.That(controls, Does.Contain("UseNextVideo"));
+            Assert.That(controls, Does.Contain("VisionVideoPlaylistSource"));
         }
 
         private static string PackagePath(string relativePath)

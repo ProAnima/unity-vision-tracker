@@ -51,7 +51,7 @@ Open `Tools/ProAnima Vision/Control Center`, choose one preset, then click the p
 
 Preset assets are written under `Assets/ProAnima Vision/Profiles`. Re-applying the same preset updates the same assets instead of creating duplicates.
 
-For Video presets, select `ProAnima Vision Experimental Demo` after applying the preset and assign a `Video Clip` or URL on its `VideoPlayer` component before pressing Play. The generated `VideoPlayer` is configured for `APIOnly` rendering so the same texture can feed the vision pipeline and dashboard.
+For Video presets, select `ProAnima Vision Experimental Demo` after applying the preset. For one file, assign a `Video Clip` or URL on its `VideoPlayer` component. For a video row, add entries to `VisionVideoPlaylistSource > Videos`; each entry can hold a project clip or a file/streaming URL. In Play Mode, use the dashboard `Video` controls `<` and `>` to switch through the row without rebuilding the pipeline. The generated `VideoPlayer` is configured for `APIOnly` rendering so the same texture can feed the vision pipeline and dashboard.
 
 ## Create A Model Profile Manually
 

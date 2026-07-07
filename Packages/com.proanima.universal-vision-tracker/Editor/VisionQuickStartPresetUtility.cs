@@ -151,6 +151,7 @@ namespace UniversalTracker.Editor
             SetBool(serialized, "autoStartRealPipeline", autoStart);
             SetEnum(serialized, "realPipelineSource", (int)ToInputProviderType(source));
             SetObject(serialized, "sourceVideoPlayer", source == VisionSceneSetupSource.Video ? videoPlayer : null);
+            SetObject(serialized, "videoPlaylist", source == VisionSceneSetupSource.Video ? root.GetComponent<VisionVideoPlaylistSource>() : null);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(bootstrap);
             EditorSceneManager.MarkSceneDirty(root.scene);
@@ -222,7 +223,7 @@ namespace UniversalTracker.Editor
                 string modelMessage = hasModelAsset
                     ? "The demo scene and profiles are ready."
                     : "The demo scene and profiles are ready. Assign a ModelAsset in the model profile.";
-                return $"{modelMessage} Assign a Video Clip or URL on the selected VideoPlayer, then press Play.";
+                return $"{modelMessage} Add clips or URLs to VisionVideoPlaylistSource, or assign one Video Clip/URL on the selected VideoPlayer, then press Play.";
             }
 
             return hasModelAsset
