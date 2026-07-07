@@ -103,6 +103,54 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void CocoPoseRetargeterLimitsNoisyHeadInfluence()
+        {
+            var retargeter = new VisionCocoHumanoidPoseRetargeter(new VisionPoseRetargetingOptions
+            {
+                minimumPoseQuality = 0.1f,
+                smoothing = 0f,
+                headKeypointInfluence = 1f
+            });
+            VisionPose pose = CreatePose(0.9f);
+            Set(pose.keypoints, 0, 0.05f, 0.85f, 0.99f);
+
+            bool ok = retargeter.TryRetarget(pose, 1f / 30f, out VisionHumanoidPose humanoidPose);
+
+            Assert.IsTrue(ok);
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.Neck, out VisionHumanoidJointPose neck));
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.Head, out VisionHumanoidJointPose head));
+            Assert.Greater(head.position.y, neck.position.y);
+            Assert.Less(Mathf.Abs(head.position.x - neck.position.x), 0.75f);
+            Assert.IsTrue(head.predicted);
+        }
+
+        [Test]
+        public void CocoPoseRetargeterDampsImplausibleLegKeypoints()
+        {
+            var retargeter = new VisionCocoHumanoidPoseRetargeter(new VisionPoseRetargetingOptions
+            {
+                minimumPoseQuality = 0.1f,
+                smoothing = 0f,
+                legKeypointInfluence = 1f
+            });
+            VisionPose pose = CreatePose(0.9f);
+            Set(pose.keypoints, 14, 0.95f, 0.22f, 0.99f);
+            Set(pose.keypoints, 16, 1.15f, 0.18f, 0.99f);
+
+            bool ok = retargeter.TryRetarget(pose, 1f / 30f, out VisionHumanoidPose humanoidPose);
+
+            Assert.IsTrue(ok);
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.RightUpperLeg, out VisionHumanoidJointPose upperLeg));
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.RightLowerLeg, out VisionHumanoidJointPose lowerLeg));
+            Assert.IsTrue(humanoidPose.TryGetJoint(VisionHumanoidJoint.RightFoot, out VisionHumanoidJointPose foot));
+            Assert.Less(lowerLeg.position.y, upperLeg.position.y);
+            Assert.Less(foot.position.y, lowerLeg.position.y);
+            Assert.Less(Mathf.Abs(lowerLeg.position.x - upperLeg.position.x), 1.1f);
+            Assert.IsTrue(lowerLeg.predicted);
+            Assert.IsTrue(foot.predicted);
+        }
+
+        [Test]
         public void HumanoidRigReceiverAppliesPoseToExplicitBindings()
         {
             var host = new GameObject("RigReceiverTest");

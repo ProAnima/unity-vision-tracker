@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace UniversalTracker.Core
 {
-    public sealed class VisionCocoHumanoidPoseRetargeter
+    public sealed partial class VisionCocoHumanoidPoseRetargeter
     {
         private readonly VisionPoseTemporalFilter temporalFilter = new VisionPoseTemporalFilter();
         private VisionPoseRetargetingOptions options;
@@ -30,11 +30,11 @@ namespace UniversalTracker.Core
 
             BodyBasis bodyBasis = BodyBasis.Create(coco, options);
             float scale = EstimateScale(coco);
-            StabilizeMissingLimbs(ref coco, scale, options);
+            StabilizeMissingLimbs(ref coco, bodyBasis, scale, options);
 
             var builder = new JointBuilder(sourcePose.personId, bodyBasis, scale, options.bodyHeightMeters);
 
-            AddTorso(builder, coco);
+            AddTorso(builder, coco, bodyBasis, scale, options);
             AddLimbs(builder, coco);
 
             humanoidPose = builder.Build();
@@ -53,6 +53,10 @@ namespace UniversalTracker.Core
                 return false;
 
             coco.nose = Point(keypoints[0], threshold);
+            coco.leftEye = Point(keypoints[1], threshold);
+            coco.rightEye = Point(keypoints[2], threshold);
+            coco.leftEar = Point(keypoints[3], threshold);
+            coco.rightEar = Point(keypoints[4], threshold);
             coco.leftShoulder = Point(keypoints[5], threshold);
             coco.rightShoulder = Point(keypoints[6], threshold);
             coco.leftElbow = Point(keypoints[7], threshold);
@@ -74,6 +78,7 @@ namespace UniversalTracker.Core
 
         private static void StabilizeMissingLimbs(
             ref CocoKeypoints coco,
+            BodyBasis bodyBasis,
             float scale,
             VisionPoseRetargetingOptions options)
         {
@@ -84,25 +89,31 @@ namespace UniversalTracker.Core
             coco.rightElbow = EnsureChild(coco.rightShoulder, coco.rightElbow, new Vector2(0.45f, 0.65f), armLength, options);
             coco.leftWrist = EnsureChild(coco.leftElbow, coco.leftWrist, Direction(coco.leftShoulder, coco.leftElbow, new Vector2(-0.35f, 0.7f)), armLength, options);
             coco.rightWrist = EnsureChild(coco.rightElbow, coco.rightWrist, Direction(coco.rightShoulder, coco.rightElbow, new Vector2(0.35f, 0.7f)), armLength, options);
-            coco.leftKnee = EnsureChild(coco.leftHip, coco.leftKnee, new Vector2(-0.05f, 1f), legLength, options);
-            coco.rightKnee = EnsureChild(coco.rightHip, coco.rightKnee, new Vector2(0.05f, 1f), legLength, options);
-            coco.leftAnkle = EnsureChild(coco.leftKnee, coco.leftAnkle, Direction(coco.leftHip, coco.leftKnee, new Vector2(-0.02f, 1f)), legLength, options);
-            coco.rightAnkle = EnsureChild(coco.rightKnee, coco.rightAnkle, Direction(coco.rightHip, coco.rightKnee, new Vector2(0.02f, 1f)), legLength, options);
+            coco.leftKnee = StabilizeLegChild(coco.leftHip, coco.leftKnee, new Vector2(-0.08f, -1f), legLength, bodyBasis, options);
+            coco.rightKnee = StabilizeLegChild(coco.rightHip, coco.rightKnee, new Vector2(0.08f, -1f), legLength, bodyBasis, options);
+            coco.leftAnkle = StabilizeLegChild(coco.leftKnee, coco.leftAnkle, new Vector2(-0.03f, -1f), legLength, bodyBasis, options);
+            coco.rightAnkle = StabilizeLegChild(coco.rightKnee, coco.rightAnkle, new Vector2(0.03f, -1f), legLength, bodyBasis, options);
         }
 
-        private static void AddTorso(JointBuilder builder, CocoKeypoints coco)
+        private static void AddTorso(
+            JointBuilder builder,
+            CocoKeypoints coco,
+            BodyBasis bodyBasis,
+            float scale,
+            VisionPoseRetargetingOptions options)
         {
             KeypointPoint shoulders = Average(coco.leftShoulder, coco.rightShoulder);
             KeypointPoint hips = Average(coco.leftHip, coco.rightHip);
             KeypointPoint spine = Lerp(hips, shoulders, 0.45f);
             KeypointPoint chest = Lerp(hips, shoulders, 0.78f);
             KeypointPoint neck = Lerp(hips, shoulders, 1.05f);
+            KeypointPoint head = ResolveHead(coco, hips, shoulders, neck, bodyBasis, scale, options);
 
             builder.Add(VisionHumanoidJoint.Hips, hips);
             builder.Add(VisionHumanoidJoint.Spine, spine);
             builder.Add(VisionHumanoidJoint.Chest, chest);
             builder.Add(VisionHumanoidJoint.Neck, neck);
-            builder.Add(VisionHumanoidJoint.Head, coco.nose.available ? coco.nose : Lerp(hips, shoulders, 1.25f));
+            builder.Add(VisionHumanoidJoint.Head, head);
             builder.Add(VisionHumanoidJoint.LeftShoulder, coco.leftShoulder);
             builder.Add(VisionHumanoidJoint.RightShoulder, coco.rightShoulder);
         }
@@ -245,6 +256,11 @@ namespace UniversalTracker.Core
                 return new Vector2(Vector2.Dot(centered, right), Vector2.Dot(centered, up));
             }
 
+            public Vector2 FromLocal(Vector2 point)
+            {
+                return origin + right * point.x + up * point.y;
+            }
+
             private static Vector2 ResolveBasisUp(Vector2 reference, Vector2 direction, float maxOutputRollDegrees)
             {
                 float limit = Mathf.Clamp(maxOutputRollDegrees, 0f, 90f);
@@ -259,6 +275,10 @@ namespace UniversalTracker.Core
         private struct CocoKeypoints
         {
             public KeypointPoint nose;
+            public KeypointPoint leftEye;
+            public KeypointPoint rightEye;
+            public KeypointPoint leftEar;
+            public KeypointPoint rightEar;
             public KeypointPoint leftShoulder;
             public KeypointPoint rightShoulder;
             public KeypointPoint leftElbow;

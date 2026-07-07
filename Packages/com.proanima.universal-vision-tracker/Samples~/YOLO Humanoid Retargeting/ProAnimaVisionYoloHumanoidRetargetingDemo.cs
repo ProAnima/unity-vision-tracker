@@ -98,7 +98,9 @@ namespace UniversalTracker.Samples
                 bodyHeightMeters = 1.7f,
                 minimumPoseQuality = 0.2f,
                 missingJointConfidence = 0.14f,
-                maxTorsoRollDegrees = 18f
+                maxTorsoRollDegrees = 18f,
+                headKeypointInfluence = 0.5f,
+                legKeypointInfluence = 0.7f
             };
             receiver.Initialize();
             ConfigureLivePipelineIfNeeded();

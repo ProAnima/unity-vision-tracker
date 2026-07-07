@@ -195,6 +195,12 @@ namespace UniversalTracker.Core
         [Range(0f, 90f)]
         public float maxTorsoRollDegrees = 25f;
 
+        [Range(0f, 1f)]
+        public float headKeypointInfluence = 0.55f;
+
+        [Range(0f, 1f)]
+        public float legKeypointInfluence = 0.75f;
+
         public static VisionPoseRetargetingOptions Default => new VisionPoseRetargetingOptions();
     }
 
