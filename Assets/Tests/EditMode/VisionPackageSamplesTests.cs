@@ -81,6 +81,7 @@ namespace UniversalTracker.Tests
         {
             string demo = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionYoloHumanoidRetargetingDemo.cs"));
             string view = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionRetargetingDemoView.cs"));
+            string overlay = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionRetargetingPreviewOverlay.cs"));
             string source = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionRetargetingSourceController.cs"));
             string asmdef = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVision.Samples.YoloHumanoidRetargeting.asmdef"));
 
@@ -94,9 +95,11 @@ namespace UniversalTracker.Tests
             Assert.That(view, Does.Contain("UIDocument"));
             Assert.That(view, Does.Contain("DropdownField"));
             Assert.That(view, Does.Contain("RefreshCameraChoices"));
+            Assert.That(overlay, Does.Not.Contain("1f - normalized.y"));
             Assert.That(source, Does.Contain("WebCamFrameSource"));
             Assert.That(source, Does.Contain("VideoFrameSource"));
             Assert.That(source, Does.Contain("VisionVideoPlaylistSource"));
+            Assert.That(source, Does.Contain("ownsFrameSource"));
             Assert.That(source, Does.Contain("Default Camera"));
             Assert.That(asmdef, Does.Not.Contain("\"UnityEngine.UI\""));
         }

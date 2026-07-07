@@ -79,6 +79,29 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void YoloDetectionParser_RemovesLetterboxPaddingWhenAspectRatioIsPreserved()
+        {
+            var parser = new YoloDetectionOutputParser();
+            float[] data = new float[84];
+            WriteChannelFirstBox(data, 1, 0, 320f, 320f, 128f, 128f, classId: 0, score: 0.82f);
+            VisionRawModelOutput raw = VisionRawModelOutput.Single("output0", data, 1, 84, 1);
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640),
+                VisionOutputCoordinateTransform.Identity,
+                preserveAspectRatio: true);
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            AssertRect(parsed.detections[0].sourceRect, new Rect(512, 232, 256, 256));
+            Assert.That(parsed.detections[0].sourceCenter, Is.EqualTo(new Vector2(640, 360)));
+        }
+
+        [Test]
         public void YoloDetectionParser_UsesFirstCompatibleTensor()
         {
             var parser = new YoloDetectionOutputParser();
@@ -229,6 +252,30 @@ namespace UniversalTracker.Tests
             AssertRect(parsed.detections[0].sourceRect, new Rect(512, 108, 256, 144));
             Assert.That(parsed.poses[0].keypoints[0].sourcePosition, Is.EqualTo(new Vector2(640, 180)));
             Assert.That(parsed.diagnostics.modelOutput, Does.Contain("1x56x1"));
+        }
+
+        [Test]
+        public void YoloPoseParser_RemovesLetterboxPaddingWhenAspectRatioIsPreserved()
+        {
+            var parser = new YoloPose2DOutputParser();
+            float[] data = new float[56];
+            WriteChannelFirstPose(data, 1, 0, 320f, 320f, 128f, 128f, score: 0.76f);
+            VisionRawModelOutput raw = VisionRawModelOutput.Single("pose", data, 1, 56, 1);
+            var context = new VisionOutputParserContext(
+                new Vector2Int(1280, 720),
+                0.25f,
+                0.5f,
+                new[] { "person" },
+                new Vector2Int(640, 640),
+                VisionOutputCoordinateTransform.Identity,
+                preserveAspectRatio: true);
+
+            VisionParsedOutput parsed = parser.Parse(raw, context);
+
+            Assert.That(parsed.detections, Has.Length.EqualTo(1));
+            Assert.That(parsed.poses, Has.Length.EqualTo(1));
+            AssertRect(parsed.detections[0].sourceRect, new Rect(512, 232, 256, 256));
+            Assert.That(parsed.poses[0].keypoints[0].sourcePosition, Is.EqualTo(new Vector2(640, 360)));
         }
 
         [Test]

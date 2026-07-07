@@ -77,11 +77,27 @@ namespace UniversalTracker.Editor
         {
             string sourceControllerPath = Path.Combine(sampleRoot, "ProAnimaVisionRetargetingSourceController.cs");
             string viewPath = Path.Combine(sampleRoot, "ProAnimaVisionRetargetingDemoView.cs");
-            if (!File.Exists(sourceControllerPath) || !File.Exists(viewPath))
+            string overlayPath = Path.Combine(sampleRoot, "ProAnimaVisionRetargetingPreviewOverlay.cs");
+            string demoPath = Path.Combine(sampleRoot, "ProAnimaVisionYoloHumanoidRetargetingDemo.cs");
+            if (!File.Exists(sourceControllerPath) ||
+                !File.Exists(viewPath) ||
+                !File.Exists(overlayPath) ||
+                !File.Exists(demoPath))
+            {
                 return false;
+            }
 
+            string sourceController = File.ReadAllText(sourceControllerPath);
             string view = File.ReadAllText(viewPath);
-            return view.Contains("UIDocument") && !view.Contains("RawImage");
+            string overlay = File.ReadAllText(overlayPath);
+            string demo = File.ReadAllText(demoPath);
+            return view.Contains("UIDocument") &&
+                   !view.Contains("RawImage") &&
+                   sourceController.Contains("ownsFrameSource") &&
+                   overlay.Contains("ProAnimaVisionRetargetingPreviewOverlay") &&
+                   !overlay.Contains("1f - normalized.y") &&
+                   demo.Contains("UniversalTrackerManager") &&
+                   demo.Contains("poseModelProfile");
         }
 
         private static bool TryCreateConfiguredScene(out string scenePath)
@@ -125,9 +141,15 @@ namespace UniversalTracker.Editor
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return false;
 
-            EditorSceneManager.OpenScene(scenePath);
+            Scene scene = EditorSceneManager.OpenScene(scenePath);
             GameObject demo = GameObject.Find("Yolo Humanoid Retargeting Demo");
-            ConfigureDemoObject(demo);
+            if (ConfigureDemoObject(demo))
+            {
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                AssetDatabase.ImportAsset(scenePath);
+            }
+
             Selection.activeGameObject = demo;
             return true;
         }
@@ -165,30 +187,46 @@ namespace UniversalTracker.Editor
                 Debug.LogWarning("[ProAnima Vision] Retargeting demo component could not be configured.");
         }
 
-        private static void ConfigureDemoObject(GameObject demoObject)
+        private static bool ConfigureDemoObject(GameObject demoObject)
         {
             if (demoObject == null)
-                return;
+                return false;
 
             Component demo = demoObject.GetComponent(DemoScriptTypeName);
             if (demo == null)
-                return;
+                return false;
 
             VisionModelProfile profile = ResolvePoseProfile();
             if (profile == null)
-                return;
+                return false;
 
             var serialized = new SerializedObject(demo);
+            bool changed = false;
             SerializedProperty profileProperty = serialized.FindProperty("poseModelProfile");
-            if (profileProperty != null && profileProperty.objectReferenceValue == null)
+            if (profileProperty != null && !IsPoseProfile(profileProperty.objectReferenceValue))
+            {
                 profileProperty.objectReferenceValue = profile;
+                changed = true;
+            }
 
             SerializedProperty runPipeline = serialized.FindProperty("runYoloPosePipeline");
-            if (runPipeline != null)
+            if (runPipeline != null && !runPipeline.boolValue)
+            {
                 runPipeline.boolValue = true;
+                changed = true;
+            }
+
+            if (!changed)
+                return false;
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(demo);
+            return true;
+        }
+
+        private static bool IsPoseProfile(UnityEngine.Object candidate)
+        {
+            return candidate is VisionModelProfile profile && profile.Supports(VisionModelCapability.Pose2D);
         }
 
         private static VisionModelProfile ResolvePoseProfile()

@@ -63,7 +63,7 @@ namespace UniversalTracker.Core
                 NormalizeCoordinate(rows.Get(row, 2), context.modelInputSize.x),
                 NormalizeCoordinate(rows.Get(row, 3), context.modelInputSize.y));
 
-            return context.coordinateTransform.Apply(rect);
+            return context.coordinateTransform.Apply(RemoveLetterbox(rect, context));
         }
 
         public static Rect CornersToNormalizedRect(
@@ -81,7 +81,7 @@ namespace UniversalTracker.Core
                 Mathf.Max(x1, x2),
                 Mathf.Max(y1, y2));
 
-            return context.coordinateTransform.Apply(rect);
+            return context.coordinateTransform.Apply(RemoveLetterbox(rect, context));
         }
 
         public static Vector2 ReadNormalizedPoint(
@@ -95,7 +95,7 @@ namespace UniversalTracker.Core
                 NormalizeCoordinate(rows.Get(row, xColumn), context.modelInputSize.x),
                 NormalizeCoordinate(rows.Get(row, yColumn), context.modelInputSize.y));
 
-            return context.coordinateTransform.Apply(point);
+            return context.coordinateTransform.Apply(RemoveLetterbox(point, context));
         }
 
         public static float NormalizeCoordinate(float value, int modelAxis)
@@ -105,6 +105,47 @@ namespace UniversalTracker.Core
 
             int divisor = modelAxis > 0 ? modelAxis : 640;
             return Mathf.Clamp01(value / divisor);
+        }
+
+        public static Vector2 RemoveLetterbox(Vector2 normalizedPoint, VisionOutputParserContext context)
+        {
+            if (!context.preserveAspectRatio ||
+                context.sourceSize.x <= 0 ||
+                context.sourceSize.y <= 0 ||
+                context.modelInputSize.x <= 0 ||
+                context.modelInputSize.y <= 0)
+            {
+                return normalizedPoint;
+            }
+
+            float scale = Mathf.Min(
+                (float)context.modelInputSize.x / context.sourceSize.x,
+                (float)context.modelInputSize.y / context.sourceSize.y);
+            if (scale <= 0f)
+                return normalizedPoint;
+
+            Vector2 contentSize = new Vector2(context.sourceSize.x * scale, context.sourceSize.y * scale);
+            Vector2 padding = (new Vector2(context.modelInputSize.x, context.modelInputSize.y) - contentSize) * 0.5f;
+            Vector2 modelPoint = new Vector2(
+                normalizedPoint.x * context.modelInputSize.x,
+                normalizedPoint.y * context.modelInputSize.y);
+            return new Vector2(
+                Mathf.Clamp01((modelPoint.x - padding.x) / contentSize.x),
+                Mathf.Clamp01((modelPoint.y - padding.y) / contentSize.y));
+        }
+
+        public static Rect RemoveLetterbox(Rect normalizedRect, VisionOutputParserContext context)
+        {
+            if (!context.preserveAspectRatio)
+                return normalizedRect;
+
+            Vector2 min = RemoveLetterbox(new Vector2(normalizedRect.xMin, normalizedRect.yMin), context);
+            Vector2 max = RemoveLetterbox(new Vector2(normalizedRect.xMax, normalizedRect.yMax), context);
+            return Rect.MinMaxRect(
+                Mathf.Min(min.x, max.x),
+                Mathf.Min(min.y, max.y),
+                Mathf.Max(min.x, max.x),
+                Mathf.Max(min.y, max.y));
         }
 
         public static bool HasObjectness(int stride)

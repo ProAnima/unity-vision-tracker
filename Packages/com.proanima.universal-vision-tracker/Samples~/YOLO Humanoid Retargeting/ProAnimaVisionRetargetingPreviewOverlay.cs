@@ -185,7 +185,7 @@ namespace UniversalTracker.Samples
         {
             return new Vector2(
                 content.xMin + normalized.x * content.width,
-                content.yMin + (1f - normalized.y) * content.height);
+                content.yMin + normalized.y * content.height);
         }
 
         private static void ApplyLine(VisualElement element, Vector2 from, Vector2 to, Color color)

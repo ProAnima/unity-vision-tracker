@@ -145,11 +145,16 @@ namespace UniversalTracker.Tests
             Assert.That(utility, Does.Contain("EnsureSampleImported()"));
             Assert.That(utility, Does.Contain("IsImportedSampleCurrent"));
             Assert.That(utility, Does.Contain("ProAnimaVisionRetargetingSourceController.cs"));
+            Assert.That(utility, Does.Contain("ProAnimaVisionRetargetingPreviewOverlay.cs"));
             Assert.That(utility, Does.Contain("!view.Contains(\"RawImage\")"));
+            Assert.That(utility, Does.Contain("sourceController.Contains(\"ownsFrameSource\")"));
+            Assert.That(utility, Does.Contain("!overlay.Contains(\"1f - normalized.y\")"));
             Assert.That(utility, Does.Contain("ConfigureDemoObject"));
+            Assert.That(utility, Does.Contain("EditorSceneManager.SaveScene(scene)"));
             Assert.That(utility, Does.Contain("ResolvePoseProfile"));
             Assert.That(utility, Does.Contain("YoloPose2DProfile.asset"));
             Assert.That(utility, Does.Contain("\"poseModelProfile\""));
+            Assert.That(utility, Does.Contain("IsPoseProfile"));
         }
 
         [Test]
