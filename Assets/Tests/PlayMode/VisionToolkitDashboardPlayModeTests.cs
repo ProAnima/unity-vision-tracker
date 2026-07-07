@@ -126,6 +126,7 @@ namespace UniversalTracker.Tests
             Assert.That(state.detectionLayer.childCount, Is.EqualTo(1));
             Assert.That(state.labelLayer.childCount, Is.EqualTo(2));
             Assert.That(state.labels[1].text, Does.Contain("person"));
+            Assert.That(state.labels[0].text, Does.Contain("tool"));
 
             Object.Destroy(maskTexture);
         }
@@ -210,6 +211,15 @@ namespace UniversalTracker.Tests
                         label = "person",
                         confidence = 0.92f,
                         normalizedRect = new Rect(0.25f, 0.25f, 0.5f, 0.5f),
+                        trackState = VisionTrackState.Tracking
+                    },
+                    new VisionDetection
+                    {
+                        trackId = 12,
+                        classId = 1,
+                        label = "tool",
+                        confidence = 0.81f,
+                        normalizedRect = new Rect(0.08f, 0.1f, 0.12f, 0.16f),
                         trackState = VisionTrackState.Tracking
                     }
                 },

@@ -95,6 +95,8 @@ namespace UniversalTracker.Tests
 
             Assert.That(bootstrap, Does.Contain("ShouldRunStandaloneWebCamPreview()"));
             Assert.That(bootstrap, Does.Contain("realPipelineSource == InputProviderType.WebCam"));
+            Assert.That(bootstrap, Does.Contain("AdoptExistingVideoSourceIfNeeded"));
+            Assert.That(bootstrap, Does.Contain("manager.inputType != InputProviderType.Video"));
             Assert.That(controls, Does.Contain("UpdateCameraControls"));
             Assert.That(controls, Does.Contain("realPipelineSource == InputProviderType.WebCam"));
         }

@@ -13,6 +13,7 @@ namespace UniversalTracker.OutputReceivers
             Vector2 viewportSize,
             float stroke,
             bool showDetections,
+            bool suppressMaskedDetections,
             float overlaySmoothing)
         {
             int used = 0;
@@ -27,6 +28,9 @@ namespace UniversalTracker.OutputReceivers
             {
                 for (int i = 0; i < result.detections.Length; i++)
                 {
+                    if (suppressMaskedDetections && HasMatchingMask(result.detections[i], result.masks))
+                        continue;
+
                     VisionDetection detection = SmoothDetection(result.detections[i], i, state, overlaySmoothing);
                     RenderDetection(detection, state, sourceSize, viewportSize, stroke, used, 1f);
                     used++;
@@ -56,6 +60,40 @@ namespace UniversalTracker.OutputReceivers
 
             PruneDetectionTemporal(state);
             return used;
+        }
+
+        private static bool HasMatchingMask(VisionDetection detection, VisionMask[] masks)
+        {
+            if (masks == null || masks.Length == 0)
+                return false;
+
+            for (int i = 0; i < masks.Length; i++)
+            {
+                VisionMask mask = masks[i];
+                if (mask.classId != detection.classId)
+                    continue;
+
+                if (CalculateIoU(detection.normalizedRect, mask.normalizedRect) >= 0.9f)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static float CalculateIoU(Rect a, Rect b)
+        {
+            float x1 = Mathf.Max(a.xMin, b.xMin);
+            float y1 = Mathf.Max(a.yMin, b.yMin);
+            float x2 = Mathf.Min(a.xMax, b.xMax);
+            float y2 = Mathf.Min(a.yMax, b.yMax);
+            if (x2 <= x1 || y2 <= y1)
+                return 0f;
+
+            float intersection = (x2 - x1) * (y2 - y1);
+            float areaA = Mathf.Max(0f, a.width) * Mathf.Max(0f, a.height);
+            float areaB = Mathf.Max(0f, b.width) * Mathf.Max(0f, b.height);
+            float union = areaA + areaB - intersection;
+            return union > 0f ? intersection / union : 0f;
         }
 
         public static int RenderMasks(

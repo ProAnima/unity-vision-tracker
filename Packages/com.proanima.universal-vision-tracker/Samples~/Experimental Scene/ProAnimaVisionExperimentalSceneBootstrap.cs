@@ -238,6 +238,7 @@ namespace ProAnimaVision.Samples
         private void EnsureManager()
         {
             manager = GetComponent<UniversalTrackerManager>() ?? gameObject.AddComponent<UniversalTrackerManager>();
+            AdoptExistingVideoSourceIfNeeded();
             manager.pipelineProfile = pipelineProfile;
             manager.modelProfiles = pipelineProfile == null && modelProfile != null ? new[] { modelProfile } : null;
             manager.inputType = realPipelineSource;
@@ -278,6 +279,27 @@ namespace ProAnimaVision.Samples
 
             VisionVideoPlaylistSource.ConfigureVideoPlayerDefaults(sourceVideoPlayer);
             return sourceVideoPlayer;
+        }
+
+        private void AdoptExistingVideoSourceIfNeeded()
+        {
+            if (manager == null ||
+                realPipelineSource != InputProviderType.WebCam ||
+                manager.inputType != InputProviderType.Video)
+            {
+                return;
+            }
+
+            realPipelineSource = InputProviderType.Video;
+            runWebCamPreview = false;
+            sourceVideoPlayer = sourceVideoPlayer != null
+                ? sourceVideoPlayer
+                : manager.sourceVideoPlayer != null
+                    ? manager.sourceVideoPlayer
+                    : GetComponent<VideoPlayer>();
+            videoPlaylist = videoPlaylist != null
+                ? videoPlaylist
+                : GetComponent<VisionVideoPlaylistSource>();
         }
 
         private VisionFrameResult CreatePreviewResult(Texture texture)

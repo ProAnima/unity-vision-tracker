@@ -33,7 +33,15 @@ namespace UniversalTracker.OutputReceivers
         {
             state.renderSequence++;
             float overlaySmoothing = Mathf.Clamp01(poseSmoothing);
-            int detectionsUsed = VisionToolkitDashboardTemporalOverlayRenderer.RenderDetections(result, state, sourceSize, viewportSize, stroke, showDetections, overlaySmoothing);
+            int detectionsUsed = VisionToolkitDashboardTemporalOverlayRenderer.RenderDetections(
+                result,
+                state,
+                sourceSize,
+                viewportSize,
+                stroke,
+                showDetections,
+                showMasks,
+                overlaySmoothing);
             int masksUsed = VisionToolkitDashboardTemporalOverlayRenderer.RenderMasks(
                 result,
                 state,

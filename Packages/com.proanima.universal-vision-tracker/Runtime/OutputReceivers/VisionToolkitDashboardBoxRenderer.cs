@@ -46,15 +46,15 @@ namespace UniversalTracker.OutputReceivers
             float opacity = 1f)
         {
             Rect rect = VisionDashboardGeometry.NormalizedToViewportRect(mask.normalizedRect, sourceSize, viewportSize);
-            float borderStroke = VisionDashboardOverlayStyle.MaskBorderStroke(stroke);
+            float borderStroke = mask.HasContour ? 0f : VisionDashboardOverlayStyle.MaskBorderStroke(stroke);
             Color color = VisionDashboardOverlayStyle.MaskColor(mask, index);
 
             ApplyRect(element, rect);
-            ApplyBorder(element, borderStroke, VisionDashboardOverlayStyle.WithAlpha(color, 0.92f));
+            ApplyBorder(element, borderStroke, VisionDashboardOverlayStyle.WithAlpha(color, mask.HasContour ? 0f : 0.92f));
             element.style.opacity = opacity;
             element.style.backgroundColor = mask.texture != null
                 ? VisionDashboardOverlayStyle.WithAlpha(color, Mathf.Clamp01(maskAlpha * 0.34f))
-                : VisionDashboardOverlayStyle.WithAlpha(color, 0.035f);
+                : VisionDashboardOverlayStyle.WithAlpha(color, mask.HasContour ? 0f : 0.035f);
 
             Image image = element.Q<Image>(VisionToolkitDashboardPrimitives.MaskImageName);
             if (image != null)

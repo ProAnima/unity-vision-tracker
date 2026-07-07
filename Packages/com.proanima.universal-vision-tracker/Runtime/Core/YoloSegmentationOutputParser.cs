@@ -8,6 +8,8 @@ namespace UniversalTracker.Core
     {
         private const int MaxContourSegments = 512;
         private const float MaskThreshold = 0.5f;
+        private const int MinActiveMaskCells = 4;
+        private const float MinActiveMaskCoverage = 0.02f;
 
         public string ParserId => "yolo.segmentation.rows";
         public VisionModelCapability Capabilities => VisionModelCapability.Detection | VisionModelCapability.Segmentation;
@@ -58,8 +60,12 @@ namespace UniversalTracker.Core
                     maskOffset,
                     maskCoefficientCount,
                     rawNormalized,
-                    context.coordinateTransform);
+                    context.coordinateTransform,
+                    out MaskQuality maskQuality);
                 if (contourSegments.Length == 0)
+                    continue;
+
+                if (!IsMaskQualityAcceptable(maskQuality))
                     continue;
 
                 string label = YoloOutputParserUtility.ResolveLabel(classId, context.labels);
@@ -174,8 +180,10 @@ namespace UniversalTracker.Core
             int coefficientOffset,
             int coefficientCount,
             Rect rawNormalizedRect,
-            VisionOutputCoordinateTransform transform)
+            VisionOutputCoordinateTransform transform,
+            out MaskQuality quality)
         {
+            quality = default;
             if (coefficientCount <= 0 || !TryResolvePrototypeShape(prototypeTensor, out int channels, out int height, out int width))
                 return Array.Empty<Vector2>();
 
@@ -184,6 +192,8 @@ namespace UniversalTracker.Core
             int xMax = Mathf.Clamp(Mathf.CeilToInt(rawNormalizedRect.xMax * width), xMin + 1, width);
             int yMax = Mathf.Clamp(Mathf.CeilToInt(rawNormalizedRect.yMax * height), yMin + 1, height);
             var segments = new List<Vector2>();
+            int totalCells = Mathf.Max(1, (xMax - xMin) * (yMax - yMin));
+            int activeCells = 0;
 
             for (int y = yMin; y < yMax; y++)
             {
@@ -192,6 +202,7 @@ namespace UniversalTracker.Core
                     if (!IsMaskActive(rows, row, prototypeTensor, coefficientOffset, coefficientCount, channels, height, width, x, y))
                         continue;
 
+                    activeCells++;
                     AddCellEdges(
                         segments,
                         rows,
@@ -212,10 +223,17 @@ namespace UniversalTracker.Core
                 }
             }
 
+            quality = new MaskQuality(activeCells, totalCells);
             if (segments.Count < 4)
                 return Array.Empty<Vector2>();
 
             return SimplifySegments(segments);
+        }
+
+        private static bool IsMaskQualityAcceptable(MaskQuality quality)
+        {
+            return quality.activeCells >= MinActiveMaskCells &&
+                   quality.Coverage >= MinActiveMaskCoverage;
         }
 
         private static bool TryResolvePrototypeShape(VisionRawTensor tensor, out int channels, out int height, out int width)
@@ -393,6 +411,20 @@ namespace UniversalTracker.Core
                 this.detection = detection;
                 this.mask = mask;
             }
+        }
+
+        private readonly struct MaskQuality
+        {
+            public readonly int activeCells;
+            public readonly int totalCells;
+
+            public MaskQuality(int activeCells, int totalCells)
+            {
+                this.activeCells = activeCells;
+                this.totalCells = Mathf.Max(1, totalCells);
+            }
+
+            public float Coverage => activeCells / (float)totalCells;
         }
     }
 }
