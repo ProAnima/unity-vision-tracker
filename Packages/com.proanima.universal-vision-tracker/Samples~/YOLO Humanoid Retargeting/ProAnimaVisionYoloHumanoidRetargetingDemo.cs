@@ -1,6 +1,7 @@
 using UniversalTracker.Core;
 using UniversalTracker.OutputReceivers;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace UniversalTracker.Samples
 {
@@ -18,7 +19,33 @@ namespace UniversalTracker.Samples
         [SerializeField]
         private Material predictedMaterial;
 
+        [Header("Source")]
+        [SerializeField]
+        private ProAnimaVisionRetargetingSourceMode sourceMode = ProAnimaVisionRetargetingSourceMode.Camera;
+
+        [SerializeField]
+        private int webCamDeviceIndex = 0;
+
+        [SerializeField]
+        private string webCamDeviceName = null;
+
+        [SerializeField]
+        private int requestedWidth = 1280;
+
+        [SerializeField]
+        private int requestedHeight = 720;
+
+        [SerializeField]
+        private int requestedFps = 30;
+
+        [SerializeField]
+        private VideoPlayer sourceVideoPlayer = null;
+
+        [SerializeField]
+        private VisionVideoPlaylistSource videoPlaylist = null;
+
         private ProAnimaVisionGeneratedHumanoidRig rig;
+        private ProAnimaVisionRetargetingSourceController sourceController;
         private ProAnimaVisionRetargetingDemoView view;
         private VisionHumanoidRigReceiver receiver;
         private float time;
@@ -29,7 +56,18 @@ namespace UniversalTracker.Samples
             bodyMaterial ??= CreateMaterial(new Color(0.18f, 0.68f, 0.95f));
             predictedMaterial ??= CreateMaterial(new Color(1f, 0.76f, 0.18f));
             rig = ProAnimaVisionGeneratedHumanoidRig.Create(transform, bodyMaterial, predictedMaterial, rigRadius);
-            view = new ProAnimaVisionRetargetingDemoView(transform, 1280, 720, 30);
+            sourceController = new ProAnimaVisionRetargetingSourceController(
+                this,
+                sourceMode,
+                webCamDeviceIndex,
+                webCamDeviceName,
+                requestedWidth,
+                requestedHeight,
+                requestedFps,
+                sourceVideoPlayer,
+                videoPlaylist);
+            sourceController.Initialize();
+            view = new ProAnimaVisionRetargetingDemoView(this, sourceController);
             view.Initialize();
 
             receiver = gameObject.AddComponent<VisionHumanoidRigReceiver>();
@@ -55,25 +93,31 @@ namespace UniversalTracker.Samples
         private void Update()
         {
             time += Time.deltaTime * animationSpeed;
-            VisionFrameResult result = CreateFrameResult(CreateSyntheticCocoPose(time), view.CurrentTexture, view.SourceSize);
+            sourceController.TryUpdate(time, out VisionFrame frame);
+            VisionFrameResult result = CreateFrameResult(CreateSyntheticCocoPose(time), frame);
             receiver.ReceiveVisionResult(result, result.sourceTexture);
             rig.UpdateVisuals(receiver.LastHumanoidPose, receiver.HasLastHumanoidPose);
-            view.Update(time, result);
+            view.Update(result);
         }
 
         private void OnDestroy()
         {
             view?.Dispose();
+            sourceController?.Dispose();
         }
 
-        private static VisionFrameResult CreateFrameResult(VisionPose pose, Texture sourceTexture, Vector2Int sourceSize)
+        private static VisionFrameResult CreateFrameResult(VisionPose pose, VisionFrame frame)
         {
+            Vector2Int sourceSize = frame.sourceSize.x > 0 && frame.sourceSize.y > 0
+                ? frame.sourceSize
+                : new Vector2Int(1280, 720);
+
             return new VisionFrameResult
             {
-                frameIndex = Time.frameCount,
-                timestamp = Time.realtimeSinceStartupAsDouble,
+                frameIndex = frame.frameIndex,
+                timestamp = frame.timestamp,
                 sourceSize = sourceSize,
-                sourceTexture = sourceTexture,
+                sourceTexture = frame.texture,
                 detections = new[] { CreateDetection(pose, sourceSize) },
                 poses = new[] { pose }
             };

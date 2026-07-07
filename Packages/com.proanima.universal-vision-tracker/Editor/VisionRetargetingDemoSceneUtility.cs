@@ -18,12 +18,12 @@ namespace UniversalTracker.Editor
 
         public static bool EnsureImportedAndOpen()
         {
+            if (!EnsureSampleImported())
+                return false;
+
             string scenePath = FindScenePath();
             if (!string.IsNullOrWhiteSpace(scenePath))
                 return Open(scenePath);
-
-            if (!EnsureSampleImported())
-                return false;
 
             if (TryCreateConfiguredScene(out scenePath))
                 return Open(scenePath);
@@ -58,7 +58,8 @@ namespace UniversalTracker.Editor
 
         private static bool EnsureSampleImported()
         {
-            if (FindImportedSampleRoot() != null)
+            string sampleRoot = FindImportedSampleRoot();
+            if (sampleRoot != null && IsImportedSampleCurrent(sampleRoot))
                 return true;
 
             if (VisionPackageSampleImportUtility.TryImport(SampleName, out string importError))
@@ -69,6 +70,17 @@ namespace UniversalTracker.Editor
 
             VisionPackageSampleImportUtility.ShowImportHelp("Retargeting Demo", SampleName, importError);
             return false;
+        }
+
+        private static bool IsImportedSampleCurrent(string sampleRoot)
+        {
+            string sourceControllerPath = Path.Combine(sampleRoot, "ProAnimaVisionRetargetingSourceController.cs");
+            string viewPath = Path.Combine(sampleRoot, "ProAnimaVisionRetargetingDemoView.cs");
+            if (!File.Exists(sourceControllerPath) || !File.Exists(viewPath))
+                return false;
+
+            string view = File.ReadAllText(viewPath);
+            return view.Contains("UIDocument") && !view.Contains("RawImage");
         }
 
         private static bool TryCreateConfiguredScene(out string scenePath)

@@ -1,101 +1,152 @@
+using System.Collections.Generic;
 using UniversalTracker.Core;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 namespace UniversalTracker.Samples
 {
-    public sealed class ProAnimaVisionRetargetingPreviewOverlay : MaskableGraphic
+    public sealed class ProAnimaVisionRetargetingPreviewOverlay : VisualElement
     {
-        [SerializeField]
-        private float lineThickness = 4f;
+        private const float BoneThickness = 4f;
+        private const float KeypointSize = 8f;
+        private const float MinimumConfidence = 0.05f;
+        private readonly VisualElement contentGuide;
+        private readonly VisualElement detectionLayer;
+        private readonly VisualElement boneLayer;
+        private readonly VisualElement keypointLayer;
+        private readonly List<VisualElement> detections = new List<VisualElement>();
+        private readonly List<VisualElement> bones = new List<VisualElement>();
+        private readonly List<VisualElement> keypoints = new List<VisualElement>();
+        private VisionFrameResult result;
 
-        [SerializeField]
-        private float keypointSize = 8f;
-
-        [SerializeField]
-        private float minimumConfidence = 0.05f;
-
-        [SerializeField]
-        private Color boneColor = new Color(0.04f, 1f, 0.72f, 0.95f);
-
-        [SerializeField]
-        private Color predictedColor = new Color(1f, 0.78f, 0.15f, 0.95f);
-
-        [SerializeField]
-        private Color boxColor = new Color(0.2f, 0.8f, 1f, 0.85f);
-
-        private VisionPose pose;
-        private VisionDetection detection;
-        private bool hasPose;
-        private bool hasDetection;
-
-        public void SetResult(VisionFrameResult result)
+        public ProAnimaVisionRetargetingPreviewOverlay()
         {
-            hasPose = result?.poses != null && result.poses.Length > 0;
-            pose = hasPose ? result.poses[0] : default;
-            hasDetection = result?.detections != null && result.detections.Length > 0;
-            detection = hasDetection ? result.detections[0] : default;
-            SetVerticesDirty();
+            name = "RetargetingPoseOverlay";
+            pickingMode = PickingMode.Ignore;
+            style.position = Position.Absolute;
+            style.left = 0;
+            style.right = 0;
+            style.top = 0;
+            style.bottom = 0;
+
+            contentGuide = CreateLayer("SourceContentGuide");
+            contentGuide.style.borderTopWidth = 1;
+            contentGuide.style.borderRightWidth = 1;
+            contentGuide.style.borderBottomWidth = 1;
+            contentGuide.style.borderLeftWidth = 1;
+            SetBorder(contentGuide, new Color(1f, 1f, 1f, 0.16f));
+            Add(contentGuide);
+
+            detectionLayer = CreateLayer("SourceDetections");
+            boneLayer = CreateLayer("SourceBones");
+            keypointLayer = CreateLayer("SourceKeypoints");
+            Add(detectionLayer);
+            Add(boneLayer);
+            Add(keypointLayer);
+
+            RegisterCallback<GeometryChangedEvent>(_ => Redraw());
         }
 
-        protected override void OnPopulateMesh(VertexHelper vh)
+        public void SetResult(VisionFrameResult value)
         {
-            vh.Clear();
-            Rect rect = GetPixelAdjustedRect();
+            result = value;
+            Redraw();
+        }
 
-            if (hasDetection)
-                DrawDetection(vh, rect, detection.normalizedRect);
-
-            if (!hasPose || pose.keypoints == null)
+        private void Redraw()
+        {
+            float width = resolvedStyle.width;
+            float height = resolvedStyle.height;
+            if (width <= 1f || height <= 1f)
                 return;
 
-            VisionSkeletonBone[] bones = pose.skeleton.bones ?? FallbackCocoBones;
-            for (int i = 0; i < bones.Length; i++)
-                DrawBone(vh, rect, bones[i]);
+            Rect content = CalculateContentRect(new Vector2(width, height), result?.sourceSize ?? Vector2Int.zero);
+            ApplyRect(contentGuide, content);
+            ApplyRect(detectionLayer, content);
+            ApplyRect(boneLayer, content);
+            ApplyRect(keypointLayer, content);
 
-            for (int i = 0; i < pose.keypoints.Length; i++)
-                DrawKeypoint(vh, rect, pose.keypoints[i]);
+            int detectionCount = DrawDetections(content);
+            int boneCount = DrawBones(content);
+            int keypointCount = DrawKeypoints(content);
+            SetPoolActive(detections, detectionCount);
+            SetPoolActive(bones, boneCount);
+            SetPoolActive(keypoints, keypointCount);
         }
 
-        private void DrawDetection(VertexHelper vh, Rect rect, Rect normalized)
+        private int DrawDetections(Rect content)
         {
-            Vector2 min = ToLocal(rect, new Vector2(normalized.xMin, normalized.yMin));
-            Vector2 max = ToLocal(rect, new Vector2(normalized.xMax, normalized.yMax));
-            Vector2 topLeft = new Vector2(min.x, min.y);
-            Vector2 topRight = new Vector2(max.x, min.y);
-            Vector2 bottomRight = new Vector2(max.x, max.y);
-            Vector2 bottomLeft = new Vector2(min.x, max.y);
+            if (result?.detections == null)
+                return 0;
 
-            DrawLine(vh, topLeft, topRight, lineThickness, boxColor);
-            DrawLine(vh, topRight, bottomRight, lineThickness, boxColor);
-            DrawLine(vh, bottomRight, bottomLeft, lineThickness, boxColor);
-            DrawLine(vh, bottomLeft, topLeft, lineThickness, boxColor);
-        }
-
-        private void DrawBone(VertexHelper vh, Rect rect, VisionSkeletonBone bone)
-        {
-            if (!TryGetKeypoint(bone.from, out VisionKeypoint from) ||
-                !TryGetKeypoint(bone.to, out VisionKeypoint to))
+            int count = 0;
+            for (int i = 0; i < result.detections.Length; i++)
             {
-                return;
+                VisionDetection detection = result.detections[i];
+                VisualElement element = GetElement(detections, detectionLayer, CreateDetectionBox, count++);
+                Rect box = ToRect(content, detection.normalizedRect);
+                ApplyRect(element, box);
             }
 
-            Color color = from.confidence < 0.35f || to.confidence < 0.35f ? predictedColor : boneColor;
-            DrawLine(vh, ToLocal(rect, from.normalizedPosition), ToLocal(rect, to.normalizedPosition), lineThickness, color);
+            return count;
         }
 
-        private void DrawKeypoint(VertexHelper vh, Rect rect, VisionKeypoint keypoint)
+        private int DrawBones(Rect content)
         {
-            if (!IsVisible(keypoint))
-                return;
+            VisionPose pose = ResolvePose();
+            if (pose.keypoints == null)
+                return 0;
 
-            Color color = keypoint.confidence < 0.35f ? predictedColor : Color.white;
-            Vector2 center = ToLocal(rect, keypoint.normalizedPosition);
-            float half = keypointSize * 0.5f;
-            AddQuad(vh, center + new Vector2(-half, -half), center + new Vector2(half, half), color);
+            VisionSkeletonBone[] skeletonBones = pose.skeleton.bones ?? FallbackCocoBones;
+            int count = 0;
+            for (int i = 0; i < skeletonBones.Length; i++)
+            {
+                VisionSkeletonBone bone = skeletonBones[i];
+                if (!TryGetKeypoint(pose, bone.from, out VisionKeypoint from) ||
+                    !TryGetKeypoint(pose, bone.to, out VisionKeypoint to))
+                {
+                    continue;
+                }
+
+                VisualElement element = GetElement(bones, boneLayer, CreateBone, count++);
+                Color color = from.confidence < 0.35f || to.confidence < 0.35f
+                    ? new Color(1f, 0.78f, 0.15f, 0.96f)
+                    : new Color(0.04f, 1f, 0.72f, 0.96f);
+                ApplyLine(element, ToLocal(content, from.normalizedPosition), ToLocal(content, to.normalizedPosition), color);
+            }
+
+            return count;
         }
 
-        private bool TryGetKeypoint(int index, out VisionKeypoint keypoint)
+        private int DrawKeypoints(Rect content)
+        {
+            VisionPose pose = ResolvePose();
+            if (pose.keypoints == null)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < pose.keypoints.Length; i++)
+            {
+                VisionKeypoint keypoint = pose.keypoints[i];
+                if (!IsVisible(keypoint))
+                    continue;
+
+                VisualElement element = GetElement(keypoints, keypointLayer, CreateKeypoint, count++);
+                Color color = keypoint.confidence < 0.35f ? new Color(1f, 0.78f, 0.15f, 1f) : Color.white;
+                element.style.backgroundColor = color;
+                Vector2 center = ToLocal(content, keypoint.normalizedPosition);
+                ApplyRect(element, new Rect(center.x - KeypointSize * 0.5f, center.y - KeypointSize * 0.5f, KeypointSize, KeypointSize));
+            }
+
+            return count;
+        }
+
+        private VisionPose ResolvePose()
+        {
+            return result?.poses != null && result.poses.Length > 0 ? result.poses[0] : default;
+        }
+
+        private static bool TryGetKeypoint(VisionPose pose, int index, out VisionKeypoint keypoint)
         {
             if (index >= 0 && index < pose.keypoints.Length && IsVisible(pose.keypoints[index]))
             {
@@ -107,48 +158,125 @@ namespace UniversalTracker.Samples
             return false;
         }
 
-        private bool IsVisible(VisionKeypoint keypoint)
+        private static bool IsVisible(VisionKeypoint keypoint)
         {
-            return keypoint.isVisible && keypoint.confidence >= minimumConfidence;
+            return keypoint.isVisible && keypoint.confidence >= MinimumConfidence;
         }
 
-        private static Vector2 ToLocal(Rect rect, Vector2 normalized)
+        private static Rect CalculateContentRect(Vector2 container, Vector2Int sourceSize)
+        {
+            if (sourceSize.x <= 0 || sourceSize.y <= 0)
+                return new Rect(0f, 0f, container.x, container.y);
+
+            float scale = Mathf.Min(container.x / sourceSize.x, container.y / sourceSize.y);
+            float width = sourceSize.x * scale;
+            float height = sourceSize.y * scale;
+            return new Rect((container.x - width) * 0.5f, (container.y - height) * 0.5f, width, height);
+        }
+
+        private static Rect ToRect(Rect content, Rect normalized)
+        {
+            Vector2 min = ToLocal(content, new Vector2(normalized.xMin, normalized.yMin));
+            Vector2 max = ToLocal(content, new Vector2(normalized.xMax, normalized.yMax));
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        }
+
+        private static Vector2 ToLocal(Rect content, Vector2 normalized)
         {
             return new Vector2(
-                rect.xMin + normalized.x * rect.width,
-                rect.yMin + (1f - normalized.y) * rect.height);
+                content.xMin + normalized.x * content.width,
+                content.yMin + (1f - normalized.y) * content.height);
         }
 
-        private static void DrawLine(VertexHelper vh, Vector2 from, Vector2 to, float thickness, Color color)
+        private static void ApplyLine(VisualElement element, Vector2 from, Vector2 to, Color color)
         {
             Vector2 delta = to - from;
-            if (delta.sqrMagnitude < 0.001f)
+            float length = delta.magnitude;
+            if (length <= 0.001f)
+            {
+                element.style.display = DisplayStyle.None;
                 return;
+            }
 
-            Vector2 normal = new Vector2(-delta.y, delta.x).normalized * (thickness * 0.5f);
-            AddQuad(vh, from - normal, from + normal, to + normal, to - normal, color);
+            element.style.display = DisplayStyle.Flex;
+            element.style.left = from.x;
+            element.style.top = from.y - BoneThickness * 0.5f;
+            element.style.width = length;
+            element.style.height = BoneThickness;
+            element.style.backgroundColor = color;
+            element.style.rotate = new Rotate(Angle.Degrees(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg));
+            element.style.transformOrigin = new TransformOrigin(0f, 50f, 0f);
         }
 
-        private static void AddQuad(VertexHelper vh, Vector2 min, Vector2 max, Color color)
+        private static void ApplyRect(VisualElement element, Rect rect)
         {
-            AddQuad(
-                vh,
-                new Vector2(min.x, min.y),
-                new Vector2(min.x, max.y),
-                new Vector2(max.x, max.y),
-                new Vector2(max.x, min.y),
-                color);
+            element.style.display = DisplayStyle.Flex;
+            element.style.position = Position.Absolute;
+            element.style.left = rect.xMin;
+            element.style.top = rect.yMin;
+            element.style.width = Mathf.Max(0f, rect.width);
+            element.style.height = Mathf.Max(0f, rect.height);
         }
 
-        private static void AddQuad(VertexHelper vh, Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color color)
+        private static VisualElement GetElement(List<VisualElement> pool, VisualElement parent, System.Func<VisualElement> factory, int index)
         {
-            int index = vh.currentVertCount;
-            vh.AddVert(a, color, Vector2.zero);
-            vh.AddVert(b, color, Vector2.zero);
-            vh.AddVert(c, color, Vector2.zero);
-            vh.AddVert(d, color, Vector2.zero);
-            vh.AddTriangle(index, index + 1, index + 2);
-            vh.AddTriangle(index, index + 2, index + 3);
+            while (pool.Count <= index)
+            {
+                VisualElement element = factory();
+                pool.Add(element);
+                parent.Add(element);
+            }
+
+            return pool[index];
+        }
+
+        private static void SetPoolActive(List<VisualElement> pool, int activeCount)
+        {
+            for (int i = 0; i < pool.Count; i++)
+                pool[i].style.display = i < activeCount ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private static VisualElement CreateLayer(string name)
+        {
+            var layer = new VisualElement { name = name, pickingMode = PickingMode.Ignore };
+            layer.style.position = Position.Absolute;
+            return layer;
+        }
+
+        private static VisualElement CreateDetectionBox()
+        {
+            var box = new VisualElement { pickingMode = PickingMode.Ignore };
+            box.style.borderTopWidth = 2;
+            box.style.borderRightWidth = 2;
+            box.style.borderBottomWidth = 2;
+            box.style.borderLeftWidth = 2;
+            SetBorder(box, new Color(0.2f, 0.8f, 1f, 0.88f));
+            return box;
+        }
+
+        private static VisualElement CreateBone()
+        {
+            var element = new VisualElement { pickingMode = PickingMode.Ignore };
+            element.style.position = Position.Absolute;
+            return element;
+        }
+
+        private static VisualElement CreateKeypoint()
+        {
+            var point = new VisualElement { pickingMode = PickingMode.Ignore };
+            point.style.borderTopLeftRadius = KeypointSize * 0.5f;
+            point.style.borderTopRightRadius = KeypointSize * 0.5f;
+            point.style.borderBottomLeftRadius = KeypointSize * 0.5f;
+            point.style.borderBottomRightRadius = KeypointSize * 0.5f;
+            return point;
+        }
+
+        private static void SetBorder(VisualElement element, Color color)
+        {
+            element.style.borderTopColor = color;
+            element.style.borderRightColor = color;
+            element.style.borderBottomColor = color;
+            element.style.borderLeftColor = color;
         }
 
         private static readonly VisionSkeletonBone[] FallbackCocoBones =

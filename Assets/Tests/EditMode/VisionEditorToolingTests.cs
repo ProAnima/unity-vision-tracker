@@ -137,6 +137,18 @@ namespace UniversalTracker.Tests
         }
 
         [Test]
+        public void RetargetingDemoImport_RefreshesStaleImportedSampleBeforeOpeningScene()
+        {
+            string utility = System.IO.File.ReadAllText(
+                "Packages/com.proanima.universal-vision-tracker/Editor/VisionRetargetingDemoSceneUtility.cs");
+
+            Assert.That(utility, Does.Contain("EnsureSampleImported()"));
+            Assert.That(utility, Does.Contain("IsImportedSampleCurrent"));
+            Assert.That(utility, Does.Contain("ProAnimaVisionRetargetingSourceController.cs"));
+            Assert.That(utility, Does.Contain("!view.Contains(\"RawImage\")"));
+        }
+
+        [Test]
         public void PipelineProfileTemplate_CanBeCreatedWithoutSelectedModels()
         {
             VisionPipelineProfile profile = VisionModelProfileTemplateFactory.CreatePipelineProfile(null);
