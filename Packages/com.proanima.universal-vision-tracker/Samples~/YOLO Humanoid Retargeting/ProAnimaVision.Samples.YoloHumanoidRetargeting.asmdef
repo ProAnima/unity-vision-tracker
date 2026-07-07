@@ -2,7 +2,8 @@
   "name": "ProAnimaVision.Samples.YoloHumanoidRetargeting",
   "rootNamespace": "UniversalTracker.Samples",
   "references": [
-    "UniversalTracker.Runtime"
+    "UniversalTracker.Runtime",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

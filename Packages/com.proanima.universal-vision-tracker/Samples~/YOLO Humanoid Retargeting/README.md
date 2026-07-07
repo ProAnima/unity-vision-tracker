@@ -4,6 +4,8 @@ This sample demonstrates the production retargeting path from a YOLO/COCO-17 pos
 
 ## What It Shows
 
+- A product-style split view: left source preview with person box, COCO-17 bones, and keypoints; right retargeted Unity rig.
+- WebCam preview when a camera is available, with a synthetic video fallback when no camera is present.
 - A runtime-created humanoid rig hierarchy with standard hips, spine, chest, neck, head, arm, hand, leg, and foot joints.
 - A synthetic COCO-17 pose stream, including intermittent wrist dropout.
 - `VisionCocoHumanoidPoseRetargeter` converting `VisionPose` into `VisionHumanoidPose`.
@@ -25,4 +27,4 @@ Manual path:
 3. Add `ProAnimaVisionYoloHumanoidRetargetingDemo` to an empty GameObject.
 4. Enter Play Mode.
 
-The sample uses generated Unity primitives rather than an FBX so the retargeting logic can be inspected without external assets. Production rigs should use `VisionHumanoidRigReceiver` with either an `Animator` humanoid auto-binding or explicit `Transform` bindings for a Generic rig.
+The sample uses generated Unity primitives rather than an FBX so the retargeting logic can be inspected without external assets. The left preview is intentionally driven by the same `VisionFrameResult` that drives the rig, making it easy to see how source keypoints, dropout filtering, and retargeted bones relate. Production rigs should use `VisionHumanoidRigReceiver` with either an `Animator` humanoid auto-binding or explicit `Transform` bindings for a Generic rig.

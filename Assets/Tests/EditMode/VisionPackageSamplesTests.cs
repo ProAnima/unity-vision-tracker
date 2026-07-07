@@ -70,7 +70,25 @@ namespace UniversalTracker.Tests
             Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/README.md")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVision.Samples.YoloHumanoidRetargeting.asmdef")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionGeneratedHumanoidRig.cs")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionRetargetingDemoView.cs")), Is.True);
+            Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionRetargetingPreviewOverlay.cs")), Is.True);
             Assert.That(File.Exists(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionYoloHumanoidRetargetingDemo.cs")), Is.True);
+        }
+
+        [Test]
+        public void YoloHumanoidRetargetingSample_ProvidesSplitSourcePreview()
+        {
+            string demo = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionYoloHumanoidRetargetingDemo.cs"));
+            string view = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVisionRetargetingDemoView.cs"));
+            string asmdef = File.ReadAllText(PackagePath("Samples~/YOLO Humanoid Retargeting/ProAnimaVision.Samples.YoloHumanoidRetargeting.asmdef"));
+
+            Assert.That(demo, Does.Contain("CreateDetection"));
+            Assert.That(demo, Does.Contain("sourceTexture"));
+            Assert.That(demo, Does.Contain("camera.rect = new Rect(0.5f"));
+            Assert.That(view, Does.Contain("RawImage"));
+            Assert.That(view, Does.Contain("WebCamTexture"));
+            Assert.That(view, Does.Contain("Synthetic video fallback"));
+            Assert.That(asmdef, Does.Contain("\"UnityEngine.UI\""));
         }
 
         [Test]
